@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { Project } from "@/models/Project";
 import { Scope } from "@/models/Scope";
+import { Message } from "@/models/Message";
 import { getEffortLevel, getRateRange, calculatePrice } from "@/lib/utils";
 import { askGeminiForCustomUnit } from "@/lib/gemini";
 
@@ -49,6 +50,37 @@ export async function PATCH(req: NextRequest, { params }: { params: { projectId:
       project.freelancerAccepted = false;
       await project.save();
       
+      return NextResponse.json({ success: true, project });
+    }
+
+    if (body.accept || body.freelancerAccepted) {
+      const project = await Project.findById(params.projectId);
+      if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
+
+      project.freelancerAccepted = true;
+      project.status = "active";
+      await project.save();
+
+      const freelancerId = project.freelancerId;
+      if (freelancerId) {
+        const { FreelancerProfile } = require("@/models/FreelancerProfile");
+        await FreelancerProfile.updateOne(
+          { userId: freelancerId },
+          { 
+            $addToSet: { activeProjectIds: project._id },
+            $set: { available: false }
+          }
+        );
+
+        // Notify client and initialize project workspace chat message
+        await Message.create({
+          projectId: project._id,
+          senderId: freelancerId,
+          senderRole: "freelancer",
+          content: "👋 Project Approved! I have officially accepted the scope and initiated execution. The secure chat channel is active and development has started!"
+        });
+      }
+
       return NextResponse.json({ success: true, project });
     }
 

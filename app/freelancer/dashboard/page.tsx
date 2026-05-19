@@ -4,9 +4,8 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Sidebar } from "@/components/layout/Navbar";
-import { Button, Badge, Card, LevelBadge, ScoreBar } from "@/components/ui";
+import { Button, Badge, Card, LevelBadge } from "@/components/ui";
 import { formatCurrency } from "@/lib/utils";
-import { cn } from "@/lib/utils";
 
 const SidebarIcons = {
   home: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 6.5L8 2l6 4.5V14a1 1 0 01-1 1H3a1 1 0 01-1-1V6.5z" stroke="currentColor" strokeWidth="1.3" /></svg>,
@@ -21,15 +20,6 @@ export default function FreelancerDashboardPage() {
   const [profile, setProfile] = useState<any>(null);
   const [test, setTest] = useState<any>(null);
   const [activeProjects, setActiveProjects] = useState<any[]>([]);
-  const [submitting, setSubmitting] = useState(false);
-  const [subUrl, setSubUrl] = useState("");
-  const [subNotes, setSubNotes] = useState("");
-  const [startingTest, setStartingTest] = useState(false);
-  const [error, setError] = useState("");
-  const [expanded, setExpanded] = useState(false);
-  const [showSubmitForm, setShowSubmitForm] = useState(false);
-  
-  const [expandedProjectId, setExpandedProjectId] = useState<string | null>(null);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
 
@@ -51,7 +41,7 @@ export default function FreelancerDashboardPage() {
       const res = await fetch(`/api/projects/${projectId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ freelancerAccepted: true })
+        body: JSON.stringify({ accept: true })
       });
       if (res.ok) {
         // Refresh profile and active projects
@@ -60,7 +50,6 @@ export default function FreelancerDashboardPage() {
         setProfile(d.profile);
         setTest(d.test);
         setActiveProjects(d.activeProjects || []);
-        setExpandedProjectId(null); // Close modal/expansion on accept
       }
     } catch (err) {
       console.error("Error accepting project:", err);
@@ -84,42 +73,11 @@ export default function FreelancerDashboardPage() {
         setProfile(d.profile);
         setTest(d.test);
         setActiveProjects(d.activeProjects || []);
-        setExpandedProjectId(null); // Close modal/expansion on reject
       }
     } catch (err) {
       console.error("Error rejecting project:", err);
     } finally {
       setRejectingId(null);
-    }
-  }
-
-  async function startTest() {
-    setStartingTest(true);
-    const res = await fetch("/api/freelancer/test", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ field: profile.field, domain: profile.domain, specialization: profile.specializations?.[0] }),
-    });
-    const data = await res.json();
-    setStartingTest(false);
-    if (data.test) setTest(data.test);
-  }
-
-  async function submitTest() {
-    if (!subUrl) { setError("Please provide a submission URL or link."); return; }
-    setSubmitting(true);
-    setError("");
-    const res = await fetch(`/api/freelancer/test/${test._id}/submit`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ submissionUrl: subUrl, submissionNotes: subNotes }),
-    });
-    setSubmitting(false);
-    if (res.ok) {
-      const d = await res.json();
-      setTest(d.test);
-    } else {
-      setError("Submission failed. Try again.");
     }
   }
 
@@ -129,6 +87,9 @@ export default function FreelancerDashboardPage() {
     { label: "Projects", href: "/freelancer/projects", icon: SidebarIcons.projects },
     { label: "Earnings", href: "/freelancer/earnings", icon: SidebarIcons.earnings },
   ];
+
+  const pendingInvitations = activeProjects.filter(p => !p.freelancerAccepted && p.status !== "active");
+  const projectsUnderExecution = activeProjects.filter(p => p.freelancerAccepted || p.status === "active");
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -171,7 +132,7 @@ export default function FreelancerDashboardPage() {
               <div>
                 <span className="text-[10px] text-text-tertiary uppercase font-bold tracking-wider">Project Invitations</span>
                 <div className="text-lg font-semibold text-text-primary mt-1">
-                  {activeProjects.filter(p => !p.freelancerAccepted).length}
+                  {pendingInvitations.length}
                 </div>
               </div>
               <div className="text-xs text-text-secondary mt-3">
@@ -195,7 +156,7 @@ export default function FreelancerDashboardPage() {
           <div className="space-y-8">
             
             {/* 1. MATCHED PROJECT INVITATIONS */}
-            {activeProjects.filter(p => !p.freelancerAccepted).length > 0 && (
+            {pendingInvitations.length > 0 && (
               <div className="space-y-4">
                 <div className="flex items-center gap-2 border-b border-border pb-2">
                   <span className="w-2.5 h-2.5 bg-blue-600 rounded-full animate-pulse" />
@@ -203,10 +164,8 @@ export default function FreelancerDashboardPage() {
                 </div>
                 
                 <div className="grid grid-cols-1 gap-6">
-                  {activeProjects.filter(p => !p.freelancerAccepted).map((p) => {
+                  {pendingInvitations.map((p) => {
                     const pricing = p.pricing || {};
-                    const client = p.clientId || {};
-                    
                     return (
                       <Card key={p._id} className="p-6 border border-blue-600/20 bg-blue-600/[0.01] hover:border-blue-600/40 transition-all space-y-4">
                         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
@@ -227,7 +186,7 @@ export default function FreelancerDashboardPage() {
 
                         <div className="pt-4 border-t border-border/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                           <button
-                            onClick={() => setExpandedProjectId(p._id)}
+                            onClick={() => router.push(`/freelancer/projects/${p._id}/preview`)}
                             className="text-xs font-semibold text-accent hover:text-accent/80 flex items-center gap-1.5 self-start sm:self-center transition-colors"
                           >
                             Review Scope Details &rarr;
@@ -263,7 +222,7 @@ export default function FreelancerDashboardPage() {
             <div className="space-y-4">
               <h3 className="text-sm font-bold uppercase tracking-wider text-text-tertiary border-b border-border pb-2">Active Project Workspace</h3>
               
-              {activeProjects.filter(p => p.freelancerAccepted).length === 0 ? (
+              {projectsUnderExecution.length === 0 ? (
                 <Card className="p-8 text-center border-dashed border-border/80 bg-surface/10">
                   <div className="w-10 h-10 bg-text-secondary/5 rounded-full flex items-center justify-center mx-auto mb-3">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 17v-5M12 17v-3M15 17v-8" /></svg>
@@ -275,7 +234,7 @@ export default function FreelancerDashboardPage() {
                 </Card>
               ) : (
                 <div className="grid grid-cols-1 gap-4">
-                  {activeProjects.filter(p => p.freelancerAccepted).map((p) => {
+                  {projectsUnderExecution.map((p) => {
                     const pricing = p.pricing || {};
                     return (
                       <Card key={p._id} className="p-6 border border-border">
@@ -306,152 +265,6 @@ export default function FreelancerDashboardPage() {
             </div>
 
           </div>
-
-          {/* 3. STUNNING FULL PROJECT PREVIEW MODAL */}
-          {expandedProjectId && (() => {
-            const p = activeProjects.find(proj => proj._id === expandedProjectId);
-            if (!p) return null;
-            const scope = p.scopeId || {};
-            const client = p.clientId || {};
-            const pricing = p.pricing || {};
-            
-            return (
-              <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
-                <div className="bg-zinc-950 border border-zinc-800 max-w-3xl w-full rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col max-h-[90vh] animate-scale-in text-white">
-                  
-                  {/* Header */}
-                  <div className="p-6 border-b border-zinc-850 flex items-start justify-between bg-zinc-900/60">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="blue" className="text-[9px] uppercase tracking-wider font-bold">Matched Project Invitation</Badge>
-                        <span className="text-[11px] text-zinc-400 font-mono">ID: {p._id.toString().slice(-6).toUpperCase()}</span>
-                      </div>
-                      <h3 className="text-xl font-bold text-white mt-1.5">{p.title}</h3>
-                      <p className="text-xs text-zinc-300 mt-1">
-                        Client Partner: <span className="font-semibold text-white">{client.name || "Client Partner"}</span>
-                      </p>
-                    </div>
-                    <button 
-                      onClick={() => setExpandedProjectId(null)} 
-                      className="text-zinc-400 hover:text-white transition-colors p-1.5 hover:bg-zinc-900 rounded-lg"
-                    >
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                    </button>
-                  </div>
-
-                  {/* Scrollable Body */}
-                  <div className="p-6 overflow-y-auto space-y-6 text-left">
-                    
-                    {/* Goal & Description */}
-                    <div className="space-y-2.5">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400">01 / Strategic Goal & Context</h4>
-                      <div className="p-5 bg-zinc-900/60 rounded-xl border border-zinc-800 space-y-4">
-                        <p className="text-sm text-zinc-100 font-medium leading-relaxed">{p.goal}</p>
-                        {p.targetAudience && (
-                          <p className="text-xs text-zinc-300 leading-relaxed border-t border-zinc-800/80 pt-3">
-                            <span className="font-bold text-blue-400 block mb-0.5">Target Audience:</span>
-                            {p.targetAudience}
-                          </p>
-                        )}
-                        {p.useCaseContext && (
-                          <p className="text-xs text-zinc-300 leading-relaxed pt-1">
-                            <span className="font-bold text-blue-400 block mb-0.5">Usage / Operational Context:</span>
-                            {p.useCaseContext}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Vetting Specifications parameters */}
-                    <div className="space-y-2.5">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400">02 / Governed Technical Parameters</h4>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-zinc-900/60 p-4 rounded-xl border border-zinc-800">
-                        <div className="bg-zinc-950/60 p-3 rounded-lg border border-zinc-800/60">
-                          <span className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider block">Priority</span>
-                          <span className="text-xs font-semibold text-blue-400 capitalize">{p.priority || "Medium"}</span>
-                        </div>
-                        <div className="bg-zinc-950/60 p-3 rounded-lg border border-zinc-800/60">
-                          <span className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider block">Complexity Track</span>
-                          <span className="text-xs font-semibold text-blue-400">Level {p.requiredLevel || 2}</span>
-                        </div>
-                        <div className="bg-zinc-950/60 p-3 rounded-lg border border-zinc-800/60">
-                          <span className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider block">Total Effort Points</span>
-                          <span className="text-xs font-semibold text-blue-400 font-mono">{scope.totalEffortScore || 0} pts</span>
-                        </div>
-                        <div className="bg-zinc-950/60 p-3 rounded-lg border border-zinc-800/60">
-                          <span className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider block">Estimated Timeline</span>
-                          <span className="text-xs font-semibold text-blue-400">{scope.timeline?.estimated || 4} Weeks</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Detailed Functional Units */}
-                    <div className="space-y-3">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400">03 / Governed Technical Scope</h4>
-                      <div className="grid gap-4">
-                        {scope.functionalUnits?.map((unit: any, idx: number) => (
-                          <div key={idx} className="p-5 bg-zinc-900/60 rounded-xl border border-zinc-800 space-y-4 shadow-sm hover:border-blue-500/30 transition-all duration-200">
-                            <div className="flex items-center justify-between">
-                              <h5 className="text-sm font-bold text-white">{unit.name}</h5>
-                              <span className="text-xs font-mono bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20 font-semibold text-blue-400">{unit.unitScore} pts</span>
-                            </div>
-                            <p className="text-xs text-zinc-300 leading-relaxed">{unit.description}</p>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 text-[11px] border-t border-zinc-800/50">
-                              {unit.included && unit.included.length > 0 && (
-                                <div className="space-y-1.5">
-                                  <span className="font-semibold text-blue-400 flex items-center gap-1.5">✓ Inclusions</span>
-                                  <ul className="list-disc list-inside text-zinc-300 space-y-1">
-                                    {unit.included.map((inc: string, i: number) => <li key={i}>{inc}</li>)}
-                                  </ul>
-                                </div>
-                              )}
-                              {unit.deliverables && unit.deliverables.length > 0 && (
-                                <div className="space-y-1.5">
-                                  <span className="font-semibold text-emerald-400 flex items-center gap-1.5">⚿ Expected Deliverables</span>
-                                  <ul className="list-disc list-inside text-zinc-300 space-y-1">
-                                    {unit.deliverables.map((del: string, i: number) => <li key={i}>{del}</li>)}
-                                  </ul>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                  </div>
-
-                  {/* Footer Actions with both Reject & Approve buttons */}
-                  <div className="p-6 border-t border-zinc-800 bg-zinc-900/90 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                      <span className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider block">Estimated Compensation</span>
-                      <span className="text-xl font-bold text-blue-400">{formatCurrency(pricing.freelancerPrice || 0)}</span>
-                    </div>
-                    <div className="flex items-center gap-3 self-stretch sm:self-auto justify-end">
-                      <Button
-                        variant="outline"
-                        loading={rejectingId === p._id}
-                        onClick={() => rejectProject(p._id)}
-                        className="px-5 py-2.5 text-xs font-bold bg-transparent text-red-400 hover:bg-red-500/10 border-red-500/30 hover:border-red-500/50 transition-all"
-                      >
-                        Reject Invitation
-                      </Button>
-                      <Button
-                        variant="primary"
-                        loading={acceptingId === p._id}
-                        onClick={() => acceptProject(p._id)}
-                        className="px-6 py-2.5 text-xs font-bold bg-blue-600 hover:bg-blue-700 border-blue-600 text-white transition-all"
-                      >
-                        Approve Project &rarr;
-                      </Button>
-                    </div>
-                  </div>
-
-                </div>
-              </div>
-            );
-          })()}
         </div>
       </main>
     </div>
