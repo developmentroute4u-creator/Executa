@@ -28,6 +28,30 @@ export async function PATCH(req: NextRequest, { params }: { params: { projectId:
     const body = await req.json();
     await connectDB();
 
+    if (body.reject) {
+      const project = await Project.findById(params.projectId);
+      if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
+      
+      const freelancerId = project.freelancerId;
+      if (freelancerId) {
+        const { FreelancerProfile } = require("@/models/FreelancerProfile");
+        await FreelancerProfile.updateOne(
+          { userId: freelancerId },
+          { 
+            $pull: { activeProjectIds: project._id },
+            $set: { available: true }
+          }
+        );
+      }
+      
+      project.freelancerId = undefined;
+      project.status = "matching";
+      project.freelancerAccepted = false;
+      await project.save();
+      
+      return NextResponse.json({ success: true, project });
+    }
+
     const { customUnit, ...projectUpdates } = body;
 
     if (customUnit) {

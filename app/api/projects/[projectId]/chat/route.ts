@@ -25,11 +25,11 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
   }
 
   const messages = await (Message as any).find({ projectId: params.projectId }).sort({ createdAt: 1 }).lean();
-  
+
   // Anonymize names and roles as per requirements
   const sanitizedMessages = messages.map((m: any) => {
     const isMe = m.senderId.toString() === userId;
-    
+
     let senderDisplayName = "";
     if (role === "client") {
       // Client views freelancer anonymized

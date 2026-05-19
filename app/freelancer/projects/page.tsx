@@ -6,10 +6,10 @@ import { Sidebar } from "@/components/layout/Navbar";
 import { Card, Badge, Button } from "@/components/ui";
 
 const SidebarIcons = {
-  home: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 6.5L8 2l6 4.5V14a1 1 0 01-1 1H3a1 1 0 01-1-1V6.5z" stroke="currentColor" strokeWidth="1.3"/></svg>,
-  test: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 8l3 3 5-5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.3"/></svg>,
-  projects: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.3"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.3"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.3"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.3"/></svg>,
-  earnings: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.3"/><path d="M8 5v1.5M8 9.5V11M6 7.5c0-.8.8-1.5 2-1.5s2 .7 2 1.5-1 1.3-2 1.5-2 .7-2 1.5S6.8 12 8 12s2-.5 2-1.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>,
+  home: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 6.5L8 2l6 4.5V14a1 1 0 01-1 1H3a1 1 0 01-1-1V6.5z" stroke="currentColor" strokeWidth="1.3" /></svg>,
+  test: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 8l3 3 5-5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.3" /></svg>,
+  projects: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.3" /><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.3" /><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.3" /><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.3" /></svg>,
+  earnings: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.3" /><path d="M8 5v1.5M8 9.5V11M6 7.5c0-.8.8-1.5 2-1.5s2 .7 2 1.5-1 1.3-2 1.5-2 .7-2 1.5S6.8 12 8 12s2-.5 2-1.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" /></svg>,
 };
 
 export default function FreelancerProjectsPage() {
@@ -28,7 +28,7 @@ export default function FreelancerProjectsPage() {
 
   const sidebarItems = [
     { label: "Dashboard", href: "/freelancer/dashboard", icon: SidebarIcons.home },
-    { label: "Skill Test", href: "/freelancer/dashboard#test", icon: SidebarIcons.test },
+    { label: "Skill Test", href: "/freelancer/test", icon: SidebarIcons.test },
     { label: "Projects", href: "/freelancer/projects", icon: SidebarIcons.projects, active: true },
     { label: "Earnings", href: "/freelancer/earnings", icon: SidebarIcons.earnings },
   ];
