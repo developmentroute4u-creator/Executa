@@ -6,6 +6,16 @@ import { useSession } from "next-auth/react";
 import { Button, Badge, Card, Input, Textarea } from "@/components/ui";
 import { formatCurrency } from "@/lib/utils";
 
+function formatDomainName(domain: string) {
+  if (!domain) return "";
+  return domain
+    .replace(/_ai/gi, " AI")
+    .replace(/ai/gi, "AI")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, c => c.toUpperCase())
+    .replace(/,/g, ", ");
+}
+
 export default function MatchFreelancerPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const router = useRouter();
@@ -60,59 +70,33 @@ export default function MatchFreelancerPage() {
     }
   }
 
-  async function handleAddSimulatedFreelancer(e: React.FormEvent) {
+  async function handleSimulate(e: React.FormEvent) {
     e.preventDefault();
-    if (!simName || !simBio) return;
-
     setSimulating(true);
     try {
-      // Direct POST to register a mock user & freelancer profile
-      const userRes = await fetch("/api/auth/register", {
+      const res = await fetch(`/api/projects/${projectId}/match/simulate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: simName,
-          email: `${simName.toLowerCase().replace(/\s/g, ".")}@executa.io`,
-          password: "password123",
-          role: "freelancer",
-        }),
+          domain: simDomain,
+          bio: simBio,
+          specializations: simSpecs.split(",").map(s => s.trim()).filter(Boolean),
+          level: simLevel,
+          testScore: simScore,
+          ratePerPoint: simRate
+        })
       });
-      const user = await userRes.json();
-
-      if (userRes.ok && user.user?.id) {
-        // Create matching Freelancer Profile
-        const profileRes = await fetch("/api/freelancer/profile", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: user.user.id,
-            field: data?.project?.field || "development",
-            domain: simDomain,
-            specializations: simSpecs.split(",").map(s => s.trim()).filter(Boolean),
-            bio: simBio,
-            level: Number(simLevel),
-            testScore: Number(simScore),
-            ratePerPoint: Number(simRate),
-            available: true,
-            testStatus: "approved"
-          }),
-        });
-
-        if (profileRes.ok) {
-          // Re-fetch match data
-          const refetchRes = await fetch(`/api/projects/${projectId}/match`);
-          const refetched = await refetchRes.json();
-          setData(refetched);
-          setSelectedId(user.user.id);
-          setShowSimulateModal(false);
-          // Reset form
-          setSimName("");
-          setSimBio("");
-          setSimSpecs("");
+      if (res.ok) {
+        const updated = await res.json();
+        setData(updated);
+        setShowSimulateModal(false);
+        if (updated.freelancers?.length > 0) {
+          setSelectedId(updated.bestMatchId || updated.freelancers[0].id);
         }
       }
     } catch (err) {
-      console.error("Failed to add simulated freelancer:", err);
+      console.error("Simulation failed:", err);
     } finally {
       setSimulating(false);
     }
@@ -120,30 +104,28 @@ export default function MatchFreelancerPage() {
 
   if (loading) return (
     <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="text-sm text-text-secondary">AI evaluation engine running match analysis…</div>
+      <div className="text-sm text-text-secondary animate-pulse">Analyzing matches…</div>
     </div>
   );
 
-  const { project, scope, freelancers = [] } = data || {};
-  const selectedFreelancer = freelancers.find((f: any) => f.id === selectedId);
+  const { project, freelancers = [] } = data || {};
+  const selectedFreelancer = freelancers?.find((f: any) => f.id === selectedId);
 
   return (
     <div className="min-h-screen bg-background">
       {/* Header bar */}
       <div className="fixed top-0 inset-x-0 z-50 bg-background/90 backdrop-blur-md border-b border-border h-14 flex items-center px-8 justify-between">
-        <Link href={`/client/projects/${projectId}/scope`} className="text-sm text-text-secondary hover:text-text-primary transition-colors">← Review Scope</Link>
-        <span className="text-sm font-medium text-text-primary">Governed Matching Engine</span>
-        <Button variant="outline" size="sm" onClick={() => setShowSimulateModal(true)}>
-          + Add Candidate Freelancer
-        </Button>
+        <Link href={`/client/projects/${projectId}/scope`} className="text-sm text-text-secondary hover:text-text-primary transition-colors">← Scope Confirmed</Link>
+        <span className="text-sm font-medium text-text-primary">Qualified Execution Match</span>
+        <Button variant="outline" size="sm" onClick={() => setShowSimulateModal(true)}>Simulate Freelancer</Button>
       </div>
 
-      <div className="pt-24 pb-16 px-8 max-w-5xl mx-auto space-y-8 animate-fade-up">
+      <div className="pt-24 pb-16 px-6 max-w-6xl mx-auto space-y-10 animate-fade-up">
         {/* Title */}
         <div>
-          <Badge variant="blue" className="mb-3">Scope Confirmed</Badge>
+          <Badge variant="blue" className="mb-4">Scope Confirmed</Badge>
           <h1 className="text-3xl font-semibold tracking-tight mb-2">Qualified Execution Match</h1>
-          <p className="text-text-secondary text-sm max-w-xl">
+          <p className="text-text-secondary max-w-2xl">
             Our algorithmic governance layer has matched your confirmed project scope against verified, vetted specialists who completed the Executa evaluations.
           </p>
         </div>
@@ -156,15 +138,15 @@ export default function MatchFreelancerPage() {
               Your governed execution contract is finalized. You are being redirected to your active project workspace.
             </p>
           </Card>
-        ) : freelancers.length === 0 ? (
-          <Card className="p-8 text-center py-16 space-y-4">
-            <h2 className="text-lg font-semibold text-text-primary">No Matching Freelancers Available</h2>
-            <p className="text-sm text-text-secondary max-w-sm mx-auto">
-              Add a candidate freelancer manually to test the AI evaluation and start the project.
+        ) : !freelancers || freelancers.length === 0 ? (
+          <Card className="p-12 text-center space-y-3 border-dashed">
+            <div className="w-10 h-10 bg-error/10 text-error rounded-full flex items-center justify-center mx-auto mb-2">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            </div>
+            <h2 className="text-base font-semibold text-text-primary">Freelancer not found.</h2>
+            <p className="text-xs text-text-secondary max-w-sm mx-auto">
+              You can hire them later.
             </p>
-            <Button variant="primary" onClick={() => setShowSimulateModal(true)}>
-              + Add Candidate Freelancer
-            </Button>
           </Card>
         ) : (
           <div className="grid grid-cols-5 gap-8 items-start">
@@ -185,7 +167,9 @@ export default function MatchFreelancerPage() {
                     <div className="flex justify-between items-start mb-2">
                       <div>
                         <div className="text-sm font-semibold tracking-tight text-text-primary">{f.name}</div>
-                        <div className="text-xs text-text-secondary capitalize mt-0.5">{f.domain} · Level {f.level}</div>
+                        <div className="text-xs text-text-secondary mt-0.5 leading-none">
+                          {formatDomainName(f.domain)} • Level {f.level}
+                        </div>
                       </div>
                       <Badge variant={f.fitScore >= 90 ? "green" : "blue"} className="tabular-nums">
                         {f.fitScore}% Match
@@ -207,10 +191,12 @@ export default function MatchFreelancerPage() {
                   <div className="flex justify-between items-start border-b border-border/40 pb-5">
                     <div>
                       <h3 className="text-lg font-semibold tracking-tight">{selectedFreelancer.name}</h3>
-                      <div className="flex items-center gap-2 mt-1.5">
-                        <Badge variant="stone" className="capitalize text-xs">{selectedFreelancer.domain} Specialist</Badge>
-                        <Badge variant="stone" className="text-xs">Level {selectedFreelancer.level} Developer</Badge>
-                        <span className="text-xs text-text-secondary tabular-nums">Test Score: {selectedFreelancer.testScore}/100</span>
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1.5 text-xs text-text-secondary leading-none">
+                        <span>{formatDomainName(selectedFreelancer.domain)} Specialist</span>
+                        <span className="text-text-tertiary/60">•</span>
+                        <span>Level {selectedFreelancer.level} Developer</span>
+                        <span className="text-text-tertiary/60">•</span>
+                        <span className="tabular-nums">Test Score: {selectedFreelancer.testScore}/50</span>
                       </div>
                     </div>
                     <div className="text-right">
@@ -271,7 +257,7 @@ export default function MatchFreelancerPage() {
               <h3 className="text-base font-semibold tracking-tight">Simulate & Add Qualified Freelancer</h3>
               <p className="text-xs text-text-secondary mt-1">Add a vetted freelancer with specific skills to see how the AI dynamically matches them against your scope.</p>
             </div>
-            <form onSubmit={handleAddSimulatedFreelancer} className="p-6 space-y-4 text-left">
+            <form onSubmit={handleSimulate} className="p-6 space-y-4 text-left">
               <div>
                 <label className="text-xs font-medium text-text-secondary mb-1.5 block">Freelancer Name</label>
                 <Input value={simName} onChange={e => setSimName(e.target.value)} placeholder="e.g. John Doe" required />

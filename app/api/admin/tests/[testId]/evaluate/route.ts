@@ -5,7 +5,7 @@ import { connectDB } from "@/lib/db";
 import { Test } from "@/models/Test";
 import { FreelancerProfile } from "@/models/FreelancerProfile";
 import { User } from "@/models/User";
-import { assignLevel } from "@/lib/utils";
+import { assignLevel, calculateRatePerPoint } from "@/lib/utils";
 
 // Admin: evaluate a test submission
 export async function POST(req: NextRequest, { params }: { params: { testId: string } }) {
@@ -36,8 +36,11 @@ export async function POST(req: NextRequest, { params }: { params: { testId: str
 
     if (!test) return NextResponse.json({ error: "Test not found" }, { status: 404 });
 
-    // Update freelancer profile
-    const ratePerPoint = level === 3 ? 295 : level === 2 ? 200 : 140;
+    // Update freelancer profile with performance-based rate per point
+    const userDoc = await User.findById(test.freelancerId).lean();
+    const field = (userDoc as any)?.field || "development";
+    const ratePerPoint = calculateRatePerPoint(level, total, field);
+
     await FreelancerProfile.findOneAndUpdate(
       { userId: test.freelancerId },
       { level, testStatus: "approved", testScore: total, scoreBreakdown: { functionalCoverage, logic, usability, edgeCases, outputQuality }, ratePerPoint }

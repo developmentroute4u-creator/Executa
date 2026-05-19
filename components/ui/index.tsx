@@ -145,7 +145,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           ref={ref}
           id={inputId}
           className={cn(
-            "w-full rounded border bg-white px-4 py-2.5 text-sm text-text-primary placeholder:text-text-tertiary transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent hover:border-border-strong resize-none leading-relaxed",
+            "w-full rounded border bg-white px-4 py-2.5 text-sm text-text-primary placeholder:text-text-tertiary transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent hover:border-border-strong resize-y min-h-[120px] leading-relaxed",
             error ? "border-error" : "border-border",
             className
           )}

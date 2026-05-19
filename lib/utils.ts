@@ -79,11 +79,27 @@ export function calculatePrice(
   total: number;
 } {
   const freelancerPrice = effortScore * ratePerPoint;
-  const scopeFee = 999;
-  const accountabilityFee = 599;
-  const executionFee = Math.round(freelancerPrice * 0.05);
+  const scopeFee = 299; // Updated from 999 to align perfectly with the ₹99 – ₹499 range in the PDF
+  const accountabilityFee = 599; // Within the ₹299 – ₹999 range in the PDF
+  const executionFee = Math.round(freelancerPrice * 0.05); // Standard 5%
   const total = freelancerPrice + scopeFee + accountabilityFee + executionFee;
   return { freelancerPrice, scopeFee, accountabilityFee, executionFee, total };
+}
+
+export function calculateRatePerPoint(
+  level: 1 | 2 | 3,
+  testScore: number,
+  field: string = "development"
+): number {
+  const range = getRateRange(field, level);
+  
+  // Generous reward formula to "increase pricing a bit, making it fair for the freelancer":
+  // We guarantee a baseline of at least 50% of the rate band (ratio = 0.5 + 0.5 * (testScore / 50)).
+  // This scales from mid-band to the maximum rate based on their vetting test score out of 50.
+  const scoreRatio = Math.min(50, Math.max(0, testScore)) / 50;
+  const generousRatio = 0.5 + 0.5 * scoreRatio;
+  
+  return range.min + Math.round((range.max - range.min) * generousRatio);
 }
 
 export function assignLevel(totalScore: number): 1 | 2 | 3 {

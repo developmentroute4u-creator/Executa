@@ -7,7 +7,10 @@ import { Scope } from "@/models/Scope";
 import { User } from "@/models/User";
 import { FreelancerProfile } from "@/models/FreelancerProfile";
 import { askGeminiToMatchFreelancers } from "@/lib/gemini";
+import { calculatePrice } from "@/lib/utils";
 import mongoose from "mongoose";
+
+export const dynamic = "force-dynamic";
 
 // Self-healing database seeder for mock freelancers to ensure perfect, immediate client testing
 async function seedMockFreelancers() {
@@ -100,22 +103,28 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
     const scope = await Scope.findById(project.scopeId);
     if (!scope) return NextResponse.json({ error: "Scope not found" }, { status: 404 });
 
-    // Query qualified, available, and approved freelancers in this project's field (e.g. development/design)
+    // Query approved freelancers across the entire database
     const rawFreelancers = await FreelancerProfile.find({
-      field: project.field || "development",
-      available: true,
       testStatus: "approved"
-    }).populate("userId");
+    });
 
-    const freelancers = rawFreelancers.map((f: any) => ({
-      id: f.userId._id.toString(),
-      name: f.userId.name,
-      domain: f.domain,
-      level: f.level,
-      specializations: f.specializations || [],
-      bio: f.bio || "",
-      testScore: f.testScore || 80
-    }));
+    const freelancers = [];
+    for (const f of rawFreelancers) {
+      if (f.userId) {
+        const userDoc = await User.findById(f.userId);
+        if (userDoc) {
+          freelancers.push({
+            id: userDoc._id.toString(),
+            name: userDoc.name,
+            domain: f.domain,
+            level: f.level,
+            specializations: f.specializations || [],
+            bio: f.bio || "",
+            testScore: f.testScore || 40
+          });
+        }
+      }
+    }
 
     if (freelancers.length === 0) {
       return NextResponse.json({
@@ -144,7 +153,7 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
 
     const bestMatchId = aiResponse?.bestMatchId || freelancers[0].id;
 
-    // Zip matches info with actual profiles to send to frontend
+    // Zip matches info with actual profiles to send to frontend and slice to return top 3 matches
     const matchedFreelancers = freelancers.map(f => {
       const matchDetails = matches.find((m: any) => m.freelancerId === f.id);
       return {
@@ -152,7 +161,7 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
         fitScore: matchDetails ? matchDetails.fitScore : 75,
         fitReason: matchDetails ? matchDetails.fitReason : "Solid overall technical candidate."
       };
-    }).sort((a, b) => b.fitScore - a.fitScore);
+    }).sort((a, b) => b.fitScore - a.fitScore).slice(0, 3);
 
     return NextResponse.json({
       project,
@@ -188,6 +197,19 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     // Link freelancer to project and update project status to active
     project.freelancerId = new mongoose.Types.ObjectId(freelancerId);
     project.status = "active";
+
+    // Recalculate project pricing using the freelancer's actual rate!
+    const profile = await FreelancerProfile.findOne({ userId: freelancerUser._id });
+    const scope = await Scope.findById(project.scopeId);
+    if (profile && scope) {
+      const freelancerRate = profile.ratePerPoint || 200;
+      const pricing = calculatePrice(scope.totalEffortScore, freelancerRate);
+      project.pricing = { 
+        ...pricing, 
+        ratePerPoint: freelancerRate, 
+        accountabilityMode: project.pricing?.accountabilityMode || "basic" 
+      };
+    }
     await project.save();
 
     // Link project to freelancer profile active projects

@@ -76,7 +76,56 @@ const STANDARD_UNITS: Record<string, any> = {
   }
 };
 
-const MODELS = ["gemini-2.5-flash", "gemini-1.5-flash-latest", "gemini-1.5-flash", "gemini-1.5-pro-latest", "gemini-1.5-pro", "gemini-2.0-flash-exp"];
+const MODELS = [
+  "gemini-2.5-flash",
+  "gemini-2.5-pro",
+  "gemini-3-flash",
+  "gemini-3.1-flash-lite"
+];
+
+// Centralized premium helper with researched daily limit tracking and auto-failover/switch logic
+async function callGeminiApi(model: string, prompt: string): Promise<any> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    console.warn("[GEMINI] No GEMINI_API_KEY env variable found.");
+    throw new Error("Missing GEMINI_API_KEY");
+  }
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          responseMimeType: "application/json"
+        }
+      })
+    }
+  );
+
+  if (!response.ok) {
+    if (response.status === 429) {
+      const limitsInfo: Record<string, string> = {
+        "gemini-2.5-flash": "Gemini 2.5 Flash has a daily limit of 20 requests per day (5 RPM, 250K TPM).",
+        "gemini-2.5-pro": "Gemini 2.5 Pro has a daily limit of 0 requests per day (0 RPM, 0 TPM) in this account tier.",
+        "gemini-3-flash": "Gemini 3 Flash has a daily limit of 20 requests per day (5 RPM, 250K TPM).",
+        "gemini-3.1-flash-lite": "Gemini 3.1 Flash Lite has a daily limit of 500 requests per day (15 RPM, 250K TPM)."
+      };
+      const limitMessage = limitsInfo[model] || `Daily rate limit reached for model ${model}.`;
+      console.error(`[DAILY LIMIT EXCEEDED] ${limitMessage} Automatically switching to the next available model...`);
+    }
+    throw new Error(`HTTP ${response.status} from ${model}`);
+  }
+
+  const resJson = await response.json();
+  const text = resJson.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) {
+    throw new Error("Empty response from Gemini.");
+  }
+  return JSON.parse(text.trim());
+}
 
 export async function askGeminiForScope(
   title: string,
@@ -84,12 +133,6 @@ export async function askGeminiForScope(
   businessModel: string,
   field: string = "development"
 ): Promise<any | null> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    console.warn("No GEMINI_API_KEY env variable found.");
-    return null;
-  }
-
   const prompt = `You are a premium software scoping algorithm. Analyze this project brief and business model:
 Project Title: "${title}"
 Project Goal: "${goal}"
@@ -112,7 +155,6 @@ For each selected standard unit, use the predefined values. For each custom unit
 - Assign a clean, professional name (e.g. "Real-time Messaging").
 - Write a short description.
 - Specify an array of features that are "included".
-- Specify an array of features that are "excluded" (out of scope, premium add-ons).
 - Specify an array of "deliverables".
 - Calculate an estimated total score (unitScore) between 15 and 50 points based on logic depth and implementation complexity. Also build the effortDrivers object using similar metrics.
 
@@ -145,36 +187,13 @@ Ensure the output is valid JSON. Do not wrap in markdown or add notes.`;
   for (const model of MODELS) {
     try {
       console.log(`[GEMINI] Trying model: ${model}`);
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-              responseMimeType: "application/json"
-            }
-          })
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status} from ${model}`);
-      }
-
-      const resJson = await response.json();
-      const text = resJson.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!text) continue;
-
-      const parsed = JSON.parse(text.trim());
+      const parsed = await callGeminiApi(model, prompt);
       if (parsed.functionalUnits && Array.isArray(parsed.functionalUnits)) {
         console.log(`[GEMINI] Successfully generated scope with model ${model}`);
         return parsed;
       }
     } catch (e: any) {
       console.warn(`[GEMINI] Model ${model} failed:`, e.message || e);
-      // Automatically loops and falls back to the next model in the MODELS array
     }
   }
 
@@ -187,12 +206,6 @@ export async function askGeminiForCustomUnit(
   description: string,
   field: string = "development"
 ): Promise<any | null> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    console.warn("No GEMINI_API_KEY env variable found.");
-    return null;
-  }
-
   const prompt = `You are a premium software scoping algorithm. Expand this custom functional unit:
 Name: "${name}"
 Description: "${description}"
@@ -229,29 +242,7 @@ Ensure the output is valid JSON. Do not wrap in markdown or add notes.`;
   for (const model of MODELS) {
     try {
       console.log(`[GEMINI CUSTOM UNIT] Trying model: ${model}`);
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-              responseMimeType: "application/json"
-            }
-          })
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status} from ${model}`);
-      }
-
-      const resJson = await response.json();
-      const text = resJson.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!text) continue;
-
-      const parsed = JSON.parse(text.trim());
+      const parsed = await callGeminiApi(model, prompt);
       if (parsed.name && parsed.included && parsed.excluded && parsed.deliverables) {
         console.log(`[GEMINI CUSTOM UNIT] Successfully expanded unit with model ${model}`);
         return parsed;
@@ -269,12 +260,6 @@ export async function askGeminiToMatchFreelancers(
   project: { title: string; goal: string; field: string; requiredLevel?: number; functionalUnits: any[] },
   freelancers: Array<{ id: string; name: string; domain: string; level: number | null; specializations: string[]; bio: string; testScore: number | null }>
 ): Promise<any | null> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    console.warn("No GEMINI_API_KEY env variable found.");
-    return null;
-  }
-
   const prompt = `You are a premium AI matching agent. Your task is to evaluate and match the best freelancer for the following project:
 
 Project Title: "${project.title}"
@@ -291,14 +276,19 @@ Name: "${f.name}"
 Domain: "${f.domain}"
 Level: Level ${f.level || 1}
 Specializations: ${f.specializations?.join(", ")}
-Test Score: ${f.testScore || "N/A"}/100
+Test Score: ${f.testScore || "N/A"}/50
 Bio: "${f.bio}"
 `).join("\n\n")}
 
 For each freelancer, calculate a match percentage (fitScore, integer 0-100) based on:
 1. Specialization and skill overlap with the project functional units and goal.
-2. Capability level ( freelancers at or above required project level are preferred).
+2. Capability level (freelancers at or above required project level are preferred).
 3. Test performance score.
+
+CRITICAL CALIBRATION RULE FOR MATCH SCORE (fitScore):
+- Be constructive, encouraging, and balanced. Since every candidate in this pool has ALREADY passed our rigorous, multi-hour vetting test and is approved, their baseline match score should be high.
+- A candidate who has matching skills/specializations but is one level below the project required difficulty (e.g. a Level 2 freelancer for a Level 3 project) is still highly competent and should be scored between 70% and 88% based on their skill overlap. Do not penalize them down to low or discouraging scores (like 30% - 50%).
+- A candidate who is an exact level match or higher should be scored between 85% and 98% based on skill alignment.
 
 Explain in a highly articulate, premium paragraph (fitReason) exactly how the freelancer's specific skills align to the scope of this project and why they are qualified to execute it.
 Identify the absolute best-suited freelancer as the 'bestMatchId'.
@@ -320,29 +310,7 @@ Ensure the output is valid JSON. Do not wrap in markdown or add notes.`;
   for (const model of MODELS) {
     try {
       console.log(`[GEMINI MATCHING] Trying model: ${model}`);
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-              responseMimeType: "application/json"
-            }
-          })
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status} from ${model}`);
-      }
-
-      const resJson = await response.json();
-      const text = resJson.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!text) continue;
-
-      const parsed = JSON.parse(text.trim());
+      const parsed = await callGeminiApi(model, prompt);
       if (parsed.matches && parsed.bestMatchId) {
         console.log(`[GEMINI MATCHING] Successfully evaluated matches with model ${model}`);
         return parsed;
@@ -373,12 +341,6 @@ export async function askGeminiForCustomTest(
     description: string;
   }>;
 } | null> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    console.warn("No GEMINI_API_KEY env variable found.");
-    return null;
-  }
-
   const prompt = `You are a premium technical vetting director for a governed execution platform.
 Your job is to generate a custom, highly practical, and challenging Level 2 skill evaluation test task for a freelancer.
 
@@ -422,29 +384,7 @@ Ensure the output is valid JSON. Do not wrap in markdown or add notes.`;
   for (const model of MODELS) {
     try {
       console.log(`[GEMINI CUSTOM TEST] Trying model: ${model}`);
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-              responseMimeType: "application/json"
-            }
-          })
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status} from ${model}`);
-      }
-
-      const resJson = await response.json();
-      const text = resJson.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!text) continue;
-
-      const parsed = JSON.parse(text.trim());
+      const parsed = await callGeminiApi(model, prompt);
       if (
         parsed.prompt &&
         Array.isArray(parsed.requirements) &&

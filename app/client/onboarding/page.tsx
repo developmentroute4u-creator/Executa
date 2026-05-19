@@ -39,7 +39,7 @@ export default function ClientOnboardingPage() {
 
   const [form, setForm] = useState({
     title: "",
-    industry: "",
+    industry: "development",
     field: "development",
     goal: "",
     businessName: "",
@@ -61,6 +61,8 @@ export default function ClientOnboardingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
+          industry: form.field, // Use selected field (development/design) as industry
+          goal: form.title,     // Default goal to the title
           references: form.references ? form.references.split("\n").filter(Boolean) : [],
           deadline: form.deadline || undefined,
         }),
@@ -79,7 +81,7 @@ export default function ClientOnboardingPage() {
   }
 
   const canProceed = [
-    form.title && form.industry && form.field && form.goal,
+    !!form.title && !!form.field,
     form.businessName && form.businessModel && form.targetAudience,
     true,
   ][step];
@@ -143,20 +145,13 @@ export default function ClientOnboardingPage() {
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
                 required
               />
-              <Select
-                label="Industry"
-                options={INDUSTRIES}
-                value={form.industry}
-                onChange={(e) => setForm({ ...form, industry: e.target.value })}
-                required
-              />
               <div>
                 <label className="block text-sm font-medium text-text-primary mb-1.5">Field</label>
                 <div className="grid grid-cols-2 gap-3">
                   {FIELDS.map((f) => (
                     <button
                       key={f.value}
-                      onClick={() => setForm({ ...form, field: f.value })}
+                      onClick={() => setForm({ ...form, field: f.value, industry: f.value })}
                       className={cn(
                         "p-4 rounded-lg border-2 text-sm font-medium transition-all text-left",
                         form.field === f.value
@@ -169,14 +164,6 @@ export default function ClientOnboardingPage() {
                   ))}
                 </div>
               </div>
-              <Textarea
-                label="What is the primary goal of this project?"
-                placeholder="e.g. Build a marketplace where artisans can list handmade products, accept payments, and manage orders."
-                rows={4}
-                value={form.goal}
-                onChange={(e) => setForm({ ...form, goal: e.target.value })}
-                required
-              />
             </div>
           </div>
         )}
@@ -214,7 +201,8 @@ export default function ClientOnboardingPage() {
                   <Textarea
                     label="Business Model & Description"
                     placeholder="e.g. A peer-to-peer marketplace connecting rural artisans with urban buyers, charging a 10% commission on transactions."
-                    rows={3}
+                    rows={10}
+                    className="min-h-[220px] text-sm leading-relaxed"
                     value={form.businessModel}
                     onChange={(e) => setForm({ ...form, businessModel: e.target.value })}
                     required
@@ -235,14 +223,16 @@ export default function ClientOnboardingPage() {
                   <Textarea
                     label="Usage context"
                     placeholder="e.g. Mobile-first web app, used primarily on smartphones. Must load fast on 4G."
-                    rows={3}
+                    rows={8}
+                    className="min-h-[180px] text-sm leading-relaxed"
                     value={form.usageContext}
                     onChange={(e) => setForm({ ...form, usageContext: e.target.value })}
                   />
                   <Textarea
                     label="References (optional, one per line)"
                     placeholder="https://example.com&#10;https://another.com"
-                    rows={3}
+                    rows={6}
+                    className="min-h-[140px] text-sm leading-relaxed"
                     value={form.references}
                     onChange={(e) => setForm({ ...form, references: e.target.value })}
                   />
@@ -313,6 +303,12 @@ export default function ClientOnboardingPage() {
                 <div className="flex gap-2">
                   <span className="text-text-secondary w-32 shrink-0">Audience</span>
                   <span className="font-medium text-text-primary line-clamp-1">{form.targetAudience}</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="text-text-secondary w-32 shrink-0">Deadline</span>
+                  <span className="font-medium text-text-primary">
+                    {form.deadline ? new Date(form.deadline).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "Not specified"}
+                  </span>
                 </div>
               </div>
             </div>
