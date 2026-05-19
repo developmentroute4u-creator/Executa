@@ -197,19 +197,6 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     // Link freelancer to project and update project status to active
     project.freelancerId = new mongoose.Types.ObjectId(freelancerId);
     project.status = "active";
-
-    // Recalculate project pricing using the freelancer's actual rate!
-    const profile = await FreelancerProfile.findOne({ userId: freelancerUser._id });
-    const scope = await Scope.findById(project.scopeId);
-    if (profile && scope) {
-      const freelancerRate = profile.ratePerPoint || 200;
-      const pricing = calculatePrice(scope.totalEffortScore, freelancerRate);
-      project.pricing = { 
-        ...pricing, 
-        ratePerPoint: freelancerRate, 
-        accountabilityMode: project.pricing?.accountabilityMode || "basic" 
-      };
-    }
     await project.save();
 
     // Link project to freelancer profile active projects

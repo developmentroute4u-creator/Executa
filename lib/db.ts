@@ -29,5 +29,39 @@ export async function connectDB() {
   }
 
   cached.conn = await cached.promise;
+
+  // Gracefully seed default admin users if they do not exist
+  try {
+    const { User } = await import("../models/User");
+    
+    // 1. Seed admin@executa.com admin
+    const emailAdminExists = await User.findOne({ email: "admin@executa.com" });
+    if (!emailAdminExists) {
+      await User.create({
+        name: "Admin System",
+        email: "admin@executa.com",
+        password: "admin123", // Automatically hashed by the User model pre-save hook
+        role: "admin",
+        onboardingComplete: true,
+      });
+      console.log("Seeded default admin account: admin@executa.com / admin123");
+    }
+
+    // 2. Seed 'admin' admin (in case the user enters just 'admin' as the username/email)
+    const usernameAdminExists = await User.findOne({ email: "admin" });
+    if (!usernameAdminExists) {
+      await User.create({
+        name: "Admin",
+        email: "admin",
+        password: "admin123", // Automatically hashed by the User model pre-save hook
+        role: "admin",
+        onboardingComplete: true,
+      });
+      console.log("Seeded default admin account: admin / admin123");
+    }
+  } catch (error) {
+    console.error("Error seeding default admin users:", error);
+  }
+
   return cached.conn;
 }

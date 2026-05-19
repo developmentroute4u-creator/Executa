@@ -48,6 +48,7 @@ export interface IProject extends Document {
   }[];
   createdAt: Date;
   updatedAt: Date;
+  freelancerAccepted?: boolean;
 }
 
 const ProjectSchema = new Schema<IProject>(
@@ -92,6 +93,7 @@ const ProjectSchema = new Schema<IProject>(
         deliverables: [String],
       },
     ],
+    freelancerAccepted: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
