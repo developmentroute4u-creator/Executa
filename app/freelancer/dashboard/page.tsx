@@ -198,7 +198,7 @@ export default function FreelancerDashboardPage() {
             {activeProjects.filter(p => !p.freelancerAccepted).length > 0 && (
               <div className="space-y-4">
                 <div className="flex items-center gap-2 border-b border-border pb-2">
-                  <span className="w-2.5 h-2.5 bg-amber-500 rounded-full animate-pulse" />
+                  <span className="w-2.5 h-2.5 bg-blue-600 rounded-full animate-pulse" />
                   <h3 className="text-sm font-bold uppercase tracking-wider text-text-primary">Matched Project Invitations</h3>
                 </div>
                 
@@ -208,11 +208,11 @@ export default function FreelancerDashboardPage() {
                     const client = p.clientId || {};
                     
                     return (
-                      <Card key={p._id} className="p-6 border border-amber-500/25 bg-amber-500/[0.01] hover:border-amber-500/40 transition-all space-y-4">
+                      <Card key={p._id} className="p-6 border border-blue-600/20 bg-blue-600/[0.01] hover:border-blue-600/40 transition-all space-y-4">
                         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
-                              <Badge variant="stone" className="text-[9px] uppercase tracking-wider font-bold">New Match Invitation</Badge>
+                              <Badge variant="blue" className="text-[9px] uppercase tracking-wider font-bold">New Match Invitation</Badge>
                               <span className="text-[11px] text-text-tertiary font-mono">ID: {p._id.toString().slice(-6).toUpperCase()}</span>
                             </div>
                             <h4 className="text-lg font-semibold text-text-primary mt-1">{p.title}</h4>
@@ -230,7 +230,7 @@ export default function FreelancerDashboardPage() {
                             onClick={() => setExpandedProjectId(p._id)}
                             className="text-xs font-semibold text-accent hover:text-accent/80 flex items-center gap-1.5 self-start sm:self-center transition-colors"
                           >
-                            🔎 Inspect & Preview Full Scope &rarr;
+                            Review Scope Details &rarr;
                           </button>
                           
                           <div className="flex items-center gap-3 shrink-0 self-stretch sm:self-auto justify-end">
@@ -246,7 +246,7 @@ export default function FreelancerDashboardPage() {
                               variant="primary"
                               loading={acceptingId === p._id}
                               onClick={() => acceptProject(p._id)}
-                              className="px-4 py-2 text-xs font-bold bg-amber-500 hover:bg-amber-600 border-amber-500 text-white transition-all"
+                              className="px-4 py-2 text-xs font-bold bg-blue-600 hover:bg-blue-700 border-blue-600 text-white transition-all"
                             >
                               Approve
                             </Button>
@@ -316,24 +316,24 @@ export default function FreelancerDashboardPage() {
             const pricing = p.pricing || {};
             
             return (
-              <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-                <div className="bg-white dark:bg-zinc-950 border border-border max-w-3xl w-full rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden flex flex-col max-h-[90vh] animate-scale-in">
+              <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+                <div className="bg-zinc-950 border border-zinc-800 max-w-3xl w-full rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col max-h-[90vh] animate-scale-in text-white">
                   
                   {/* Header */}
-                  <div className="p-6 border-b border-border/80 flex items-start justify-between bg-slate-50 dark:bg-zinc-900/50">
+                  <div className="p-6 border-b border-zinc-850 flex items-start justify-between bg-zinc-900/60">
                     <div>
                       <div className="flex items-center gap-2">
                         <Badge variant="blue" className="text-[9px] uppercase tracking-wider font-bold">Matched Project Invitation</Badge>
-                        <span className="text-[11px] text-text-tertiary font-mono">ID: {p._id.toString().slice(-6).toUpperCase()}</span>
+                        <span className="text-[11px] text-zinc-400 font-mono">ID: {p._id.toString().slice(-6).toUpperCase()}</span>
                       </div>
-                      <h3 className="text-xl font-bold text-text-primary mt-1.5">{p.title}</h3>
-                      <p className="text-xs text-text-secondary mt-1">
-                        Client Partner: <span className="font-semibold text-text-primary">{client.name || "Client Partner"}</span>
+                      <h3 className="text-xl font-bold text-white mt-1.5">{p.title}</h3>
+                      <p className="text-xs text-zinc-300 mt-1">
+                        Client Partner: <span className="font-semibold text-white">{client.name || "Client Partner"}</span>
                       </p>
                     </div>
                     <button 
                       onClick={() => setExpandedProjectId(null)} 
-                      className="text-text-tertiary hover:text-text-primary transition-colors p-1.5 hover:bg-surface rounded-lg"
+                      className="text-zinc-400 hover:text-white transition-colors p-1.5 hover:bg-zinc-900 rounded-lg"
                     >
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
@@ -344,18 +344,18 @@ export default function FreelancerDashboardPage() {
                     
                     {/* Goal & Description */}
                     <div className="space-y-2.5">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-text-tertiary">01 / Strategic Goal & Context</h4>
-                      <div className="p-4 bg-slate-50/50 dark:bg-zinc-900/30 rounded-xl border border-border space-y-3">
-                        <p className="text-xs text-text-primary font-medium leading-relaxed">{p.goal}</p>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400">01 / Strategic Goal & Context</h4>
+                      <div className="p-5 bg-zinc-900/60 rounded-xl border border-zinc-800 space-y-4">
+                        <p className="text-sm text-zinc-100 font-medium leading-relaxed">{p.goal}</p>
                         {p.targetAudience && (
-                          <p className="text-[11px] text-text-secondary leading-relaxed pt-1">
-                            <span className="font-bold text-text-primary block mb-0.5">Target Audience:</span>
+                          <p className="text-xs text-zinc-300 leading-relaxed border-t border-zinc-800/80 pt-3">
+                            <span className="font-bold text-blue-400 block mb-0.5">Target Audience:</span>
                             {p.targetAudience}
                           </p>
                         )}
                         {p.useCaseContext && (
-                          <p className="text-[11px] text-text-secondary leading-relaxed pt-1">
-                            <span className="font-bold text-text-primary block mb-0.5">Usage / Operational Context:</span>
+                          <p className="text-xs text-zinc-300 leading-relaxed pt-1">
+                            <span className="font-bold text-blue-400 block mb-0.5">Usage / Operational Context:</span>
                             {p.useCaseContext}
                           </p>
                         )}
@@ -364,52 +364,52 @@ export default function FreelancerDashboardPage() {
 
                     {/* Vetting Specifications parameters */}
                     <div className="space-y-2.5">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-text-tertiary">02 / Governed Technical Parameters</h4>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50/50 dark:bg-zinc-900/30 p-4 rounded-xl border border-border">
-                        <div>
-                          <span className="text-[9px] text-text-tertiary uppercase font-bold tracking-wider block">Priority</span>
-                          <span className="text-xs font-semibold text-text-primary capitalize">{p.priority || "Medium"}</span>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400">02 / Governed Technical Parameters</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-zinc-900/60 p-4 rounded-xl border border-zinc-800">
+                        <div className="bg-zinc-950/60 p-3 rounded-lg border border-zinc-800/60">
+                          <span className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider block">Priority</span>
+                          <span className="text-xs font-semibold text-blue-400 capitalize">{p.priority || "Medium"}</span>
                         </div>
-                        <div>
-                          <span className="text-[9px] text-text-tertiary uppercase font-bold tracking-wider block">Complexity Track</span>
-                          <span className="text-xs font-semibold text-text-primary">Level {p.requiredLevel || 2}</span>
+                        <div className="bg-zinc-950/60 p-3 rounded-lg border border-zinc-800/60">
+                          <span className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider block">Complexity Track</span>
+                          <span className="text-xs font-semibold text-blue-400">Level {p.requiredLevel || 2}</span>
                         </div>
-                        <div>
-                          <span className="text-[9px] text-text-tertiary uppercase font-bold tracking-wider block">Total Effort Points</span>
-                          <span className="text-xs font-semibold text-text-primary font-mono">{scope.totalEffortScore || 0} pts</span>
+                        <div className="bg-zinc-950/60 p-3 rounded-lg border border-zinc-800/60">
+                          <span className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider block">Total Effort Points</span>
+                          <span className="text-xs font-semibold text-blue-400 font-mono">{scope.totalEffortScore || 0} pts</span>
                         </div>
-                        <div>
-                          <span className="text-[9px] text-text-tertiary uppercase font-bold tracking-wider block">Estimated Timeline</span>
-                          <span className="text-xs font-semibold text-text-primary">{scope.timeline?.estimated || 4} Weeks</span>
+                        <div className="bg-zinc-950/60 p-3 rounded-lg border border-zinc-800/60">
+                          <span className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider block">Estimated Timeline</span>
+                          <span className="text-xs font-semibold text-blue-400">{scope.timeline?.estimated || 4} Weeks</span>
                         </div>
                       </div>
                     </div>
 
                     {/* Detailed Functional Units */}
                     <div className="space-y-3">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-text-tertiary">03 / Governed Technical Scope</h4>
-                      <div className="grid gap-3.5">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400">03 / Governed Technical Scope</h4>
+                      <div className="grid gap-4">
                         {scope.functionalUnits?.map((unit: any, idx: number) => (
-                          <div key={idx} className="p-4 bg-white dark:bg-zinc-900/40 rounded-xl border border-border/80 space-y-3 shadow-sm">
+                          <div key={idx} className="p-5 bg-zinc-900/60 rounded-xl border border-zinc-800 space-y-4 shadow-sm hover:border-blue-500/30 transition-all duration-200">
                             <div className="flex items-center justify-between">
-                              <h5 className="text-xs font-bold text-text-primary">{unit.name}</h5>
-                              <span className="text-[10px] font-mono bg-slate-100 dark:bg-zinc-800 px-2.5 py-0.5 rounded-full border border-border font-semibold text-text-secondary">{unit.unitScore} pts</span>
+                              <h5 className="text-sm font-bold text-white">{unit.name}</h5>
+                              <span className="text-xs font-mono bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20 font-semibold text-blue-400">{unit.unitScore} pts</span>
                             </div>
-                            <p className="text-[11px] text-text-secondary leading-relaxed">{unit.description}</p>
+                            <p className="text-xs text-zinc-300 leading-relaxed">{unit.description}</p>
                             
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 text-[10px]">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 text-[11px] border-t border-zinc-800/50">
                               {unit.included && unit.included.length > 0 && (
-                                <div className="space-y-1">
-                                  <span className="font-semibold text-text-primary block">✓ Inclusions</span>
-                                  <ul className="list-disc list-inside text-text-secondary space-y-0.5">
+                                <div className="space-y-1.5">
+                                  <span className="font-semibold text-blue-400 flex items-center gap-1.5">✓ Inclusions</span>
+                                  <ul className="list-disc list-inside text-zinc-300 space-y-1">
                                     {unit.included.map((inc: string, i: number) => <li key={i}>{inc}</li>)}
                                   </ul>
                                 </div>
                               )}
                               {unit.deliverables && unit.deliverables.length > 0 && (
-                                <div className="space-y-1">
-                                  <span className="font-semibold text-text-primary block">⚿ Expected Deliverable</span>
-                                  <ul className="list-disc list-inside text-text-secondary space-y-0.5">
+                                <div className="space-y-1.5">
+                                  <span className="font-semibold text-emerald-400 flex items-center gap-1.5">⚿ Expected Deliverables</span>
+                                  <ul className="list-disc list-inside text-zinc-300 space-y-1">
                                     {unit.deliverables.map((del: string, i: number) => <li key={i}>{del}</li>)}
                                   </ul>
                                 </div>
@@ -423,17 +423,17 @@ export default function FreelancerDashboardPage() {
                   </div>
 
                   {/* Footer Actions with both Reject & Approve buttons */}
-                  <div className="p-6 border-t border-border/80 bg-slate-50 dark:bg-zinc-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="p-6 border-t border-zinc-800 bg-zinc-900/90 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                      <span className="text-[10px] text-text-tertiary uppercase font-bold tracking-wider block">Estimated Compensation</span>
-                      <span className="text-xl font-bold text-accent">{formatCurrency(pricing.freelancerPrice || 0)}</span>
+                      <span className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider block">Estimated Compensation</span>
+                      <span className="text-xl font-bold text-blue-400">{formatCurrency(pricing.freelancerPrice || 0)}</span>
                     </div>
                     <div className="flex items-center gap-3 self-stretch sm:self-auto justify-end">
                       <Button
                         variant="outline"
                         loading={rejectingId === p._id}
                         onClick={() => rejectProject(p._id)}
-                        className="px-5 py-2.5 text-xs font-bold bg-transparent text-error hover:bg-error/5 border-error/30 hover:border-error/50 transition-all"
+                        className="px-5 py-2.5 text-xs font-bold bg-transparent text-red-400 hover:bg-red-500/10 border-red-500/30 hover:border-red-500/50 transition-all"
                       >
                         Reject Invitation
                       </Button>
@@ -441,7 +441,7 @@ export default function FreelancerDashboardPage() {
                         variant="primary"
                         loading={acceptingId === p._id}
                         onClick={() => acceptProject(p._id)}
-                        className="px-6 py-2.5 text-xs font-bold bg-amber-500 hover:bg-amber-600 border-amber-500 text-white transition-all"
+                        className="px-6 py-2.5 text-xs font-bold bg-blue-600 hover:bg-blue-700 border-blue-600 text-white transition-all"
                       >
                         Approve Project &rarr;
                       </Button>
