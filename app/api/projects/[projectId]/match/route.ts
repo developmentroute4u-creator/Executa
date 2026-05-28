@@ -103,9 +103,13 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
     const scope = await Scope.findById(project.scopeId);
     if (!scope) return NextResponse.json({ error: "Scope not found" }, { status: 404 });
 
-    // Query approved freelancers across the entire database
+    // Query approved and available freelancers across the entire database
     const rawFreelancers = await FreelancerProfile.find({
-      testStatus: "approved"
+      testStatus: "approved",
+      $or: [
+        { available: true },
+        { userId: project.freelancerId }
+      ]
     });
 
     const freelancers = [];

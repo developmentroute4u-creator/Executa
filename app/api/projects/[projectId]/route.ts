@@ -57,6 +57,17 @@ export async function PATCH(req: NextRequest, { params }: { params: { projectId:
       const project = await Project.findById(params.projectId);
       if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
+      // Enforce check that two freelancers cannot accept the same project
+      if (project.freelancerAccepted) {
+        return NextResponse.json({ error: "This project has already been accepted by another freelancer." }, { status: 400 });
+      }
+
+      // Verify the logged-in user is actually the matched freelancer
+      const loggedInUserId = (session.user as any).id;
+      if (!project.freelancerId || project.freelancerId.toString() !== loggedInUserId) {
+        return NextResponse.json({ error: "Unauthorized: You are not the matched freelancer for this project." }, { status: 403 });
+      }
+
       project.freelancerAccepted = true;
       project.status = "active";
       await project.save();
