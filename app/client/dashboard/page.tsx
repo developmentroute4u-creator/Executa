@@ -169,10 +169,16 @@ export default function ClientDashboardPage() {
                               <div>
                                 <span className="text-[10px] text-text-tertiary uppercase font-bold tracking-wider block mb-0.5">Matched Talent</span>
                                 {project.freelancerName ? (
-                                  <span className="text-xs font-semibold text-text-primary flex items-center gap-1.5">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-success"><path d="M20 6L9 17l-5-5"/></svg>
-                                    {project.freelancerName}
-                                  </span>
+                                  project.freelancerAccepted ? (
+                                    <span className="text-xs font-semibold text-text-primary flex items-center gap-1.5">
+                                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-success"><path d="M20 6L9 17l-5-5"/></svg>
+                                      {project.freelancerName}
+                                    </span>
+                                  ) : (
+                                    <span className="text-xs text-amber-600 dark:text-amber-500 font-semibold flex items-center gap-1">
+                                      ⏱ Offered to {project.freelancerName} (pending)
+                                    </span>
+                                  )
                                 ) : (
                                   <span className="text-xs text-text-secondary italic">Pending match…</span>
                                 )}
