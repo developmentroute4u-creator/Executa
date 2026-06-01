@@ -13,8 +13,26 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   await connectDB();
-  const project = await Project.findById(params.projectId).lean();
+  const project = await Project.findById(params.projectId).lean() as any;
   if (!project) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  if (project.freelancerId) {
+    const { User } = await import("@/models/User");
+    const freelancer = await User.findById(project.freelancerId).lean();
+    if (freelancer) {
+      project.freelancerName = freelancer.name;
+    }
+  }
+
+  if (project.assignedFreelancers && project.assignedFreelancers.length > 0) {
+    const { User } = await import("@/models/User");
+    for (const f of project.assignedFreelancers) {
+      const user = await User.findById(f.userId).lean();
+      if (user) {
+        f.name = user.name;
+      }
+    }
+  }
 
   const scope = project.scopeId ? await Scope.findById(project.scopeId).lean() : null;
 
@@ -53,42 +71,57 @@ export async function PATCH(req: NextRequest, { params }: { params: { projectId:
       return NextResponse.json({ success: true, project });
     }
 
-    if (body.accept || body.freelancerAccepted) {
+    if (body.accept || body.freelancerAccepted || body.action === "accept_scope") {
       const project = await Project.findById(params.projectId);
       if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
-      // Enforce check that two freelancers cannot accept the same project
-      if (project.freelancerAccepted) {
-        return NextResponse.json({ error: "This project has already been accepted by another freelancer." }, { status: 400 });
-      }
-
-      // Verify the logged-in user is actually the matched freelancer
       const loggedInUserId = (session.user as any).id;
-      if (!project.freelancerId || project.freelancerId.toString() !== loggedInUserId) {
-        return NextResponse.json({ error: "Unauthorized: You are not the matched freelancer for this project." }, { status: 403 });
+      
+      const assignedIdx = project.assignedFreelancers?.findIndex((a: any) => a.userId.toString() === loggedInUserId);
+      const isLegacyAssigned = project.freelancerId && project.freelancerId.toString() === loggedInUserId;
+
+      if (assignedIdx === undefined || (assignedIdx === -1 && !isLegacyAssigned)) {
+        return NextResponse.json({ error: "Unauthorized: You are not assigned to this project." }, { status: 403 });
       }
 
-      project.freelancerAccepted = true;
-      project.status = "active";
+      if (assignedIdx !== undefined && assignedIdx !== -1 && project.assignedFreelancers) {
+        if (project.assignedFreelancers[assignedIdx].accepted) {
+          return NextResponse.json({ error: "You have already accepted this project." }, { status: 400 });
+        }
+        project.assignedFreelancers[assignedIdx].accepted = true;
+      }
+      
+      // Update top-level boolean for legacy checks, but it represents "has at least one accepted" until all accept.
+      project.freelancerAccepted = true; 
+
+      // Check if ALL assigned freelancers have accepted
+      let allAccepted = true;
+      if (project.assignedFreelancers && project.assignedFreelancers.length > 0) {
+        allAccepted = project.assignedFreelancers.every((a: any) => a.accepted === true);
+      }
+
+      if (allAccepted) {
+        project.status = "active";
+      }
+
       await project.save();
 
-      const freelancerId = project.freelancerId;
-      if (freelancerId) {
-        const { FreelancerProfile } = require("@/models/FreelancerProfile");
-        await FreelancerProfile.updateOne(
-          { userId: freelancerId },
-          { 
-            $addToSet: { activeProjectIds: project._id },
-            $set: { available: false }
-          }
-        );
+      const { FreelancerProfile } = require("@/models/FreelancerProfile");
+      await FreelancerProfile.updateOne(
+        { userId: new require("mongoose").Types.ObjectId(loggedInUserId) },
+        { 
+          $addToSet: { activeProjectIds: project._id },
+          $set: { available: false }
+        }
+      );
 
+      if (allAccepted) {
         // Notify client and initialize project workspace chat message
         await Message.create({
           projectId: project._id,
-          senderId: freelancerId,
+          senderId: new require("mongoose").Types.ObjectId(loggedInUserId),
           senderRole: "freelancer",
-          content: "👋 Project Approved! I have officially accepted the scope and initiated execution. The secure chat channel is active and development has started!"
+          content: "👋 Project Approved! The execution team has officially accepted the scope and initiated execution. The secure chat channel is active and development has started!"
         });
       }
 

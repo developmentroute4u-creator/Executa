@@ -1,83 +1,165 @@
 "use client";
-import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import Link from "next/link";
-import { Sidebar } from "@/components/layout/Navbar";
-import { Badge, Card, Button } from "@/components/ui";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { Clock, CheckCircle2, ChevronRight, Activity, Archive, Plus, Search } from "lucide-react";
 
-const SidebarIcons = {
-  home: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 6.5L8 2l6 4.5V14a1 1 0 01-1 1H3a1 1 0 01-1-1V6.5z" stroke="currentColor" strokeWidth="1.3"/></svg>,
-  projects: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.3"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.3"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.3"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.3"/></svg>,
-  new: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.3"/><path d="M8 5v6M5 8h6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>,
-};
-
-export default function ClientProjectsListPage() {
-  const { data: session } = useSession();
+export default function ClientProjectsList() {
+  const [activeTab, setActiveTab] = useState<"active" | "draft" | "matching" | "completed">("active");
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const user = session?.user as any;
-
   useEffect(() => {
     fetch("/api/projects")
-      .then((r) => r.json())
-      .then((d) => setProjects(d.projects || []))
-      .finally(() => setLoading(false));
+      .then(res => res.json())
+      .then(data => {
+        setProjects(data.projects || []);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoading(false);
+      });
   }, []);
 
-  const sidebarItems = [
-    { label: "Dashboard", href: "/client/dashboard", icon: SidebarIcons.home },
-    { label: "My Projects", href: "/client/projects", icon: SidebarIcons.projects, active: true },
-    { label: "New Project", href: "/client/onboarding", icon: SidebarIcons.new },
+  const tabs = [
+    { id: "active", label: "Active", icon: <Activity size={14} /> },
+    { id: "draft", label: "Needs Review", icon: <Clock size={14} /> },
+    { id: "matching", label: "Freelancer Finding", icon: <Search size={14} /> },
+    { id: "completed", label: "Completed", icon: <CheckCircle2 size={14} /> }
   ];
 
-  return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar items={sidebarItems} user={{ name: user?.name, email: user?.email, role: "Client" }} />
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-4xl mx-auto px-8 py-12">
-          <div className="flex items-center justify-between mb-10">
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight">My Projects</h1>
-              <p className="text-sm text-text-secondary mt-1">All your projects and their statuses.</p>
-            </div>
-            <Button variant="primary" size="sm" href="/client/onboarding">+ New project</Button>
-          </div>
+  // Map backend statuses to frontend tabs
+  const filteredProjects = projects.filter(p => {
+    if (activeTab === "draft") return ["scoping", "scope_review"].includes(p.status);
+    if (activeTab === "matching") return ["matching"].includes(p.status);
+    if (activeTab === "active") return ["execution", "active", "pending"].includes(p.status);
+    if (activeTab === "completed") return p.status === "completed";
+    return false;
+  });
 
-          {loading ? (
-            <div className="text-sm text-text-secondary py-8 text-center">Loading…</div>
-          ) : projects.length === 0 ? (
-            <div className="py-16 text-center border border-border border-dashed rounded-xl">
-              <h3 className="text-sm font-medium text-text-primary mb-1">No projects yet</h3>
-              <p className="text-xs text-text-secondary mb-5">Create a new project to get started.</p>
-            </div>
-          ) : (
-            <div className="grid gap-4">
-              {projects.map((project) => (
-                <Link key={project._id} href={project.status === "scope_review" ? `/client/projects/${project._id}/scope` : `/client/projects/${project._id}`} className="block">
-                  <Card className="p-5 hover:shadow-md transition-all group">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-base font-semibold">{project.title}</h3>
-                      <Badge variant="stone" className="capitalize">{project.status.replace("_", " ")}</Badge>
-                    </div>
-                    <div className="text-sm text-text-secondary mb-4 line-clamp-1">{project.goal}</div>
-                    <div className="flex items-center gap-4 text-xs text-text-tertiary border-t border-border pt-3">
-                      <span>Created {formatDate(project.createdAt)}</span>
-                      {project.pricing?.total && (
-                        <>
-                          <span>·</span>
-                          <span className="font-medium text-text-primary">{formatCurrency(project.pricing.total)}</span>
-                        </>
+  function getStatusBadge(status: string) {
+    const map: Record<string, { label: string; color: string }> = {
+      scoping: { label: "Scoping", color: "bg-amber-50 text-amber-600 border border-amber-100" },
+      scope_review: { label: "Scope Ready — Review Now", color: "bg-[#FFF7F6] text-[#E85239] border border-orange-100" },
+      matching: { label: "Finding Freelancer", color: "bg-[#FFF7F6] text-[#E85239] border border-orange-100" },
+      pending: { label: "Pending Acceptance", color: "bg-amber-50 text-amber-600 border border-amber-100" },
+      execution: { label: "In Execution", color: "bg-emerald-50 text-emerald-600 border border-emerald-100" },
+      active: { label: "Active", color: "bg-emerald-50 text-emerald-600 border border-emerald-100" },
+      completed: { label: "Completed", color: "bg-stone-50 text-stone-500 border border-stone-100" },
+      archived: { label: "Archived", color: "bg-stone-50 text-stone-400 border border-stone-100" },
+    };
+    return map[status] || { label: status.replace("_", " "), color: "bg-stone-50 text-stone-500 border border-stone-100" };
+  }
+
+  return (
+    <div className="flex-1 w-full max-w-7xl mx-auto p-12">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+        className="mb-12 flex justify-between items-end"
+      >
+        <div>
+          <h1 className="text-[40px] font-black tracking-tight text-stone-900 leading-[1.1] mb-4">
+            Projects
+          </h1>
+          <p className="text-[18px] font-medium text-stone-500 max-w-2xl leading-relaxed">
+            Manage your governed executions, track active progress, and oversee completed deliverables.
+          </p>
+        </div>
+        <Link 
+          href="/client/onboarding"
+          className="h-12 px-6 bg-stone-900 text-white text-[14px] font-bold rounded-xl flex items-center gap-2 hover:bg-[#E85239] hover:shadow-[0_8px_20px_rgba(232,82,57,0.25)] transition-all"
+        >
+          <Plus size={18} /> Create new project
+        </Link>
+      </motion.div>
+
+      {/* TABS */}
+      <div className="flex gap-2 mb-10 border-b border-stone-200/60 pb-px">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as any)}
+            className={`relative flex items-center gap-2 px-5 py-3 text-[13px] font-bold tracking-wide uppercase transition-colors ${
+              activeTab === tab.id ? "text-stone-900" : "text-stone-400 hover:text-stone-600"
+            }`}
+          >
+            {tab.icon}
+            {tab.label}
+            {activeTab === tab.id && (
+              <motion.div 
+                layoutId="project-tab-indicator"
+                className="absolute bottom-[-1px] left-0 right-0 h-0.5 bg-[#E85239]"
+              />
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* PROJECT LIST */}
+      <div className="flex flex-col gap-4">
+        {loading ? (
+          <div className="text-[14px] font-medium text-stone-400 py-12">Loading projects...</div>
+        ) : filteredProjects.length === 0 ? (
+          <div className="py-20 flex flex-col items-center justify-center border border-dashed border-stone-200 rounded-2xl bg-white/50">
+            <h3 className="text-[16px] font-bold text-stone-900 mb-2">No projects found</h3>
+            <p className="text-[14px] text-stone-500 mb-6">You don't have any {activeTab} projects at the moment.</p>
+            {activeTab === "draft" && (
+              <Link href="/client/onboarding" className="text-[13px] font-bold text-[#E85239] hover:underline">
+                Create new project
+              </Link>
+            )}
+          </div>
+        ) : (
+          filteredProjects.map((project, i) => (
+            <motion.div
+              key={project._id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+            >
+              <Link href={`/client/projects/${project._id}`}>
+                <div className="group bg-white rounded-2xl p-6 md:p-8 border border-stone-100 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_30px_-10px_rgba(232,82,57,0.1)] transition-all cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  
+                  <div className="flex-1">
+                    <h3 className="text-[20px] font-black text-stone-900 mb-2 group-hover:text-[#E85239] transition-colors">
+                      {project.title}
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2.5 py-1 text-[11px] font-bold rounded-full uppercase tracking-wider ${getStatusBadge(project.status).color}`}>
+                        {getStatusBadge(project.status).label}
+                      </span>
+                      {project.freelancerName && (
+                        <span className="text-[13px] font-medium text-stone-400">
+                          · {project.freelancerName}
+                        </span>
                       )}
                     </div>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-      </main>
+                  </div>
+
+                  <div className="flex items-center gap-6">
+                    {project.pricing?.total > 0 && (
+                      <div className="text-right">
+                        <p className="text-[11px] font-bold uppercase tracking-wider text-stone-400">Value</p>
+                        <p className="text-[16px] font-black text-stone-900">₹{project.pricing.total.toLocaleString("en-IN")}</p>
+                      </div>
+                    )}
+                    <div className="shrink-0">
+                      <div className="w-10 h-10 rounded-full bg-stone-50 flex items-center justify-center group-hover:bg-[#E85239] group-hover:text-white transition-colors text-stone-400">
+                        <ChevronRight size={20} />
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </Link>
+            </motion.div>
+          ))
+        )}
+      </div>
+
     </div>
   );
 }

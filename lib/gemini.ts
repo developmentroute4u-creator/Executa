@@ -77,10 +77,11 @@ const STANDARD_UNITS: Record<string, any> = {
 };
 
 const MODELS = [
+  "gemini-3.5-flash",
+  "gemini-3.1-flash-lite",
   "gemini-2.5-flash",
   "gemini-2.5-pro",
-  "gemini-3-flash",
-  "gemini-3.1-flash-lite"
+  "gemini-2.5-flash-lite"
 ];
 
 // Centralized premium helper with researched daily limit tracking and auto-failover/switch logic
@@ -108,82 +109,112 @@ async function callGeminiApi(model: string, prompt: string): Promise<any> {
   if (!response.ok) {
     if (response.status === 429) {
       const limitsInfo: Record<string, string> = {
-        "gemini-2.5-flash": "Gemini 2.5 Flash has a daily limit of 20 requests per day (5 RPM, 250K TPM).",
-        "gemini-2.5-pro": "Gemini 2.5 Pro has a daily limit of 0 requests per day (0 RPM, 0 TPM) in this account tier.",
-        "gemini-3-flash": "Gemini 3 Flash has a daily limit of 20 requests per day (5 RPM, 250K TPM).",
-        "gemini-3.1-flash-lite": "Gemini 3.1 Flash Lite has a daily limit of 500 requests per day (15 RPM, 250K TPM)."
+        "gemini-3.5-flash": "Gemini 3.5 Flash has a daily limit of 20 requests.",
+        "gemini-3.1-flash": "Gemini 3.1 Flash has a daily limit of 20 requests.",
+        "gemini-2.5-flash": "Gemini 2.5 Flash has a daily limit of 20 requests.",
+        "gemini-2.2-flash": "Gemini 2.2 Flash has a daily limit of 20 requests."
       };
       const limitMessage = limitsInfo[model] || `Daily rate limit reached for model ${model}.`;
       console.error(`[DAILY LIMIT EXCEEDED] ${limitMessage} Automatically switching to the next available model...`);
     }
+    const resText = await response.text();
+    console.error(`[GEMINI API ERROR] Model ${model} returned ${response.status}: ${resText}`);
     throw new Error(`HTTP ${response.status} from ${model}`);
   }
 
   const resJson = await response.json();
-  const text = resJson.candidates?.[0]?.content?.parts?.[0]?.text;
+  let text = resJson.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!text) {
     throw new Error("Empty response from Gemini.");
   }
+
+  // Remove potential markdown wrappers
+  text = text.trim();
+  if (text.startsWith("```json")) text = text.substring(7);
+  else if (text.startsWith("```")) text = text.substring(3);
+  if (text.endsWith("```")) text = text.substring(0, text.length - 3);
+  
   return JSON.parse(text.trim());
 }
 
-export async function askGeminiForScope(
-  title: string,
-  goal: string,
-  businessModel: string,
-  field: string = "development"
-): Promise<any | null> {
-  const prompt = `You are a premium software scoping algorithm. Analyze this project brief and business model:
-Project Title: "${title}"
-Project Goal: "${goal}"
-Business Model: "${businessModel}"
-Field: "${field}"
-
-Identify which of these standard functional units are required for this project (choose only what is relevant):
-1. Authentication System
-2. Dashboard
-3. API Layer
-4. Payment & Checkout
-5. Search & Filter
-6. User Profile
-7. SEO Setup
-8. Notification System
-
-In addition to standard functional units, if the project description requires unique features not fully covered by these 8 standard units, you MUST define one or more custom functional units (for example, "Real-time Messaging Chat", "Scheduling Calendar", "Product Inventory Manager", "AI Translation", etc.) to make the scope fully complete and accurate.
-
-For each selected standard unit, use the predefined values. For each custom unit:
-- Assign a clean, professional name (e.g. "Real-time Messaging").
-- Write a short description.
-- Specify an array of features that are "included".
-- Specify an array of "deliverables".
-- Calculate an estimated total score (unitScore) between 15 and 50 points based on logic depth and implementation complexity. Also build the effortDrivers object using similar metrics.
-
-Return your response strictly in the following JSON format:
-{
-  "articulatedGoal": "A beautifully written, highly articulate explanation of the project goal summarizing it in a clear way for freelancers...",
-  "functionalUnits": [
-    {
-      "name": "Authentication System",
-      "description": "User registration, login, session management...",
-      "included": ["Email/password auth", "Session handling"],
-      "excluded": ["Social OAuth", "2FA"],
-      "deliverables": ["Auth flow", "Route guards"],
-      "unitScore": 34,
-      "effortDrivers": {
-        "logicDepth": 7,
-        "interactionDensity": 5,
-        "dataHandling": 6,
-        "dependencyLevel": 5,
-        "variations": 4,
-        "outputExpectation": 7,
-        "totalScore": 34
-      }
-    }
-  ]
+export interface DiscoveryPayload {
+  title: string;
+  domain: string;
+  projectDescription: string;
+  projectProblem: string;
+  targetUsers: string;
+  userJourney: string;
+  managedEntities: string;
+  specialRequirements?: string;
+  successCriteria: string;
 }
 
-Ensure the output is valid JSON. Do not wrap in markdown or add notes.`;
+export async function askGeminiForScope(
+  payload: DiscoveryPayload
+): Promise<any | null> {
+  const prompt = `You are an elite software scoping and architecture engine. Your objective is to discover the project scope based ENTIRELY on the client's own words and business outcomes below. You MUST use EVERY piece of information provided — do NOT ignore or summarize away any detail.
 
+PROJECT FOUNDATION:
+- Name: "${payload.title}"
+- Domain: "${payload.domain}" (NOTE: If this is 'Design & Development' or 'both', you MUST incorporate BOTH UX/UI design processes like wireframing/mockups AND technical development implementation seamlessly into the functional units and deliverables. You must generate distinct, highly detailed functional units for BOTH the Design phase and the Development phase. Do not skew entirely to one or the other. Give equal, massive weight to both.)
+
+DISCOVERY INTELLIGENCE (Client's Own Words — USE ALL OF THIS):
+- Project Overview: "${payload.projectDescription}"
+- Problem Being Solved: "${payload.projectProblem}"
+- Target Users: "${payload.targetUsers}"
+- User Journey & Actions: "${payload.userJourney}"
+- Entities & Info Managed: "${payload.managedEntities}"
+- Special Requirements: "${payload.specialRequirements || "None"}"
+- Success Criteria: "${payload.successCriteria}"
+
+CRITICAL RULES FOR MAXIMAL COMPREHENSIVENESS:
+- You MUST read and incorporate EVERY field above into the scope. If the client mentioned specific features, integrations, user types, entities, or requirements, they MUST appear in your functional units, included scope, or deliverables.
+- The project summary must reflect the client's ACTUAL project — not a generic template.
+- Functional units must be derived FROM the client's description, user journey, entities, and requirements. Provide a COMPREHENSIVE list of units (generate at least 6 to 12 units to cover everything deeply).
+- "Included" arrays MUST be extremely detailed, spelling out exactly "what includes what" at a granular level. Do not be vague. List every expected micro-feature, flow, or screen component.
+- The "excluded" items should be realistic premium add-ons that the client did NOT mention.
+- NEVER generate simple screen or page counts. Focus on comprehensive capability delivery.
+- Your unitScores should be generous (typically 30-50 per unit) to accurately reflect full premium pricing for elite work.
+
+INSTRUCTIONS:
+1. Generate OUTPUT 1: Project Summary.
+2. Generate OUTPUT 2: Functional Units. Break the project down extensively.
+   - If Domain is 'Design', include ONLY UI/UX, wireframing, and design-focused units.
+   - If Domain is 'Development', include ONLY technical implementation units (Frontend, Backend, DB).
+   - If Domain is 'Design & Development', you MUST explicitly generate separate, comprehensive units for the Design phase AND the Development phase, doubling the expected scope size.
+3. For each Functional Unit, assign a unitScore between 20 and 50 points based on logic depth and implementation complexity, and build an effortDrivers object.
+4. Generate OUTPUT 3: Expected Deliverables (derived strictly from the client's domain. E.g. Figma files for Design, Source Code for Development).
+5. Generate OUTPUT 4: Included Scope (explicit, measurable, execution-focused items that the client mentioned or clearly needs).
+6. Generate OUTPUT 5: Excluded Scope (protect both client and freelancer, e.g., Future Enhancements, 3rd Party Costs, things NOT mentioned).
+7. Generate OUTPUT 6: Required Capabilities (technical skills needed based on domain and project).
+
+Return your response strictly in the following JSON format. Do not wrap in markdown or add notes.
+{
+  "projectSummary": {
+    "overview": "Professional and detailed overview that references the client's specific project, problem, and goals",
+    "businessGoal": "The primary business outcome derived from the client's success criteria",
+    "primaryUsers": ["Specific user groups the client mentioned"]
+  },
+  "functionalUnits": [
+    {
+      "name": "Unit Name Derived From Client's Description",
+      "description": "Outcome-based description reflecting what the client actually needs",
+      "included": ["Granular detail 1 (what includes what)", "Granular detail 2", "Granular detail 3"],
+      "excluded": ["Premium add-on not mentioned by client"],
+      "deliverables": ["Concrete deliverable"],
+      "unitScore": 45,
+      "effortDrivers": {
+        "logicDepth": 7, "interactionDensity": 5, "dataHandling": 6, "dependencyLevel": 5, "variations": 4, "outputExpectation": 7, "totalScore": 45
+      }
+    }
+  ],
+  "overallIncluded": ["Measurable inclusion derived from client's input"],
+  "overallExcluded": ["Future Enhancements", "Third-party API costs"],
+  "expectedDeliverables": ["Deliverable based on domain"],
+  "requiredCapabilities": ["Backend Development", "Mobile App Development"]
+}`;
+
+  const errors: string[] = [];
   for (const model of MODELS) {
     try {
       console.log(`[GEMINI] Trying model: ${model}`);
@@ -194,11 +225,24 @@ Ensure the output is valid JSON. Do not wrap in markdown or add notes.`;
       }
     } catch (e: any) {
       console.warn(`[GEMINI] Model ${model} failed:`, e.message || e);
+      errors.push(e.message || "");
     }
   }
 
-  console.warn("[GEMINI] All models failed or rate limited. Falling back to local rules.");
-  return null;
+  console.warn("[GEMINI] All models failed or rate limited. Errors: ", errors);
+  if (errors.some(e => e.includes("429"))) {
+    throw new Error("RATE_LIMIT_EXCEEDED");
+  } else if (errors.some(e => e.includes("403") && e.includes("leaked"))) {
+    throw new Error("API_KEY_LEAKED");
+  } else if (errors.some(e => e.includes("400") && e.includes("API key not valid"))) {
+    throw new Error("API_KEY_INVALID");
+  } else if (errors.some(e => e.includes("403") || e.includes("401") || e.includes("400"))) {
+    throw new Error("API_KEY_INVALID");
+  } else if (errors.some(e => e.includes("404"))) {
+    throw new Error("MODEL_NOT_FOUND");
+  }
+  
+  throw new Error("RATE_LIMIT_EXCEEDED");
 }
 
 export async function askGeminiForCustomUnit(
@@ -239,6 +283,7 @@ Return your response strictly in the following JSON format:
 
 Ensure the output is valid JSON. Do not wrap in markdown or add notes.`;
 
+  const errors: string[] = [];
   for (const model of MODELS) {
     try {
       console.log(`[GEMINI CUSTOM UNIT] Trying model: ${model}`);
@@ -249,18 +294,27 @@ Ensure the output is valid JSON. Do not wrap in markdown or add notes.`;
       }
     } catch (e: any) {
       console.warn(`[GEMINI CUSTOM UNIT] Model ${model} failed:`, e.message || e);
+      errors.push(e.message || "");
     }
   }
 
-  console.warn("[GEMINI CUSTOM UNIT] All models failed. Returning null.");
-  return null;
+  console.warn("[GEMINI CUSTOM UNIT] All models failed or rate limited. Errors: ", errors);
+  if (errors.some(e => e.includes("429"))) {
+    throw new Error("RATE_LIMIT_EXCEEDED");
+  } else if (errors.some(e => e.includes("403") || e.includes("401") || e.includes("400"))) {
+    throw new Error("API_KEY_INVALID");
+  } else if (errors.some(e => e.includes("404"))) {
+    throw new Error("MODEL_NOT_FOUND");
+  }
+
+  throw new Error("RATE_LIMIT_EXCEEDED");
 }
 
 export async function askGeminiToMatchFreelancers(
   project: { title: string; goal: string; field: string; requiredLevel?: number; functionalUnits: any[] },
   freelancers: Array<{ id: string; name: string; domain: string; level: number | null; specializations: string[]; bio: string; testScore: number | null }>
 ): Promise<any | null> {
-  const prompt = `You are a premium AI matching agent. Your task is to evaluate and match the best freelancer for the following project:
+  const prompt = `You are a premium AI matching agent. Your task is to evaluate and match the best freelancer(s) for the following project:
 
 Project Title: "${project.title}"
 Goal: "${project.goal}"
@@ -291,7 +345,10 @@ CRITICAL CALIBRATION RULE FOR MATCH SCORE (fitScore):
 - A candidate who is an exact level match or higher should be scored between 85% and 98% based on skill alignment.
 
 Explain in a highly articulate, premium paragraph (fitReason) exactly how the freelancer's specific skills align to the scope of this project and why they are qualified to execute it.
-Identify the absolute best-suited freelancer as the 'bestMatchId'.
+
+MATCHING LOGIC:
+- If Field is "development" or "design", identify the absolute best-suited freelancer and return their ID in 'bestMatches' with role "fullstack" or the relevant domain.
+- If Field is "design_development", you MUST identify TWO distinct top freelancers: one specifically specialized in Design and one specifically specialized in Development. Return BOTH of their IDs in the 'bestMatches' array, explicitly assigning them the "design" and "development" roles respectively.
 
 Return your response strictly in the following JSON format:
 {
@@ -302,7 +359,12 @@ Return your response strictly in the following JSON format:
       "fitReason": "Highly detailed paragraph explaining the exact capability match..."
     }
   ],
-  "bestMatchId": "ID of best freelancer"
+  "bestMatches": [
+    {
+      "freelancerId": "ID of best freelancer",
+      "role": "design or development or fullstack"
+    }
+  ]
 }
 
 Ensure the output is valid JSON. Do not wrap in markdown or add notes.`;
@@ -311,7 +373,7 @@ Ensure the output is valid JSON. Do not wrap in markdown or add notes.`;
     try {
       console.log(`[GEMINI MATCHING] Trying model: ${model}`);
       const parsed = await callGeminiApi(model, prompt);
-      if (parsed.matches && parsed.bestMatchId) {
+      if (parsed.matches && parsed.bestMatches) {
         console.log(`[GEMINI MATCHING] Successfully evaluated matches with model ${model}`);
         return parsed;
       }
@@ -403,6 +465,60 @@ Ensure the output is valid JSON. Do not wrap in markdown or add notes.`;
   }
 
   console.warn("[GEMINI CUSTOM TEST] All models failed. Returning null.");
+  return null;
+}
+
+export async function askGeminiForScopeUpgrade(
+  currentScopeContext: any,
+  requestDetails: { whatToAdd: string; howItWorks: string; whyNeeded?: string },
+  projectField: string = "development"
+): Promise<any | null> {
+  const prompt = `You are an elite software scoping engine. A client wants to upgrade an existing project scope.
+  
+EXISTING SCOPE CONTEXT (Summary):
+Overview: ${currentScopeContext.projectSummary?.overview || ""}
+Existing Total Functional Units: ${currentScopeContext.functionalUnits?.length || 0}
+Existing Score: ${currentScopeContext.totalEffortScore || 0}
+Project Domain Field: ${projectField}
+(CRITICAL: If Project Domain Field is 'design_development' or 'both', you MUST incorporate BOTH UI/UX design deliverables (e.g. wireframing, high-fidelity mockups, prototypes) AND technical development implementation seamlessly into this new functional unit. The 'included' array MUST explicitly list the design aspects alongside the development aspects. Do not skew entirely to just development!)
+
+CLIENT UPGRADE REQUEST:
+What to Add: "${requestDetails.whatToAdd}"
+How it Works: "${requestDetails.howItWorks}"
+Why Needed: "${requestDetails.whyNeeded || "Not provided"}"
+
+Your objective is to generate exactly ONE new Functional Unit that covers this new requirement, and analyze its impact. Ensure it reflects the required Domain Field.
+
+Return your response strictly in the following JSON format. Do not wrap in markdown or add notes.
+{
+  "proposedUnit": {
+    "name": "Professional Name for this Feature",
+    "description": "Clear, professional description of the new unit",
+    "included": ["Granular capability 1", "Granular capability 2"],
+    "excluded": ["Out of scope item"],
+    "deliverables": ["Tangible deliverable"],
+    "unitScore": 30, 
+    "effortDrivers": {
+      "logicDepth": 5, "interactionDensity": 5, "dataHandling": 5, "dependencyLevel": 5, "variations": 5, "outputExpectation": 5, "totalScore": 30
+    }
+  },
+  "scopeImpactSummary": "Business-friendly paragraph explaining what is being added and how it changes the project.",
+  "deliverableImpact": ["New deliverable to expect", "Changes to existing deliverables"]
+}`;
+
+  for (const model of MODELS) {
+    try {
+      console.log(`[GEMINI UPGRADE] Trying model: ${model}`);
+      const parsed = await callGeminiApi(model, prompt);
+      if (parsed.proposedUnit && parsed.scopeImpactSummary) {
+        return parsed;
+      }
+    } catch (e: any) {
+      console.warn(`[GEMINI UPGRADE] Model ${model} failed:`, e.message || e);
+    }
+  }
+
+  console.warn("[GEMINI UPGRADE] All models failed. Returning null.");
   return null;
 }
 

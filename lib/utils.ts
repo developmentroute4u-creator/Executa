@@ -47,25 +47,31 @@ export function getLevelLabel(level: number) {
 }
 
 export function getEffortLevel(score: number): 1 | 2 | 3 {
-  if (score < 100) return 1;
-  if (score < 220) return 2;
+  if (score <= 100) return 1;
+  if (score <= 220) return 2;
   return 3;
 }
 
 export function getRateRange(field: string, level: 1 | 2 | 3): { min: number; max: number } {
+  // Market-aligned rates per effort point (in INR)
   const rates: Record<string, Record<number, { min: number; max: number }>> = {
     development: {
-      1: { min: 120, max: 160 },
-      2: { min: 160, max: 240 },
-      3: { min: 240, max: 350 },
+      1: { min: 180, max: 240 },
+      2: { min: 260, max: 360 },
+      3: { min: 380, max: 520 },
     },
     design: {
-      1: { min: 100, max: 140 },
-      2: { min: 140, max: 210 },
-      3: { min: 210, max: 320 },
+      1: { min: 150, max: 210 },
+      2: { min: 220, max: 310 },
+      3: { min: 320, max: 460 },
+    },
+    design_development: {
+      1: { min: 200, max: 270 },
+      2: { min: 290, max: 400 },
+      3: { min: 420, max: 580 },
     },
   };
-  return rates[field]?.[level] ?? { min: 100, max: 200 };
+  return rates[field]?.[level] ?? { min: 200, max: 320 };
 }
 
 export function calculatePrice(
@@ -78,10 +84,14 @@ export function calculatePrice(
   executionFee: number;
   total: number;
 } {
-  const freelancerPrice = effortScore * ratePerPoint;
-  const scopeFee = 299; // Updated from 999 to align perfectly with the ₹99 – ₹499 range in the PDF
-  const accountabilityFee = 599; // Within the ₹299 – ₹999 range in the PDF
-  const executionFee = Math.round(freelancerPrice * 0.05); // Standard 5%
+  // Apply 40% market-rate uplift to the freelancer's base price
+  const baseFreelancerPrice = effortScore * ratePerPoint;
+  const freelancerPrice = Math.round(baseFreelancerPrice * 1.4);
+
+  const scopeFee = 99;          // Fixed platform scope fee
+  const accountabilityFee = 199; // Fixed platform accountability fee
+  const executionFee = Math.round(freelancerPrice * 0.05); // 5% of uplifted freelancer price
+
   const total = freelancerPrice + scopeFee + accountabilityFee + executionFee;
   return { freelancerPrice, scopeFee, accountabilityFee, executionFee, total };
 }

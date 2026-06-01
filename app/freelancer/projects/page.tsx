@@ -1,71 +1,130 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { Sidebar } from "@/components/layout/Navbar";
-import { Card, Badge, Button } from "@/components/ui";
+import { formatCurrency } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import { FileText, ArrowRight } from "lucide-react";
 
-const SidebarIcons = {
-  home: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 6.5L8 2l6 4.5V14a1 1 0 01-1 1H3a1 1 0 01-1-1V6.5z" stroke="currentColor" strokeWidth="1.3" /></svg>,
-  test: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 8l3 3 5-5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.3" /></svg>,
-  projects: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.3" /><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.3" /><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.3" /><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.3" /></svg>,
-  earnings: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.3" /><path d="M8 5v1.5M8 9.5V11M6 7.5c0-.8.8-1.5 2-1.5s2 .7 2 1.5-1 1.3-2 1.5-2 .7-2 1.5S6.8 12 8 12s2-.5 2-1.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" /></svg>,
-};
-
-export default function FreelancerProjectsPage() {
-  const { data: session } = useSession();
+export default function ProjectsEnvironment() {
+  const router = useRouter();
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const user = session?.user as any;
+  const [accepting, setAccepting] = useState(false);
 
   useEffect(() => {
     fetch("/api/projects")
-      .then((r) => r.json())
-      .then((d) => setProjects(d.projects || []))
+      .then((res) => res.json())
+      .then((data) => setProjects(data.projects || []))
+      .catch((err) => console.error(err))
       .finally(() => setLoading(false));
   }, []);
 
-  const sidebarItems = [
-    { label: "Dashboard", href: "/freelancer/dashboard", icon: SidebarIcons.home },
-    { label: "Skill Test", href: "/freelancer/test", icon: SidebarIcons.test },
-    { label: "Projects", href: "/freelancer/projects", icon: SidebarIcons.projects, active: true },
-    { label: "Earnings", href: "/freelancer/earnings", icon: SidebarIcons.earnings },
-  ];
+  const handleAcceptScope = async (id: string) => {
+    setAccepting(true);
+    try {
+      const res = await fetch(`/api/projects/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "accept_scope" }),
+      });
+      if (res.ok) {
+        router.push(`/freelancer/execution/${id}`);
+      }
+    } finally {
+      setAccepting(false);
+    }
+  };
+
+  const getPhaseLabel = (p: any) => {
+    if (p.status === "pending") return "Pending Approval";
+    if (p.status === "active") return "In Execution";
+    if (p.status === "completed") return "Completed";
+    return p.status;
+  };
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar items={sidebarItems} user={{ name: user?.name, email: user?.email, role: "Freelancer" }} />
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-4xl mx-auto px-8 py-12">
-          <div className="mb-10">
-            <h1 className="text-2xl font-semibold tracking-tight">My Projects</h1>
-            <p className="text-sm text-text-secondary mt-1">Assigned and completed projects.</p>
-          </div>
-
-          {loading ? (
-            <div className="text-sm text-text-secondary py-8 text-center">Loading…</div>
-          ) : projects.length === 0 ? (
-            <div className="py-16 text-center border border-border border-dashed rounded-xl">
-              <h3 className="text-sm font-medium text-text-primary mb-1">No assigned projects</h3>
-              <p className="text-xs text-text-secondary mb-5">Ensure your skill evaluation is completed and you are marked as available.</p>
-              <Button variant="outline" size="sm" href="/freelancer/dashboard">Go to Dashboard</Button>
+    <main className="flex-1 overflow-y-auto pb-32 bg-background min-h-screen pl-24">
+      <div className="max-w-[1000px] mx-auto px-8 md:px-16 pt-24 md:pt-32">
+        <header className="mb-16 border-b border-border/40 pb-10">
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
+            <div className="flex items-center gap-2 mb-2.5">
+              <FileText className="text-accent" size={18} strokeWidth={2} />
+              <span className="text-xs font-semibold uppercase tracking-wider text-accent">Project Discovery</span>
             </div>
-          ) : (
-            <div className="grid gap-4">
-              {projects.map((project) => (
-                <Card key={project._id} className="p-5">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-base font-semibold">{project.title}</h3>
-                    <Badge variant="stone" className="capitalize">{project.status.replace("_", " ")}</Badge>
-                  </div>
-                  <div className="text-sm text-text-secondary line-clamp-2">{project.goal}</div>
-                </Card>
+            <h1 className="font-display text-4xl md:text-5xl font-semibold tracking-tight text-text-primary leading-tight">
+              Your Projects
+            </h1>
+            <p className="text-text-secondary font-sans text-sm mt-2">
+              Review pending project requests, track active execution, and explore completed work.
+            </p>
+          </motion.div>
+        </header>
+
+        <motion.div 
+          className="bg-white/80 backdrop-blur-xl border border-border/60 rounded-2xl p-8 md:p-10 shadow-[0_8px_30px_rgba(232,82,57,0.01)]"
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.2 }}
+        >
+          {loading ? (
+            <div className="space-y-6">
+              {[1, 2].map((i) => (
+                <div key={i} className="h-32 bg-background rounded-2xl border border-border/50 animate-pulse" />
               ))}
             </div>
+          ) : projects.length === 0 ? (
+            <div className="py-24 text-center">
+              <p className="text-xs font-medium text-text-tertiary uppercase tracking-wider text-center mt-12">
+                No matching projects.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {projects.map((p) => {
+                const isPending = p.status === "pending";
+                return (
+                  <div key={p._id} className="group bg-background border border-border/50 rounded-2xl p-8 hover:border-accent/40 transition-all duration-300">
+                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-8">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-4 mb-4">
+                          <span className="text-xs text-text-primary font-semibold uppercase tracking-wider px-3 py-1 bg-white rounded-md border border-border/50 shadow-sm">{p.clientName}</span>
+                          <span className="text-xs text-accent font-semibold uppercase tracking-wider">{getPhaseLabel(p)}</span>
+                        </div>
+                        
+                        <h3 className="font-display text-2xl md:text-3xl text-text-primary tracking-tight mb-4 group-hover:text-accent transition-colors">
+                          {p.title}
+                        </h3>
+                      </div>
+
+                      <div className="flex flex-col items-end gap-6 shrink-0">
+                        <div className="text-right">
+                          <p className="font-display text-2xl font-bold text-text-primary">{formatCurrency(p.pricing?.freelancerPrice || 0)}</p>
+                        </div>
+                        
+                        {isPending ? (
+                          <button
+                            onClick={() => handleAcceptScope(p._id)}
+                            disabled={accepting}
+                            className="flex items-center gap-2 px-6 py-3 rounded-xl text-xs uppercase tracking-wider font-semibold bg-accent text-white hover:bg-accent-hover transition-colors shadow-[0_4px_16px_rgba(232,82,57,0.2)]"
+                          >
+                            {accepting ? "Authorizing..." : "Accept Scope"} <ArrowRight size={14} strokeWidth={3} />
+                          </button>
+                        ) : (
+                          <Link
+                            href={`/freelancer/execution/${p._id}`}
+                            className="flex items-center gap-2 px-6 py-3 rounded-xl text-xs uppercase tracking-wider font-semibold bg-white text-text-primary hover:text-accent border border-border/80 hover:border-accent/50 transition-all shadow-sm"
+                          >
+                            Enter Room <ArrowRight size={14} strokeWidth={3} />
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
-        </div>
-      </main>
-    </div>
+        </motion.div>
+      </div>
+    </main>
   );
 }

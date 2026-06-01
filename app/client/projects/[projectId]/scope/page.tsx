@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button, Badge, ScoreBar, Card, Input, Textarea } from "@/components/ui";
 import { formatCurrency, getLevelLabel } from "@/lib/utils";
+import { CheckCircle2, X, Loader2 } from "lucide-react";
 
 export default function ScopeReviewPage() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -12,41 +13,47 @@ export default function ScopeReviewPage() {
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [upgradeStep, setUpgradeStep] = useState<"intake" | "loading" | "review">("intake");
+  const [upgradeForm, setUpgradeForm] = useState({ whatToAdd: "", howItWorks: "", whyNeeded: "" });
+  const [proposedUpgrade, setProposedUpgrade] = useState<any>(null);
   const [adding, setAdding] = useState(false);
-  const [newUnit, setNewUnit] = useState({
-    name: "",
-    description: "",
-    included: "",
-    excluded: "",
-    deliverables: "",
-    unitScore: 30,
-  });
 
-  async function handleAddCustomUnit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newUnit.name) return;
+  async function handleGenerateCustomUnit() {
+    if (!upgradeForm.whatToAdd || !upgradeForm.howItWorks) return;
+    setUpgradeStep("loading");
+    try {
+      const res = await fetch(`/api/projects/${projectId}/ai-custom-unit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(upgradeForm)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setProposedUpgrade(data);
+        setUpgradeStep("review");
+      } else {
+        setUpgradeStep("intake");
+        alert("Failed to generate unit. Please try again.");
+      }
+    } catch (err) {
+      console.error(err);
+      setUpgradeStep("intake");
+    }
+  }
 
+  async function handleAddCustomUnit() {
+    if (!proposedUpgrade?.proposedUnit) return;
     setAdding(true);
     try {
       const res = await fetch(`/api/projects/${projectId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          customUnit: {
-            name: newUnit.name,
-            description: newUnit.description,
-            included: newUnit.included.split(",").map(s => s.trim()).filter(Boolean),
-            excluded: newUnit.excluded.split(",").map(s => s.trim()).filter(Boolean),
-            deliverables: newUnit.deliverables.split(",").map(s => s.trim()).filter(Boolean),
-            unitScore: newUnit.unitScore,
-          }
-        })
+        body: JSON.stringify({ customUnit: proposedUpgrade.proposedUnit })
       });
       const updated = await res.json();
       if (res.ok && updated.project && updated.scope) {
         setData(updated);
         setShowAddModal(false);
-        setNewUnit({ name: "", description: "", included: "", excluded: "", deliverables: "", unitScore: 30 });
       }
     } catch (err) {
       console.error("Failed to add custom unit:", err);
@@ -104,7 +111,12 @@ export default function ScopeReviewPage() {
         {/* Header */}
         <div>
           <Badge variant="amber" className="mb-4">Awaiting your review</Badge>
-          <h1 className="text-3xl font-semibold tracking-tight mb-2">{project.title}</h1>
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-3xl font-semibold tracking-tight">{project.title}</h1>
+            <Badge variant="stone" className="capitalize text-xs font-semibold bg-stone-100 text-stone-600 border-stone-200">
+              {project.field === "design_development" ? "Design & Development" : project.field}
+            </Badge>
+          </div>
           <p className="text-text-secondary">{project.goal}</p>
         </div>
 
@@ -125,7 +137,12 @@ export default function ScopeReviewPage() {
         <div>
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-lg font-semibold tracking-tight">Functional Units</h2>
-            <Button variant="outline" size="sm" onClick={() => setShowAddModal(true)}>
+            <Button variant="outline" size="sm" onClick={() => {
+              setUpgradeForm({ whatToAdd: "", howItWorks: "", whyNeeded: "" });
+              setProposedUpgrade(null);
+              setUpgradeStep("intake");
+              setShowAddModal(true);
+            }}>
               + Add custom functionality
             </Button>
           </div>
@@ -228,36 +245,103 @@ export default function ScopeReviewPage() {
 
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-surface border border-border w-full max-w-lg rounded-2xl shadow-2xl p-6 relative space-y-6 animate-fade-up">
-            <div>
-              <h2 className="text-xl font-semibold tracking-tight">Add Custom Functionality</h2>
-              <p className="text-xs text-text-secondary mt-1">If our AI engine missed any details, append them to your project brief here.</p>
+          <div className="bg-surface border border-border w-full max-w-2xl rounded-2xl shadow-2xl relative flex flex-col max-h-[90vh] animate-fade-up">
+            <div className="p-6 border-b border-border flex justify-between items-center bg-stone-50/50 rounded-t-2xl">
+              <h2 className="text-[18px] font-bold text-stone-900">Add Custom Functionality</h2>
+              <button onClick={() => setShowAddModal(false)} className="w-8 h-8 rounded-full bg-white border border-border flex items-center justify-center text-text-tertiary hover:text-text-primary">
+                <X size={16} />
+              </button>
             </div>
 
-            <form onSubmit={handleAddCustomUnit} className="space-y-4">
-              <Input
-                label="Functionality Name"
-                placeholder="e.g. Appointment Booking Calendar"
-                value={newUnit.name}
-                onChange={e => setNewUnit({ ...newUnit, name: e.target.value })}
-                required
-              />
-              <Textarea
-                label="Description"
-                placeholder="Allows patients to schedule dental checkups online based on calendar availability slot parameters."
-                rows={4}
-                value={newUnit.description}
-                onChange={e => setNewUnit({ ...newUnit, description: e.target.value })}
-                required
-              />
+            <div className="p-8 overflow-y-auto flex-1">
+              {upgradeStep === "intake" && (
+                <div className="flex flex-col gap-6">
+                  <div>
+                    <label className="block text-[14px] font-bold text-stone-900 mb-2">1. What would you like to add, change, or improve?</label>
+                    <p className="text-[12px] text-text-secondary mb-3">Describe the new functionality, workflow, or enhancement in business terms.</p>
+                    <textarea 
+                      value={upgradeForm.whatToAdd}
+                      onChange={e => setUpgradeForm({...upgradeForm, whatToAdd: e.target.value})}
+                      placeholder="e.g. I want users to save rides and access them later."
+                      className="w-full h-24 bg-stone-50 border border-border rounded-xl p-4 text-[13px] outline-none focus:border-[#E85239] resize-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[14px] font-bold text-stone-900 mb-2">2. How should this work when completed?</label>
+                    <p className="text-[12px] text-text-secondary mb-3">Walk us through the expected behavior (who uses it, actions they take, outcomes).</p>
+                    <textarea 
+                      value={upgradeForm.howItWorks}
+                      onChange={e => setUpgradeForm({...upgradeForm, howItWorks: e.target.value})}
+                      placeholder="e.g. A student clicks a save button on a ride listing, accesses saved rides from their profile..."
+                      className="w-full h-24 bg-stone-50 border border-border rounded-xl p-4 text-[13px] outline-none focus:border-[#E85239] resize-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[14px] font-bold text-stone-900 mb-2">3. Why is this change needed? (Optional)</label>
+                    <input 
+                      value={upgradeForm.whyNeeded}
+                      onChange={e => setUpgradeForm({...upgradeForm, whyNeeded: e.target.value})}
+                      placeholder="e.g. User feedback requested this feature."
+                      className="w-full bg-stone-50 border border-border rounded-xl p-4 text-[13px] outline-none focus:border-[#E85239]"
+                    />
+                  </div>
+                </div>
+              )}
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
-                <Button variant="ghost" onClick={() => setShowAddModal(false)} type="button">Cancel</Button>
-                <Button variant="primary" type="submit" loading={adding}>
-                  {adding ? "Adding..." : "Add to Scope"}
+              {upgradeStep === "loading" && (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <Loader2 className="animate-spin text-[#E85239] mb-4" size={32} />
+                  <h3 className="text-[16px] font-bold text-stone-900">AI Analyzing Scope Impact...</h3>
+                  <p className="text-[13px] text-text-secondary mt-2 text-center max-w-sm">Generating a precise functional unit and calculating the effort requirements.</p>
+                </div>
+              )}
+
+              {upgradeStep === "review" && proposedUpgrade?.proposedUnit && (
+                <div className="flex flex-col gap-6">
+                  <div className="bg-[#FFF7F6] border border-orange-100 rounded-2xl p-6">
+                    <h3 className="text-[18px] font-bold text-stone-900 mb-2">{proposedUpgrade.proposedUnit.name}</h3>
+                    <p className="text-[13px] text-stone-700 leading-relaxed">{proposedUpgrade.proposedUnit.description}</p>
+                  </div>
+                  
+                  <div>
+                    <h4 className="text-[14px] font-bold text-stone-900 mb-3 flex items-center gap-2"><CheckCircle2 size={16} className="text-emerald-500"/> Included Capabilities</h4>
+                    <ul className="space-y-2">
+                      {proposedUpgrade.proposedUnit.included.map((item: string, i: number) => (
+                        <li key={i} className="text-[13px] text-text-secondary flex items-start gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-stone-300 mt-1.5 shrink-0"/> {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="bg-stone-50 border border-border rounded-2xl p-6">
+                    <h4 className="text-[14px] font-bold text-stone-900 mb-2">Scope Impact Summary</h4>
+                    <p className="text-[13px] text-text-secondary leading-relaxed mb-0">{proposedUpgrade.impact}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-border bg-stone-50/50 rounded-b-2xl flex justify-end">
+              {upgradeStep === "intake" && (
+                <Button 
+                  variant="primary"
+                  onClick={handleGenerateCustomUnit}
+                  disabled={!upgradeForm.whatToAdd || !upgradeForm.howItWorks}
+                >
+                  Generate Proposal
                 </Button>
-              </div>
-            </form>
+              )}
+              {upgradeStep === "review" && (
+                <Button 
+                  variant="primary"
+                  onClick={handleAddCustomUnit}
+                  loading={adding}
+                >
+                  Confirm & Add to Scope
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       )}

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getToken } from "next-auth/jwt";
 import { connectDB } from "@/lib/db";
 import { Project } from "@/models/Project";
 import { Scope } from "@/models/Scope";
@@ -10,12 +9,12 @@ import { askGeminiForScope } from "@/lib/gemini";
 
 // GET /api/projects — list client's projects
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   await connectDB();
-  const userId = (session.user as any).id;
-  const role = (session.user as any).role;
+  const userId = token.id;
+  const role = token.role;
 
   const query = role === "client" ? { clientId: userId } : { freelancerId: userId };
   const projects = await Project.find(query).sort({ createdAt: -1 }).lean();
@@ -36,9 +35,9 @@ export async function GET(req: NextRequest) {
 
 // POST /api/projects — create project + generate scope
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if ((session.user as any).role !== "client") {
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (token.role !== "client") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -46,109 +45,134 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const {
       title,
-      industry,
-      goal,
-      businessName,
-      businessWebsite,
-      businessModel,
-      usageContext,
-      targetAudience,
-      requiredFunctionality,
-      references,
+      domain,
+      projectDescription,
+      projectProblem,
+      targetUsers,
+      userJourney,
+      managedEntities,
+      specialRequirements,
+      successCriteria,
       priority,
       deadline,
-      field,
     } = body;
 
     await connectDB();
-    const userId = (session.user as any).id;
+    const userId = token.id as string;
 
     const project = await Project.create({
       clientId: userId,
       title,
-      industry,
-      goal,
-      businessName: businessName || "",
-      businessWebsite: businessWebsite || "",
-      businessModel: businessModel || "",
-      usageContext: usageContext || "",
-      targetAudience: targetAudience || "",
-      requiredFunctionality: requiredFunctionality || [],
-      references: references || [],
+      field: domain === "Development" ? "development" : domain === "Design & Development" ? "design_development" : "design",
+      projectDescription,
+      projectProblem,
+      targetUsers,
+      userJourney,
+      managedEntities,
+      specialRequirements: specialRequirements || "",
+      successCriteria,
       priority: priority || "medium",
       deadline: deadline ? new Date(deadline) : undefined,
-      field: field || "development",
       status: "scoping",
     });
 
-    // Attempt to generate scope using Gemini with automatic fallbacks
-    let generatedScope = await askGeminiForScope(
-      title,
-      goal,
-      businessModel,
-      field || "development"
-    );
-
-    // If Gemini fails (e.g., all models rate limited), gracefully fallback to local keyword rules
-    if (!generatedScope) {
-      console.log("[POST /api/projects] Gemini failed, executing local fallback rule engine.");
-      generatedScope = generateScope(body);
-    } else {
-      // Save AI-articulated, polished explanation of the project goal if generated
-      if (generatedScope.articulatedGoal) {
-        project.goal = generatedScope.articulatedGoal;
-        await project.save();
-      }
-
-      // Calibrate totalEffortScore and timeline from Gemini results
-      const functionalUnits = generatedScope.functionalUnits.map((u: any) => ({
-        id: u.name.toLowerCase().replace(/\s/g, "_"),
-        name: u.name,
-        description: u.description || "",
-        included: u.included || [],
-        excluded: u.excluded || [],
-        deliverables: u.deliverables || [],
-        unitScore: u.unitScore || u.effortDrivers?.totalScore || 30,
-        effortDrivers: u.effortDrivers || {
-          logicDepth: 5, interactionDensity: 5, dataHandling: 5,
-          dependencyLevel: 5, variations: 5, outputExpectation: 5,
-          totalScore: u.unitScore || 30
-        }
-      }));
-
-      const totalEffortScore = functionalUnits.reduce((sum: number, u: any) => sum + u.unitScore, 0);
-      const weeks = Math.ceil(totalEffortScore / 15);
-
-      generatedScope = {
-        functionalUnits,
-        totalEffortScore,
-        timeline: { estimated: weeks, unit: "weeks" as const },
-        revisionRules: [
-          "2 revision rounds included per functional unit",
-          "Revisions must be within original scope definition",
-          "Change requests outside scope require upgrade approval"
-        ],
-        upgradeRules: [
-          "New functional units can be added via upgrade request",
-          "Upgrades are priced at current rate per effort point",
-          "Timeline adjusts proportionally with upgrades"
-        ]
-      };
+    if (!project) {
+      throw new Error("Project creation failed in DB");
     }
 
-    const effortLevel = getEffortLevel(generatedScope.totalEffortScore);
+    // Attempt to generate scope using Gemini with automatic fallbacks
+    let generatedScope;
+    try {
+      generatedScope = await askGeminiForScope({
+        title,
+        domain,
+        projectDescription,
+        projectProblem,
+        targetUsers,
+        userJourney,
+        managedEntities,
+        specialRequirements,
+        successCriteria
+      });
+    } catch (e: any) {
+      if (e.message === "RATE_LIMIT_EXCEEDED") {
+        return NextResponse.json({ error: "The limit will be reached for all models" }, { status: 429 });
+      }
+      if (e.message === "API_KEY_LEAKED") {
+        return NextResponse.json({ error: "Google has disabled this API Key because it was leaked. Please generate a new key." }, { status: 403 });
+      }
+      if (e.message === "API_KEY_INVALID") {
+        return NextResponse.json({ error: "The Gemini API key provided is invalid or unauthorized." }, { status: 400 });
+      }
+      if (e.message === "MODEL_NOT_FOUND") {
+        return NextResponse.json({ error: "The requested Gemini models (like 3.5 Flash) were not found or are not available." }, { status: 400 });
+      }
+      generatedScope = null;
+    }
+
+    // If Gemini fails for other reasons, throw an error as the AI engine is mandatory
+    if (!generatedScope) {
+      console.error("[POST /api/projects] Gemini failed to generate a scope.");
+      return NextResponse.json({ error: "AI Engine failed to discover scope." }, { status: 500 });
+    }
+
+    // Calibrate totalEffortScore and timeline from Gemini results
+    const functionalUnits = generatedScope.functionalUnits.map((u: any) => ({
+      id: u.name.toLowerCase().replace(/\s/g, "_"),
+      name: u.name,
+      description: u.description || "",
+      included: u.included || [],
+      excluded: u.excluded || [],
+      deliverables: u.deliverables || [],
+      unitScore: u.unitScore || u.effortDrivers?.totalScore || 30,
+      effortDrivers: u.effortDrivers || {
+        logicDepth: 5, interactionDensity: 5, dataHandling: 5,
+        dependencyLevel: 5, variations: 5, outputExpectation: 5,
+        totalScore: u.unitScore || 30
+      }
+    }));
+
+    const totalEffortScore = functionalUnits.reduce((sum: number, u: any) => sum + u.unitScore, 0);
+    const weeks = Math.ceil(totalEffortScore / 15);
+
+    const formattedScope = {
+      projectSummary: generatedScope.projectSummary || {
+        overview: projectDescription,
+        businessGoal: successCriteria,
+        primaryUsers: [targetUsers]
+      },
+      functionalUnits,
+      overallIncluded: generatedScope.overallIncluded || [],
+      overallExcluded: generatedScope.overallExcluded || [],
+      expectedDeliverables: generatedScope.expectedDeliverables || [],
+      requiredCapabilities: generatedScope.requiredCapabilities || [],
+      totalEffortScore,
+      timeline: { estimated: weeks, unit: "weeks" as const },
+      revisionRules: [
+        "2 revision rounds included per functional unit",
+        "Revisions must be within original scope definition",
+        "Change requests outside scope require upgrade approval"
+      ],
+      upgradeRules: [
+        "New functional units can be added via upgrade request",
+        "Upgrades are priced at current rate per effort point",
+        "Timeline adjusts proportionally with upgrades"
+      ]
+    };
+
+    const effortLevel = getEffortLevel(formattedScope.totalEffortScore);
 
     const scope = await Scope.create({
       projectId: project._id,
-      ...generatedScope,
+      ...formattedScope,
       effortLevel,
       status: "draft",
     });
 
     // Update project with scope + pricing
-    const rateRange = getRateRange(field || "development", effortLevel);
+    const rateRange = getRateRange(domain === "Development" ? "development" : "design", effortLevel);
     const avgRate = Math.round((rateRange.min + rateRange.max) / 2);
-    const pricing = calculatePrice(generatedScope.totalEffortScore, avgRate);
+    const pricing = calculatePrice(formattedScope.totalEffortScore, avgRate);
 
     await Project.findByIdAndUpdate(project._id, {
       scopeId: scope?._id,
@@ -160,7 +184,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ projectId: project._id.toString(), scopeId: scope?._id.toString() }, { status: 201 });
   } catch (err: any) {
     console.error("[CREATE_PROJECT]", err);
-    return NextResponse.json({ error: "Failed to create project" }, { status: 500 });
+    return NextResponse.json({ error: err.message || "Failed to create project" }, { status: 500 });
   }
 }
 
