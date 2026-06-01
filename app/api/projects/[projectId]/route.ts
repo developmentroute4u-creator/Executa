@@ -7,6 +7,7 @@ import { Scope } from "@/models/Scope";
 import { Message } from "@/models/Message";
 import { getEffortLevel, getRateRange, calculatePrice } from "@/lib/utils";
 import { askGeminiForCustomUnit } from "@/lib/gemini";
+import mongoose from "mongoose";
 
 export async function GET(req: NextRequest, { params }: { params: { projectId: string } }) {
   const session = await getServerSession(authOptions);
@@ -108,7 +109,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { projectId:
 
       const { FreelancerProfile } = require("@/models/FreelancerProfile");
       await FreelancerProfile.updateOne(
-        { userId: new require("mongoose").Types.ObjectId(loggedInUserId) },
+        { userId: new mongoose.Types.ObjectId(loggedInUserId) },
         { 
           $addToSet: { activeProjectIds: project._id },
           $set: { available: false }
@@ -119,7 +120,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { projectId:
         // Notify client and initialize project workspace chat message
         await Message.create({
           projectId: project._id,
-          senderId: new require("mongoose").Types.ObjectId(loggedInUserId),
+          senderId: new mongoose.Types.ObjectId(loggedInUserId),
           senderRole: "freelancer",
           content: "👋 Project Approved! The execution team has officially accepted the scope and initiated execution. The secure chat channel is active and development has started!"
         });
