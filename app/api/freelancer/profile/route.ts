@@ -18,11 +18,18 @@ export async function GET(req: NextRequest) {
   const test = await Test.findOne({ freelancerId: userId }).sort({ createdAt: -1 }).lean();
 
   let activeProjects: any[] = [];
+  let pendingUpgrades: any[] = [];
   if (profile && profile.activeProjectIds && profile.activeProjectIds.length > 0) {
     activeProjects = await Project.find({ _id: { $in: profile.activeProjectIds } }).lean();
+    
+    const { ScopeUpgrade } = await import("@/models/ScopeUpgrade");
+    pendingUpgrades = await ScopeUpgrade.find({ 
+      projectId: { $in: profile.activeProjectIds },
+      status: "pending_freelancer_approval"
+    }).lean();
   }
 
-  return NextResponse.json({ profile, test, activeProjects });
+  return NextResponse.json({ profile, test, activeProjects, pendingUpgrades });
 }
 
 // PATCH /api/freelancer/profile — update profile fields

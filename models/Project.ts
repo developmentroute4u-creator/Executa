@@ -5,6 +5,7 @@ export type ProjectStatus =
   | "scope_review"
   | "pricing"
   | "matching"
+  | "pending"
   | "active"
   | "review"
   | "completed"
@@ -13,22 +14,29 @@ export type ProjectStatus =
 
 export interface IProject extends Document {
   clientId: mongoose.Types.ObjectId;
-  freelancerId?: mongoose.Types.ObjectId;
+  freelancerId?: mongoose.Types.ObjectId; // Kept for backwards compatibility
+  assignedFreelancers?: {
+    userId: mongoose.Types.ObjectId;
+    role: "design" | "development" | "fullstack";
+    splitPrice?: number;
+    accepted?: boolean;
+  }[];
   scopeId?: mongoose.Types.ObjectId;
   title: string;
-  industry: string;
-  goal: string;
-  businessName?: string;
-  businessWebsite?: string;
-  businessModel?: string;
-  usageContext: string;
-  targetAudience: string;
-  requiredFunctionality: string[];
-  references: string[];
+  field: "development" | "design" | "design_development"; // This acts as Domain
+  
+  // Discovery Questions
+  projectDescription: string;
+  projectProblem: string;
+  targetUsers: string;
+  userJourney: string;
+  managedEntities: string;
+  specialRequirements?: string;
+  successCriteria: string;
+
   priority: "low" | "medium" | "high" | "critical";
   deadline?: Date;
   status: ProjectStatus;
-  field?: "development" | "design";
   requiredLevel?: 1 | 2 | 3;
   pricing?: {
     freelancerPrice: number;
@@ -55,25 +63,33 @@ const ProjectSchema = new Schema<IProject>(
   {
     clientId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     freelancerId: { type: Schema.Types.ObjectId, ref: "User" },
+    assignedFreelancers: [
+      {
+        userId: { type: Schema.Types.ObjectId, ref: "User" },
+        role: { type: String, enum: ["design", "development", "fullstack"] },
+        splitPrice: { type: Number },
+        accepted: { type: Boolean, default: false }
+      }
+    ],
     scopeId: { type: Schema.Types.ObjectId, ref: "Scope" },
     title: { type: String, required: true, trim: true },
-    industry: { type: String, required: true },
-    goal: { type: String, required: true },
-    businessName: { type: String, default: "" },
-    businessWebsite: { type: String, default: "" },
-    businessModel: { type: String, default: "" },
-    usageContext: { type: String, default: "" },
-    targetAudience: { type: String, default: "" },
-    requiredFunctionality: [{ type: String }],
-    references: [{ type: String }],
+    field: { type: String, enum: ["development", "design", "design_development"], required: true },
+
+    projectDescription: { type: String, required: true },
+    projectProblem: { type: String, required: true },
+    targetUsers: { type: String, required: true },
+    userJourney: { type: String, required: true },
+    managedEntities: { type: String, required: true },
+    specialRequirements: { type: String, default: "" },
+    successCriteria: { type: String, required: true },
+
     priority: { type: String, enum: ["low", "medium", "high", "critical"], default: "medium" },
     deadline: { type: Date },
     status: {
       type: String,
-      enum: ["scoping", "scope_review", "pricing", "matching", "active", "review", "completed", "disputed", "cancelled"],
+      enum: ["scoping", "scope_review", "pricing", "matching", "pending", "active", "review", "completed", "disputed", "cancelled"],
       default: "scoping",
     },
-    field: { type: String, enum: ["development", "design"] },
     requiredLevel: { type: Number, enum: [1, 2, 3] },
     pricing: {
       freelancerPrice: Number,

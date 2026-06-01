@@ -1,67 +1,78 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
-import { Sidebar } from "@/components/layout/Navbar";
-import { Card } from "@/components/ui";
 import { formatCurrency } from "@/lib/utils";
+import { motion } from "framer-motion";
+import { IndianRupee, ArrowRight } from "lucide-react";
 
-const SidebarIcons = {
-  home: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 6.5L8 2l6 4.5V14a1 1 0 01-1 1H3a1 1 0 01-1-1V6.5z" stroke="currentColor" strokeWidth="1.3" /></svg>,
-  test: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 8l3 3 5-5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.3" /></svg>,
-  projects: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.3" /><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.3" /><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.3" /><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.3" /></svg>,
-  earnings: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.3" /><path d="M8 5v1.5M8 9.5V11M6 7.5c0-.8.8-1.5 2-1.5s2 .7 2 1.5-1 1.3-2 1.5-2 .7-2 1.5S6.8 12 8 12s2-.5 2-1.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" /></svg>,
-};
-
-export default function FreelancerEarningsPage() {
-  const { data: session } = useSession();
+export default function EarningsEnvironment() {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-
-  const user = session?.user as any;
 
   useEffect(() => {
     fetch("/api/freelancer/profile")
       .then((r) => r.json())
       .then((d) => setProfile(d.profile))
+      .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
 
-  const sidebarItems = [
-    { label: "Dashboard", href: "/freelancer/dashboard", icon: SidebarIcons.home },
-    { label: "Skill Test", href: "/freelancer/test", icon: SidebarIcons.test },
-    { label: "Projects", href: "/freelancer/projects", icon: SidebarIcons.projects },
-    { label: "Earnings", href: "/freelancer/earnings", icon: SidebarIcons.earnings, active: true },
-  ];
-
   return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar items={sidebarItems} user={{ name: user?.name, email: user?.email, role: "Freelancer" }} />
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-4xl mx-auto px-8 py-12">
-          <div className="mb-10">
-            <h1 className="text-2xl font-semibold tracking-tight">Earnings</h1>
-            <p className="text-sm text-text-secondary mt-1">Your total platform earnings and payout history.</p>
-          </div>
+    <main className="flex-1 overflow-y-auto pb-32 bg-background min-h-screen pl-24">
+      <div className="max-w-[1000px] mx-auto px-8 md:px-16 pt-24 md:pt-32">
+        <header className="mb-16 border-b border-border/40 pb-10">
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
+            <div className="flex items-center gap-2 mb-2.5">
+              <IndianRupee className="text-accent" size={18} strokeWidth={2} />
+              <span className="text-xs font-semibold uppercase tracking-wider text-accent">Earnings Overview</span>
+            </div>
+            <h1 className="font-display text-4xl md:text-5xl font-semibold tracking-tight text-text-primary leading-tight">
+              Your Earnings
+            </h1>
+            <p className="text-text-secondary font-sans text-sm mt-2">
+              Track your cleared revenue, outstanding payments, and request payouts.
+            </p>
+          </motion.div>
+        </header>
 
+        <motion.div 
+          className="bg-white/80 backdrop-blur-xl border border-border/60 rounded-2xl p-8 md:p-12 shadow-[0_8px_30px_rgba(232,82,57,0.01)]"
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.2 }}
+        >
           {loading ? (
-            <div className="text-sm text-text-secondary py-8 text-center">Loading…</div>
+            <div className="h-48 bg-background rounded-2xl animate-pulse" />
           ) : (
-            <div className="grid gap-6">
-              <Card className="p-8 bg-surface">
-                <div className="text-sm font-semibold text-text-secondary mb-2">Total Earnings</div>
-                <div className="text-4xl font-semibold tabular-nums text-text-primary">
+            <div className="flex flex-col md:flex-row gap-16 md:items-center">
+              
+              <div className="flex-1">
+                <p className="text-xs font-semibold uppercase tracking-wider text-text-tertiary mb-6">Total Cleared Revenue</p>
+                <p className="font-display text-[5rem] md:text-[6rem] leading-none tracking-tight text-text-primary">
                   {formatCurrency(profile?.totalEarnings || 0)}
-                </div>
-              </Card>
-
-              <div className="py-16 text-center border border-border border-dashed rounded-xl">
-                <h3 className="text-sm font-medium text-text-primary mb-1">No transaction history yet</h3>
-                <p className="text-xs text-text-secondary">Complete projects to see your earnings history here.</p>
+                </p>
               </div>
+              
+              <div className="w-full md:w-64 shrink-0 border-t md:border-t-0 md:border-l border-border/50 pt-12 md:pt-0 md:pl-12 flex flex-col justify-center">
+                <p className="text-xs font-semibold uppercase tracking-wider text-text-tertiary mb-6">Available to Withdraw</p>
+                <p className="font-display text-4xl text-text-primary mb-8">{formatCurrency(profile?.totalEarnings || 0)}</p>
+                
+                <button className="flex items-center justify-between w-full p-4 rounded-xl text-xs uppercase tracking-wider font-semibold bg-accent text-white hover:bg-accent-hover transition-colors shadow-[0_4px_16px_rgba(232,82,57,0.2)]">
+                  Execute Payout <ArrowRight size={14} strokeWidth={3} />
+                </button>
+              </div>
+
             </div>
           )}
-        </div>
-      </main>
-    </div>
+        </motion.div>
+
+        <motion.div 
+          className="mt-12 bg-white/80 backdrop-blur-xl border border-border/60 rounded-2xl p-8 shadow-[0_8px_30px_rgba(232,82,57,0.01)]"
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.3 }}
+        >
+           <p className="text-xs font-semibold uppercase tracking-wider text-text-tertiary mb-8">Earnings History</p>
+           <div className="py-16 text-center border border-dashed border-border/50 rounded-2xl bg-background">
+             <p className="text-xs text-text-tertiary">No recent transactions recorded.</p>
+           </div>
+        </motion.div>
+      </div>
+    </main>
   );
 }

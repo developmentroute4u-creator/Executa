@@ -4,13 +4,13 @@
 
 @layer base {
   :root {
-    --background: #FAFAF7;
-    --surface: #F4F4F0;
-    --border: #E5E5E0;
-    --border-strong: #D1D1CB;
-    --text-primary: #111111;
-    --text-secondary: #6B7280;
-    --accent: #2563EB;
+    --background: #FFF7F6;
+    --surface: #FDF2F0;
+    --border: #EADCDA;
+    --border-strong: #D4BDBA;
+    --text-primary: #2C2C2E;
+    --text-secondary: #5C5C60;
+    --accent: #E85239;
   }
 
   * {
@@ -38,8 +38,8 @@
   }
 
   ::selection {
-    background-color: #DBEAFE;
-    color: #1D4ED8;
+    background-color: rgba(232, 82, 57, 0.15);
+    color: #E85239;
   }
 
   :focus-visible {
@@ -106,7 +106,7 @@
     @apply text-xs text-text-secondary mt-1;
   }
   .field-error {
-    @apply text-xs text-error mt-1;
+    @apply text-xs text-accent mt-1;
   }
 
   /* Card */
@@ -130,16 +130,7 @@
     @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium;
   }
   .badge-blue {
-    @apply badge bg-accent-muted text-accent;
-  }
-  .badge-green {
-    @apply badge bg-success-muted text-success;
-  }
-  .badge-amber {
-    @apply badge bg-warning-muted text-warning;
-  }
-  .badge-red {
-    @apply badge bg-error-muted text-error;
+    @apply badge bg-accent/10 text-accent;
   }
   .badge-stone {
     @apply badge bg-stone-100 text-stone-600;
@@ -160,7 +151,7 @@
     @apply w-8 h-8 rounded-full bg-accent text-white flex items-center justify-center text-xs font-semibold;
   }
   .step-done {
-    @apply w-8 h-8 rounded-full bg-success text-white flex items-center justify-center text-xs font-semibold;
+    @apply w-8 h-8 rounded-full bg-accent/80 text-white flex items-center justify-center text-xs font-semibold;
   }
   .step-pending {
     @apply w-8 h-8 rounded-full border-2 border-border text-text-tertiary flex items-center justify-center text-xs font-semibold;
@@ -183,3 +174,24 @@
 .stagger > *:nth-child(4) { animation-delay: 180ms; }
 .stagger > *:nth-child(5) { animation-delay: 240ms; }
 .stagger > *:nth-child(6) { animation-delay: 300ms; }
+
+/* Pulse glow for status indicators */
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(99, 102, 241, 0); }
+}
+
+/* Sidebar hover helpers (inline styles take precedence; these are fallbacks) */
+.sidebar-nav-item-hover:hover {
+  color: rgba(255, 255, 255, 0.72) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Card hover lift */
+.card-lift {
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.card-lift:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}

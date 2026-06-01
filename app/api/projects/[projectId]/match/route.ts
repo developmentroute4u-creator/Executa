@@ -14,11 +14,6 @@ export const dynamic = "force-dynamic";
 
 // Self-healing database seeder for mock freelancers to ensure perfect, immediate client testing
 async function seedMockFreelancers() {
-  const count = await User.countDocuments({ role: "freelancer" });
-  if (count > 0) return;
-
-  console.log("[SEED] No freelancers found. Seeding high-quality qualified mock freelancers...");
-
   const mockUsers = [
     {
       name: "Alex Rivera",
@@ -37,6 +32,27 @@ async function seedMockFreelancers() {
     {
       name: "David Kim",
       email: "david.kim@executa.io",
+      password: "password123",
+      role: "freelancer" as const,
+      onboardingComplete: true
+    },
+    {
+      name: "Elena Rostova",
+      email: "elena.rostova@executa.io",
+      password: "password123",
+      role: "freelancer" as const,
+      onboardingComplete: true
+    },
+    {
+      name: "Marcus Vance",
+      email: "marcus.vance@executa.io",
+      password: "password123",
+      role: "freelancer" as const,
+      onboardingComplete: true
+    },
+    {
+      name: "Isabella Rossi",
+      email: "isabella.rossi@executa.io",
       password: "password123",
       role: "freelancer" as const,
       onboardingComplete: true
@@ -76,19 +92,54 @@ async function seedMockFreelancers() {
       testScore: 84,
       ratePerPoint: 270,
       available: true
+    },
+    {
+      field: "development" as const,
+      domain: "frontend" as const,
+      specializations: ["React", "CSS Animation", "Framer Motion", "Responsive Layouts"],
+      bio: "Creative frontend specialist with 5 years experience crafting immersive animation pipelines and pixel-perfect design systems.",
+      level: 3 as const,
+      testStatus: "approved" as const,
+      testScore: 91,
+      ratePerPoint: 320,
+      available: true
+    },
+    {
+      field: "development" as const,
+      domain: "backend" as const,
+      specializations: ["Node.js", "PostgreSQL", "Redis Caching", "Docker Containerization"],
+      bio: "Senior backend system engineer with a focus on low-latency data structures, distributed cache layers, and robust deployment pipelines.",
+      level: 3 as const,
+      testStatus: "approved" as const,
+      testScore: 93,
+      ratePerPoint: 340,
+      available: true
+    },
+    {
+      field: "design" as const,
+      domain: "ui_ux" as const,
+      specializations: ["Figma", "User Research", "Wireframing", "Prototyping", "Design Systems"],
+      bio: "Expert UX/UI designer specializing in high-conversion SaaS flows and premium, pixel-perfect design systems.",
+      level: 3 as const,
+      testStatus: "approved" as const,
+      testScore: 96,
+      ratePerPoint: 310,
+      available: true
     }
   ];
 
   for (let i = 0; i < mockUsers.length; i++) {
-    const user = await User.create(mockUsers[i]);
-    if (user) {
-      await FreelancerProfile.create({
-        ...profiles[i],
-        userId: user._id
-      });
+    const exists = await User.findOne({ email: mockUsers[i].email });
+    if (!exists) {
+      const user = await User.create(mockUsers[i]);
+      if (user) {
+        await FreelancerProfile.create({
+          ...profiles[i],
+          userId: user._id
+        });
+      }
     }
   }
-  console.log("[SEED] Successfully seeded mock freelancers.");
 }
 
 export async function GET(req: NextRequest, { params }: { params: { projectId: string } }) {
@@ -143,7 +194,7 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
     // Call Gemini to evaluate matches against the scope
     const aiResponse = await askGeminiToMatchFreelancers({
       title: project.title,
-      goal: project.goal,
+      goal: (project as any).projectDescription || project.title,
       field: project.field || "development",
       requiredLevel: project.requiredLevel || 2,
       functionalUnits: scope.functionalUnits || []
@@ -155,9 +206,9 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
       fitReason: `${f.name} is a highly qualified ${f.domain} specialist with matching skills.`
     }));
 
-    const bestMatchId = aiResponse?.bestMatchId || freelancers[0].id;
+    const bestMatches = aiResponse?.bestMatches || [{ freelancerId: freelancers[0].id, role: "fullstack" }];
 
-    // Zip matches info with actual profiles to send to frontend and slice to return top 3 matches
+    // Zip matches info with actual profiles to send to frontend and slice to return top 5 matches
     const matchedFreelancers = freelancers.map(f => {
       const matchDetails = matches.find((m: any) => m.freelancerId === f.id);
       return {
@@ -165,13 +216,53 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
         fitScore: matchDetails ? matchDetails.fitScore : 75,
         fitReason: matchDetails ? matchDetails.fitReason : "Solid overall technical candidate."
       };
-    }).sort((a, b) => b.fitScore - a.fitScore).slice(0, 3);
+    }).sort((a, b) => b.fitScore - a.fitScore).slice(0, 8);
+
+    // Calculate split pricing based on functional units sum
+    let designTotalScore = 0;
+    let devTotalScore = 0;
+    const units = scope.functionalUnits || [];
+    
+    // Fallback naive split if we can't determine it
+    if (project.field === "design_development") {
+      // Half and half if we don't have distinct tags
+      // For a real prod app, you might use AI or keyword parsing to categorize units.
+      // Since our new prompt enforces separate phases, let's just do a 50/50 split of the total unit score as a safe baseline, 
+      // or try to parse 'design' vs 'development' keywords.
+      units.forEach((u: any) => {
+        const str = (u.name + " " + u.description).toLowerCase();
+        if (str.includes("design") || str.includes("ui") || str.includes("ux") || str.includes("wireframe") || str.includes("mockup")) {
+          designTotalScore += u.unitScore || 0;
+        } else {
+          devTotalScore += u.unitScore || 0;
+        }
+      });
+      
+      // If parsing fails to separate them cleanly, enforce an even split
+      if (designTotalScore === 0 || devTotalScore === 0) {
+        designTotalScore = 1;
+        devTotalScore = 1;
+      }
+    }
+
+    // Attach pricing split info to best matches
+    const totalScore = designTotalScore + devTotalScore;
+    const finalBestMatches = bestMatches.map((bm: any) => {
+      let pricingCut = 1; // 100%
+      if (project.field === "design_development") {
+        pricingCut = bm.role === "design" ? (designTotalScore / totalScore) : (devTotalScore / totalScore);
+      }
+      return {
+        ...bm,
+        pricingCut
+      };
+    });
 
     return NextResponse.json({
       project,
       scope,
       freelancers: matchedFreelancers,
-      bestMatchId
+      bestMatches: finalBestMatches
     });
 
   } catch (err: any) {
@@ -186,31 +277,48 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
-    const { freelancerId } = await req.json();
-    if (!freelancerId) return NextResponse.json({ error: "Missing freelancerId" }, { status: 400 });
+    const { freelancersToAppoint } = await req.json(); // Expected format: [{ freelancerId, role }]
+    if (!freelancersToAppoint || freelancersToAppoint.length === 0) {
+      return NextResponse.json({ error: "Missing freelancersToAppoint" }, { status: 400 });
+    }
 
     await connectDB();
     const project = await Project.findById(params.projectId);
     if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
-    const freelancerUser = await User.findById(freelancerId);
-    if (!freelancerUser || freelancerUser.role !== "freelancer") {
-      return NextResponse.json({ error: "Invalid freelancer selected" }, { status: 404 });
+    // Handle backward compatibility + new logic
+    project.assignedFreelancers = [];
+
+    for (const assignment of freelancersToAppoint) {
+      const freelancerUser = await User.findById(assignment.freelancerId);
+      if (!freelancerUser || freelancerUser.role !== "freelancer") {
+        return NextResponse.json({ error: `Invalid freelancer selected: ${assignment.freelancerId}` }, { status: 404 });
+      }
+
+      project.assignedFreelancers.push({
+        userId: new mongoose.Types.ObjectId(assignment.freelancerId),
+        role: assignment.role || "fullstack",
+        splitPrice: assignment.pricingCut || 1,
+        accepted: false
+      });
+
+      // Maintain backward compatibility for single assignments
+      if (freelancersToAppoint.length === 1) {
+        project.freelancerId = new mongoose.Types.ObjectId(assignment.freelancerId);
+      }
+
+      // Link project to freelancer profile active projects
+      await FreelancerProfile.updateOne(
+        { userId: new mongoose.Types.ObjectId(assignment.freelancerId) },
+        { 
+          $push: { activeProjectIds: project._id },
+          $set: { available: false } // Book freelancer
+        }
+      );
     }
 
-    // Link freelancer to project and update project status to active
-    project.freelancerId = new mongoose.Types.ObjectId(freelancerId);
-    project.status = "active";
+    project.status = "pending";
     await project.save();
-
-    // Link project to freelancer profile active projects
-    await FreelancerProfile.updateOne(
-      { userId: new mongoose.Types.ObjectId(freelancerId) },
-      { 
-        $push: { activeProjectIds: project._id },
-        $set: { available: false } // Book freelancer
-      }
-    );
 
     return NextResponse.json({ success: true, project });
 

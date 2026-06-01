@@ -10,6 +10,7 @@ export const authOptions: AuthOptions = {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        role: { label: "Role", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
@@ -18,6 +19,8 @@ export const authOptions: AuthOptions = {
         if (!user) return null;
         const isValid = await user.comparePassword(credentials.password);
         if (!isValid) return null;
+        // Role enforcement: the tab the user signed in from must match their registered role
+        if (credentials.role && user.role !== credentials.role) return null;
         return {
           id: user._id.toString(),
           name: user.name,

@@ -25,7 +25,16 @@ export interface IFunctionalUnit {
 
 export interface IScope extends Document {
   projectId: mongoose.Types.ObjectId;
+  projectSummary: {
+    overview: string;
+    businessGoal: string;
+    primaryUsers: string[];
+  };
   functionalUnits: IFunctionalUnit[];
+  overallIncluded: string[];
+  overallExcluded: string[];
+  expectedDeliverables: string[];
+  requiredCapabilities: string[]; // INTERNAL
   totalEffortScore: number;
   effortLevel: 1 | 2 | 3;
   timeline: {
@@ -35,6 +44,8 @@ export interface IScope extends Document {
   revisionRules: string[];
   upgradeRules: string[];
   status: "draft" | "confirmed" | "locked";
+  version: number;
+  previousScopeId?: mongoose.Types.ObjectId;
   generatedAt: Date;
   confirmedAt?: Date;
   createdAt: Date;
@@ -67,7 +78,16 @@ const FunctionalUnitSchema = new Schema({
 const ScopeSchema = new Schema<IScope>(
   {
     projectId: { type: Schema.Types.ObjectId, ref: "Project", required: true },
+    projectSummary: {
+      overview: { type: String, required: true },
+      businessGoal: { type: String, required: true },
+      primaryUsers: [{ type: String }],
+    },
     functionalUnits: [FunctionalUnitSchema],
+    overallIncluded: [{ type: String }],
+    overallExcluded: [{ type: String }],
+    expectedDeliverables: [{ type: String }],
+    requiredCapabilities: [{ type: String }],
     totalEffortScore: { type: Number, required: true },
     effortLevel: { type: Number, enum: [1, 2, 3], required: true },
     timeline: {
@@ -77,6 +97,8 @@ const ScopeSchema = new Schema<IScope>(
     revisionRules: [String],
     upgradeRules: [String],
     status: { type: String, enum: ["draft", "confirmed", "locked"], default: "draft" },
+    version: { type: Number, default: 1 },
+    previousScopeId: { type: Schema.Types.ObjectId, ref: "Scope" },
     generatedAt: { type: Date, default: Date.now },
     confirmedAt: Date,
   },

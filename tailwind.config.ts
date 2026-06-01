@@ -10,21 +10,21 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "#FAFAF7",
-        surface: "#F4F4F0",
-        border: "#E5E5E0",
-        "border-strong": "#D1D1CB",
+        background: "#FFF7F6",
+        surface: "#FDF2F0",
+        border: "#EADCDA",
+        "border-strong": "#D4BDBA",
         text: {
-          primary: "#111111",
-          secondary: "#6B7280",
-          tertiary: "#9CA3AF",
-          inverse: "#FAFAF7",
+          primary: "#2C2C2E",
+          secondary: "#5C5C60",
+          tertiary: "#8E8E93",
+          inverse: "#FFF7F6",
         },
         accent: {
-          DEFAULT: "#2563EB",
-          hover: "#1D4ED8",
-          light: "#EFF6FF",
-          muted: "#DBEAFE",
+          DEFAULT: "#E85239",
+          hover: "#D1452D",
+          light: "rgba(232, 82, 57, 0.08)",
+          muted: "rgba(232, 82, 57, 0.18)",
         },
         stone: {
           50: "#FAFAF9",
@@ -38,25 +38,12 @@ const config: Config = {
           800: "#292922",
           900: "#1A1A14",
         },
-        success: {
-          DEFAULT: "#16A34A",
-          light: "#F0FDF4",
-          muted: "#DCFCE7",
-        },
-        warning: {
-          DEFAULT: "#D97706",
-          light: "#FFFBEB",
-          muted: "#FEF3C7",
-        },
-        error: {
-          DEFAULT: "#DC2626",
-          light: "#FEF2F2",
-          muted: "#FEE2E2",
-        },
       },
       fontFamily: {
-        sans: ["var(--font-geist-sans)", "system-ui", "sans-serif"],
-        mono: ["var(--font-geist-mono)", "monospace"],
+        sans: ["var(--font-outfit)", "ui-sans-serif", "system-ui", "-apple-system", "sans-serif"],
+        display: ["var(--font-outfit)", "ui-sans-serif", "system-ui", "-apple-system", "sans-serif"],
+        mono: ["var(--font-jetbrains-mono)", "ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "monospace"],
+        caveat: ["var(--font-caveat)", "cursive"],
       },
       fontSize: {
         "display-2xl": ["4.5rem", { lineHeight: "1.1", letterSpacing: "-0.03em", fontWeight: "600" }],
@@ -85,9 +72,9 @@ const config: Config = {
         DEFAULT: "0 4px 12px rgba(0,0,0,0.05), 0 2px 4px rgba(0,0,0,0.03)",
         "md": "0 8px 24px rgba(0,0,0,0.07), 0 2px 8px rgba(0,0,0,0.04)",
         "lg": "0 16px 40px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.05)",
-        "xl": "0 24px 60px rgba(0,0,0,0.1), 0 8px 24px rgba(0,0,0,0.06)",
-        "accent": "0 0 0 3px rgba(37,99,235,0.12)",
-        "inner": "inset 0 1px 3px rgba(0,0,0,0.06)",
+        "xl": "0 24px 60px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.04)",
+        "accent": "0 0 0 3px rgba(232, 82, 57, 0.12)",
+        "inner": "inset 0 1px 3px rgba(0,0,0,0.04)",
       },
       animation: {
         "fade-in": "fadeIn 0.4s ease-out forwards",

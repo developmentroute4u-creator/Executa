@@ -1,380 +1,989 @@
-import { Navbar } from "@/components/layout/Navbar";
+"use client";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import {
+  motion,
+  AnimatePresence,
+  useTransform,
+  useMotionValue,
+  useSpring,
+} from "framer-motion";
+import {
+  ArrowRight,
+  CheckCircle2,
+  Layers,
+  ArrowRightLeft,
+  ShieldCheck,
+  UserCheck,
+  FileCheck,
+  Code,
+  Database,
+} from "lucide-react";
 
-// Icons (inline SVG — no extra deps)
-const Icon = {
-  scope: (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-      <rect x="2" y="2" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
-      <rect x="11" y="2" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
-      <rect x="2" y="11" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
-      <path d="M11 14.5h7M14.5 11v7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-    </svg>
-  ),
-  pricing: (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-      <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.5"/>
-      <path d="M10 6v1.5M10 12.5V14M7.5 8.5C7.5 7.5 8.5 7 10 7s2.5.8 2.5 2c0 1-1 1.5-2.5 2s-2.5 1-2.5 2c0 1.2 1.2 2 2.5 2s2.5-.5 2.5-1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-    </svg>
-  ),
-  skill: (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-      <path d="M10 2L12.5 7.5H18L13.5 11L15.5 17L10 13.5L4.5 17L6.5 11L2 7.5H7.5L10 2Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-    </svg>
-  ),
-  match: (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-      <path d="M3 10h14M10 3v14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      <circle cx="10" cy="10" r="3" stroke="currentColor" strokeWidth="1.5"/>
-    </svg>
-  ),
-  accountability: (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-      <path d="M10 2L14 6H18V14L14 18H6L2 14V6L6 2H10Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-      <path d="M7 10l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  ),
-  arrow: (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  ),
-};
-
-const SYSTEMS = [
-  {
-    number: "01",
-    icon: Icon.scope,
-    name: "Scope Engine",
-    headline: "Work defined in functional units.",
-    body: "The platform breaks every project into Functional Units — meaningful product outcomes scored across Logic Depth, Interaction Density, Data Handling, Dependency Level, Variations, and Output Expectation. No screens. No hours. No vague descriptions.",
-    tags: ["Functional Units", "Effort Drivers", "Structured Scope"],
-  },
-  {
-    number: "02",
-    icon: Icon.pricing,
-    name: "Pricing Engine",
-    headline: "Price derived from effort, not negotiation.",
-    body: "Every project receives a Total Effort Score. Price = Effort Score × Rate per Point. Rate is determined by field, specialization, and evaluated freelancer level. Three tiers: L1 (40–100pts), L2 (100–220pts), L3 (220–400pts).",
-    tags: ["Effort-Based Pricing", "Three Tiers", "Transparent Fees"],
-  },
-  {
-    number: "03",
-    icon: Icon.skill,
-    name: "Skill Evaluation",
-    headline: "Capability proven through output, not claims.",
-    body: "Freelancers are assigned a Level 2 task matching their domain. Output is evaluated across 5 dimensions: Functional Coverage, Logic, Usability, Edge Cases, and Output Quality — each scored 0–10. AI assistance is permitted. Only the result matters.",
-    tags: ["Outcome-Based", "0–50 Score", "AI Allowed"],
-  },
-  {
-    number: "04",
-    icon: Icon.match,
-    name: "Matching Engine",
-    headline: "Matched by proof, not profile.",
-    body: "The system matches freelancers to projects based on specialization, evaluated level, project effort range, and availability. No bidding. No proposals. No guesswork.",
-    tags: ["No Bidding", "Level-Matched", "Availability-Aware"],
-  },
-  {
-    number: "05",
-    icon: Icon.accountability,
-    name: "Accountability System",
-    headline: "Outcomes enforced, not hoped for.",
-    body: "Choose Basic mode for autonomous execution, or Accountability mode for full platform oversight — scope enforcement, dispute resolution, rework approval, and escalation handling built in.",
-    tags: ["Dispute Resolution", "Scope Enforcement", "Rework Oversight"],
-  },
-];
-
-const CLIENT_STEPS = [
-  { step: "01", title: "Describe your goal", body: "Answer questions about your industry, audience, functionality, and priorities through a conversational intake flow." },
-  { step: "02", title: "Receive structured scope", body: "The Scope Engine generates a complete project definition using Functional Units and Effort Drivers — no vague estimates." },
-  { step: "03", title: "Review and confirm", body: "Add or remove units, select upgrades, and lock the scope. Pricing is calculated automatically." },
-  { step: "04", title: "Matched to a freelancer", body: "The Matching Engine assigns a vetted, level-appropriate freelancer. No browsing. No negotiation." },
-  { step: "05", title: "Execution with oversight", body: "Work proceeds against defined milestones. Accountability mode available for full platform enforcement." },
-];
-
-const FREELANCER_STEPS = [
-  { step: "01", title: "Select your field and domain", body: "Choose Development or Design, then narrow to your domain and specialization." },
-  { step: "02", title: "Complete the skill test", body: "Receive a Level 2 task. Submit your output. AI tools are permitted — only the result is evaluated." },
-  { step: "03", title: "Receive your level", body: "Scoring across 5 dimensions determines your level: Executor (L1), Independent (L2), or Systems Thinker (L3)." },
-  { step: "04", title: "Get matched to projects", body: "Projects that match your specialization, level, and availability are assigned directly to you." },
+const HERO_CYCLE_PAIRS = [
+  { type: "client", inputTitle: "Raw Input", input: "I need a payment system, make it work fast.", outputTitle: "Structured Scope", output: "Stripe Billing Integration", detail: "4 milestones · webhook validation · retry logic", iconColor: "text-accent", bgColor: "bg-[#FFF7F5]/95", borderColor: "border-accent/20" },
+  { type: "freelancer", inputTitle: "Unknown Developer", input: "3 years experience, knows React and Node.", outputTitle: "Verified Expert", output: "Top 1% React Engineer", detail: "Passed 4-hour technical test · Verified architecture skills", iconColor: "text-blue-600", bgColor: "bg-[#FFF7F5]/90", borderColor: "border-accent/20" },
+  { type: "client", inputTitle: "Raw Input", input: "Build me a login page with social stuff.", outputTitle: "Structured Scope", output: "Multi-Provider Auth System", detail: "3 milestones · OAuth flows · session mgmt", iconColor: "text-accent", bgColor: "bg-[#FFF7F5]/95", borderColor: "border-accent/20" },
+  { type: "freelancer", inputTitle: "Unknown Developer", input: "I built a chat app in college.", outputTitle: "Verified Systems Expert", output: "Top 1% Backend Engineer", detail: "Passed real-time WebSocket architecture evaluation", iconColor: "text-blue-600", bgColor: "bg-[#FFF7F5]/90", borderColor: "border-accent/20" },
 ];
 
 export default function LandingPage() {
+  const [activeTab, setActiveTab] = useState<"client" | "freelancer">("client");
+  const [inputIndex, setInputIndex] = useState(0);
+
+  const handleTabToggle = (tab: "client" | "freelancer") => {
+    if (tab === activeTab) return;
+    setActiveTab(tab);
+  };
+
+  useEffect(() => {
+    const interval = setInterval(() => setInputIndex((p) => (p + 1) % HERO_CYCLE_PAIRS.length), 6000);
+    return () => clearInterval(interval);
+  }, []);
+
+  /* ─────────────────────────────────────────────────────────────
+     UNIFIED SCROLL SEQUENCE (Wheel-Locked)
+  ───────────────────────────────────────────────────────────── */
+  const seqRaw = useMotionValue(0);
+  const seq = useSpring(seqRaw, { stiffness: 100, damping: 24, mass: 0.5 });
+  const seqRef = useRef(0);
+  const unlockedRef = useRef(false);
+  const wheelBusy = useRef(false);
+
+  // Phase A: Logo zoom (0.0 -> 0.40)
+  const heroLogoScale = useTransform(seq, [0, 0.40], [1, 30]);
+  const heroLogoBorderRadius = useTransform(seq, [0, 0.36], ["50%", "0%"]);
+  const heroElementsOpacity = useTransform(seq, [0, 0.24], [1, 0]);
+  const heroInnerLogoOpacity = useTransform(seq, [0, 0.16], [1, 0]);
+  const heroLogoOpacity = useTransform(seq, [0.36, 0.50], [1, 0]);
+
+  // Phase B & C & D: Title & Cards Slide In -> Hold -> Merge -> Morph (0.40 -> 0.88)
+  const sec2TitleOp = useTransform(seq, [0.40, 0.52, 0.76, 0.88], [0, 1, 1, 0]);
+  const sec2TitleY = useTransform(seq, [0.40, 0.52, 0.76, 0.88], [15, 0, 0, -25]);
+
+  // Cards slide in, then merge at center
+  const sec2ClientX = useTransform(seq, [0.44, 0.56, 0.76, 0.88], ["-50vw", "0px", "0px", "232px"]);
+  const sec2FreelanX = useTransform(seq, [0.44, 0.56, 0.76, 0.88], ["50vw", "0px", "0px", "-232px"]);
+
+  const sec2CardsFilter = useTransform(seq, [0.76, 0.88, 0.92], ["blur(0px) brightness(1)", "blur(8px) brightness(1.2)", "blur(24px) brightness(2.5)"]);
+  const sec2CardsOp = useTransform(seq, [0.44, 0.56, 0.88, 0.94], [0, 1, 1, 0]);
+  const cardScale = useTransform(seq, [0.76, 0.88], [1, 0.96]);
+  const cardInnerOp = useTransform(seq, [0.76, 0.84], [1, 0]);
+
+  const sec2ScrollNudgeOp = useTransform(seq, [0.56, 0.64, 0.84, 0.88, 1.16, 1.20, 2.80, 2.94], [0, 1, 1, 0, 0, 1, 1, 0]);
+
+  // Phase E: Solution Box Appears (0.88 -> 1.20)
+  const sec2SolOp = useTransform(seq, [0.88, 1.00, 1.12, 1.20], [0, 1, 1, 0]);
+  const sec2SolScale = useTransform(seq, [0.88, 1.00, 1.12, 1.20], [0.85, 1, 1, 0.96]);
+  const sec2SolFilter = useTransform(seq, [0.88, 1.00, 1.12, 1.20], ["blur(16px) brightness(2)", "blur(0px) brightness(1)", "blur(0px) brightness(1)", "blur(12px)"]);
+  const sec2SolY = useTransform(seq, [0.88, 1.00, 1.12, 1.20], [25, 0, 0, -25]);
+
+  // Phase F: Commitments Snap-Lock Sequence (1.20 -> 1.96)
+  // Clean fade-in for commitments layer, then fades out at the end as Stage 4 starts
+  const commitmentsLayerOp = useTransform(seq, [1.20, 1.28, 1.88, 1.96], [0, 1, 1, 0]);
+  const s3HeaderOp = useTransform(seq, [1.22, 1.30, 1.88, 1.96], [0, 1, 1, 0]);
+  const s3HeaderY = useTransform(seq, [1.22, 1.30, 1.88, 1.96], [-20, 0, 0, -20]);
+
+  // Snaps for 3 Commitments cards
+  const item1Op = useTransform(seq, [1.20, 1.26, 1.40, 1.44], [0, 1, 1, 0]);
+  const item1Y = useTransform(seq, [1.20, 1.26, 1.40, 1.44], [30, 0, 0, -30]);
+  const item1Scale = useTransform(seq, [1.40, 1.44], [1, 0.96]);
+
+  const item2Op = useTransform(seq, [1.44, 1.50, 1.64, 1.68], [0, 1, 1, 0]);
+  const item2Y = useTransform(seq, [1.44, 1.50, 1.64, 1.68], [30, 0, 0, -30]);
+  const item2Scale = useTransform(seq, [1.64, 1.68], [1, 0.96]);
+
+  const item3Op = useTransform(seq, [1.68, 1.74, 1.88, 1.96], [0, 1, 1, 0]);
+  const item3Y = useTransform(seq, [1.68, 1.74, 1.88, 1.96], [30, 0, 0, -30]);
+
+  // Dot track indicators mapped directly to Stage 3 scroll seq
+  const dot1Op = useTransform(seq, [1.20, 1.26, 1.40, 1.44], [0.3, 1, 1, 0.3]);
+  const dot1Scale = useTransform(seq, [1.20, 1.26, 1.40, 1.44], [0.8, 1.25, 1.25, 0.8]);
+
+  const dot2Op = useTransform(seq, [1.44, 1.50, 1.64, 1.68], [0.3, 1, 1, 0.3]);
+  const dot2Scale = useTransform(seq, [1.44, 1.50, 1.64, 1.68], [0.8, 1.25, 1.25, 0.8]);
+
+  const dot3Op = useTransform(seq, [1.68, 1.74, 1.88, 1.96], [0.3, 1, 1, 0.3]);
+  const dot3Scale = useTransform(seq, [1.68, 1.74, 1.88, 1.96], [0.8, 1.25, 1.25, 0.8]);
+
+  // Phase G: Journey Roadmap snaps absolutely in place (1.96 -> 3.00)
+  const journeyLayerOp = useTransform(seq, [1.94, 2.02], [0, 1]);
+  const s5HeaderOp = useTransform(seq, [1.96, 2.04], [0, 1]);
+  const s5HeaderY = useTransform(seq, [1.96, 2.04], [-20, 0]);
+
+  // Snaps for 4 Roadmap steps
+  const step1Op = useTransform(seq, [1.80, 2.09, 2.22, 2.35], [0, 1, 1, 0]);
+  const step1Y = useTransform(seq, [1.80, 2.09, 2.22, 2.35], [100, 0, 0, -100]);
+  const step1Scale = useTransform(seq, [1.80, 2.09, 2.22, 2.35], [0.9, 1, 1, 0.9]);
+  const step1RotX = useTransform(seq, [1.80, 2.09, 2.22, 2.35], [15, 0, 0, -15]);
+  const step1Disp = useTransform(seq, (v) => (v < 1.80 || v > 2.35) ? "none" : "flex");
+
+  const step2Op = useTransform(seq, [2.09, 2.22, 2.35, 2.48, 2.61], [0, 0, 1, 1, 0]);
+  const step2Y = useTransform(seq, [2.09, 2.22, 2.35, 2.48, 2.61], [100, 100, 0, 0, -100]);
+  const step2Scale = useTransform(seq, [2.09, 2.22, 2.35, 2.48, 2.61], [0.9, 0.9, 1, 1, 0.9]);
+  const step2RotX = useTransform(seq, [2.09, 2.22, 2.35, 2.48, 2.61], [15, 15, 0, 0, -15]);
+  const step2Disp = useTransform(seq, (v) => (v < 2.09 || v > 2.61) ? "none" : "flex");
+
+  const step3Op = useTransform(seq, [2.35, 2.48, 2.61, 2.74, 2.87], [0, 0, 1, 1, 0]);
+  const step3Y = useTransform(seq, [2.35, 2.48, 2.61, 2.74, 2.87], [100, 100, 0, 0, -100]);
+  const step3Scale = useTransform(seq, [2.35, 2.48, 2.61, 2.74, 2.87], [0.9, 0.9, 1, 1, 0.9]);
+  const step3RotX = useTransform(seq, [2.35, 2.48, 2.61, 2.74, 2.87], [15, 15, 0, 0, -15]);
+  const step3Disp = useTransform(seq, (v) => (v < 2.35 || v > 2.87) ? "none" : "flex");
+
+  const step4Op = useTransform(seq, [2.61, 2.74, 2.87, 3.00], [0, 0, 1, 1]);
+  const step4Y = useTransform(seq, [2.61, 2.74, 2.87, 3.00], [100, 100, 0, 0]);
+  const step4Scale = useTransform(seq, [2.61, 2.74, 2.87, 3.00], [0.9, 0.9, 1, 1]);
+  const step4RotX = useTransform(seq, [2.61, 2.74, 2.87, 3.00], [15, 15, 0, 0]);
+  const step4Disp = useTransform(seq, (v) => v < 2.61 ? "none" : "flex");
+
+  // Dot track indicators mapped directly to Stage 4 scroll seq (active-pill capsule stretch vertically)
+  const jDot1Op = useTransform(seq, [1.80, 2.09, 2.22, 2.35], [0.3, 1, 1, 0.3]);
+  const jDot1Height = useTransform(seq, [1.80, 2.09, 2.22, 2.35], ["10px", "24px", "24px", "10px"]);
+
+  const jDot2Op = useTransform(seq, [2.09, 2.22, 2.35, 2.48, 2.61], [0.3, 0.3, 1, 1, 0.3]);
+  const jDot2Height = useTransform(seq, [2.09, 2.22, 2.35, 2.48, 2.61], ["10px", "10px", "24px", "24px", "10px"]);
+
+  const jDot3Op = useTransform(seq, [2.35, 2.48, 2.61, 2.74, 2.87], [0.3, 0.3, 1, 1, 0.3]);
+  const jDot3Height = useTransform(seq, [2.35, 2.48, 2.61, 2.74, 2.87], ["10px", "10px", "24px", "24px", "10px"]);
+
+  const jDot4Op = useTransform(seq, [2.61, 2.74, 2.87, 3.00], [0.3, 0.3, 1, 1]);
+  const jDot4Height = useTransform(seq, [2.61, 2.74, 2.87, 3.00], ["10px", "10px", "24px", "24px"]);
+
+  // Pointer events & visibility layers
+  const sec2PointerEvents = useTransform(seq, (v) => (v > 0.40 && v < 1.20) ? "auto" : "none");
+  const solPointerEvents = useTransform(seq, (v) => (v > 0.88 && v < 1.20) ? "auto" : "none");
+  const commitPointerEvents = useTransform(seq, (v) => (v > 1.20 && v < 1.96) ? "auto" : "none");
+  const journeyPointerEvents = useTransform(seq, (v) => (v > 1.96) ? "auto" : "none");
+
+  useEffect(() => {
+    const onWheel = (e: WheelEvent) => {
+      if (unlockedRef.current) return;
+      e.preventDefault();
+      if (wheelBusy.current) return;
+      wheelBusy.current = true;
+      requestAnimationFrame(() => { wheelBusy.current = false; });
+
+      const speed = 1000; // Increased spacing for more comfortable, deliberate scrolling
+      const next = Math.min(3, Math.max(0, seqRef.current + e.deltaY / speed));
+      seqRef.current = next;
+      seqRaw.set(next);
+
+      if (next >= 2.98) {
+        setTimeout(() => { unlockedRef.current = true; document.body.style.overflow = "unset"; }, 200);
+      }
+    };
+    document.body.style.overflow = "hidden";
+    window.scrollTo(0, 0);
+    window.addEventListener("wheel", onWheel, { passive: false });
+    return () => { window.removeEventListener("wheel", onWheel); document.body.style.overflow = "unset"; };
+  }, [seqRaw]);
+
+  useEffect(() => {
+    const onScroll = () => {
+      if (window.scrollY <= 0 && unlockedRef.current) {
+        unlockedRef.current = false;
+        seqRef.current = 2.98;
+        seqRaw.set(2.98);
+        document.body.style.overflow = "hidden";
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [seqRaw]);
+
+
+
   return (
-    <div className="bg-background min-h-screen">
-      <Navbar />
+    <div className="bg-background text-text-primary font-sans antialiased overflow-x-hidden">
 
-      {/* ── HERO ── */}
-      <section className="pt-40 pb-32 px-6">
-        <div className="max-w-4xl mx-auto">
-          {/* Eyebrow */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-border bg-surface text-xs text-text-secondary mb-10 animate-fade-in">
-            <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-            Governed Execution Platform · Currently in private beta
-          </div>
+      {/* ════════════════════════════════════════════════
+          STAGE 1, 2, 2.5, & 3 — LOCKED UNIFIED SEQUENCE
+      ════════════════════════════════════════════════ */}
+      <section className="relative h-screen w-full bg-surface overflow-hidden">
 
-          {/* Headline */}
-          <h1 className="text-[clamp(2.5rem,6vw,4.5rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-text-primary mb-8 animate-fade-up">
-            Work, clearly defined.
-            <br />
-            <span className="text-text-secondary">Execution without chaos.</span>
-          </h1>
-
-          <p className="text-lg text-text-secondary leading-relaxed max-w-2xl mb-12 animate-fade-up" style={{ animationDelay: "60ms" }}>
-            Executa is not a freelance marketplace. It is a governed execution platform that defines scope as structured Functional Units, evaluates freelancer capability through outcome-based testing, and enforces accountability at every stage.
-          </p>
-
-          <div className="flex flex-wrap items-center gap-4 animate-fade-up" style={{ animationDelay: "120ms" }}>
-            <Link
-              href="/auth/signup?role=client"
-              className="inline-flex items-center gap-2.5 px-6 py-3 bg-accent text-white text-sm font-medium rounded hover:bg-accent-hover transition-colors shadow-sm"
-            >
-              Start a project
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </Link>
-            <Link
-              href="/auth/signup?role=freelancer"
-              className="inline-flex items-center gap-2.5 px-6 py-3 border border-border text-text-primary text-sm font-medium rounded hover:border-border-strong hover:bg-surface transition-all"
-            >
-              Apply as a freelancer
-            </Link>
-          </div>
-
-          {/* Stats */}
-          <div className="mt-20 pt-10 border-t border-border grid grid-cols-3 gap-8 max-w-lg animate-fade-up" style={{ animationDelay: "180ms" }}>
-            {[
-              { value: "5", label: "Core systems" },
-              { value: "3", label: "Capability levels" },
-              { value: "0", label: "Gigs. Ever." },
-            ].map((s) => (
-              <div key={s.label}>
-                <div className="text-2xl font-semibold tracking-tight text-text-primary">{s.value}</div>
-                <div className="text-xs text-text-secondary mt-0.5">{s.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── PHILOSOPHY ── */}
-      <section className="py-24 px-6 bg-surface border-y border-border" id="systems">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-16 items-center">
-            <div>
-              <p className="text-xs font-medium text-text-tertiary uppercase tracking-widest mb-5">Platform philosophy</p>
-              <h2 className="text-3xl font-semibold tracking-tight text-text-primary mb-6">
-                This platform doesn't sell freelancers. It sells clarity, structure, and accountability.
-              </h2>
-              <p className="text-text-secondary leading-relaxed">
-                Every feature connects to one of five core systems. There are no gig cards, no bidding wars, no portfolio browsing, and no vague project descriptions. Work is defined precisely before execution begins — and the system holds both parties to that definition.
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              {["Clarity", "Structure", "Accountability", "Execution", "Reduced Decision Fatigue", "Outcome Enforcement"].map((item) => (
-                <div key={item} className="p-4 bg-white border border-border rounded-lg text-sm text-text-primary font-medium">
-                  {item}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── SYSTEMS ── */}
-      <section className="py-28 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-16">
-            <p className="text-xs font-medium text-text-tertiary uppercase tracking-widest mb-4">Five core systems</p>
-            <h2 className="text-3xl font-semibold tracking-tight text-text-primary max-w-xl">
-              Every feature connects to a system. Every system enforces an outcome.
+        {/* ── STAGE 1: HERO ── */}
+        <motion.div style={{ opacity: heroElementsOpacity }}
+          className="absolute inset-x-0 top-0 pt-16 px-6 md:px-16 z-30 pointer-events-none select-none flex flex-col md:flex-row justify-between items-start gap-8">
+          <div className="max-w-[420px]">
+            <h2 className={`font-sans font-bold tracking-tighter text-4xl md:text-5xl lg:text-7xl transition-all duration-700 ${HERO_CYCLE_PAIRS[inputIndex].type === "freelancer" ? "text-stone-900" : "text-stone-300"}`}>
+              We <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-[#FF5B3A]">test</span> the talent.
             </h2>
+            {HERO_CYCLE_PAIRS[inputIndex].type === "freelancer" && (
+              <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4 text-sm text-stone-400 leading-relaxed">
+                Top 1% vetted engineering talent, assessed and ready to execute your vision.
+              </motion.p>
+            )}
           </div>
+          <div className="max-w-[420px] md:text-right">
+            <h2 className={`font-sans font-bold tracking-tighter text-4xl md:text-5xl lg:text-7xl transition-all duration-700 ${HERO_CYCLE_PAIRS[inputIndex].type === "client" ? "text-stone-900" : "text-stone-300"}`}>
+              We <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-[#FF5B3A]">lock</span> the scope.
+            </h2>
+            {HERO_CYCLE_PAIRS[inputIndex].type === "client" && (
+              <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4 text-sm text-stone-400 md:ml-auto leading-relaxed">
+                Crystal clear requirements, predictable timelines, and absolutely no guesswork.
+              </motion.p>
+            )}
+          </div>
+        </motion.div>
 
-          <div className="space-y-0 border-t border-border">
-            {SYSTEMS.map((system, i) => (
-              <div
-                key={system.number}
-                className="grid md:grid-cols-[200px_1fr] gap-8 py-10 border-b border-border group"
+        <div className="absolute inset-0 flex items-center justify-center overflow-hidden pointer-events-none z-20">
+          <motion.div style={{ opacity: heroElementsOpacity }} className="absolute inset-0 flex items-center justify-center z-0 hidden sm:flex">
+            {/* Outer ring */}
+            <motion.div animate={{ rotate: 360 }} transition={{ duration: 50, repeat: Infinity, ease: "linear" }} className="absolute w-[900px] h-[900px] rounded-full border border-dashed border-stone-300">
+              <motion.div animate={{ rotate: -360 }} transition={{ duration: 50, repeat: Infinity, ease: "linear" }} className="absolute top-[-28px] left-[calc(50%-28px)] w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center border border-stone-100"><FileCheck size={24} className="text-accent" strokeWidth={1.5} /></motion.div>
+              <motion.div animate={{ rotate: -360 }} transition={{ duration: 50, repeat: Infinity, ease: "linear" }} className="absolute bottom-[-28px] left-[calc(50%-28px)] w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center border border-stone-100"><ShieldCheck size={24} className="text-accent" strokeWidth={1.5} /></motion.div>
+              <motion.div animate={{ rotate: -360 }} transition={{ duration: 50, repeat: Infinity, ease: "linear" }} className="absolute left-[-28px] top-[calc(50%-28px)] w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center border border-stone-100"><Code size={24} className="text-accent" strokeWidth={1.5} /></motion.div>
+              <motion.div animate={{ rotate: -360 }} transition={{ duration: 50, repeat: Infinity, ease: "linear" }} className="absolute right-[-28px] top-[calc(50%-28px)] w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center border border-stone-100"><UserCheck size={24} className="text-accent" strokeWidth={1.5} /></motion.div>
+            </motion.div>
+            {/* Middle ring */}
+            <motion.div animate={{ rotate: -360 }} transition={{ duration: 35, repeat: Infinity, ease: "linear" }} className="absolute w-[640px] h-[640px] rounded-full border border-dashed border-stone-300">
+              <motion.div animate={{ rotate: 360 }} transition={{ duration: 35, repeat: Infinity, ease: "linear" }} className="absolute top-[-24px] left-[calc(50%-24px)] w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center border border-stone-100"><Layers size={22} className="text-accent" strokeWidth={1.5} /></motion.div>
+              <motion.div animate={{ rotate: 360 }} transition={{ duration: 35, repeat: Infinity, ease: "linear" }} className="absolute bottom-[-24px] left-[calc(50%-24px)] w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center border border-stone-100"><Database size={22} className="text-accent" strokeWidth={1.5} /></motion.div>
+              <motion.div animate={{ rotate: 360 }} transition={{ duration: 35, repeat: Infinity, ease: "linear" }} className="absolute right-[-24px] top-[calc(50%-24px)] w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center border border-stone-100"><ArrowRightLeft size={22} className="text-accent" strokeWidth={1.5} /></motion.div>
+              <motion.div animate={{ rotate: 360 }} transition={{ duration: 35, repeat: Infinity, ease: "linear" }} className="absolute left-[-24px] top-[calc(50%-24px)] w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center border border-stone-100"><CheckCircle2 size={22} className="text-accent" strokeWidth={1.5} /></motion.div>
+            </motion.div>
+          </motion.div>
+
+          <motion.div
+            style={{ scale: heroLogoScale, borderRadius: heroLogoBorderRadius, opacity: heroLogoOpacity }}
+            className="relative z-50 w-36 h-36 md:w-48 md:h-48 bg-surface flex items-center justify-center shadow-[0_10px_60px_rgba(232,82,57,0.08)] border border-white/60"
+          >
+            <motion.div style={{ opacity: heroInnerLogoOpacity }} animate={{ scale: [1, 1.05, 1] }} transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }} className="flex items-center justify-center w-[75%]">
+              <svg viewBox="0 0 160 40" className="w-full h-auto drop-shadow-sm overflow-visible">
+                <text x="50%" y="50%" dominantBaseline="central" textAnchor="middle" className="font-sans font-black text-stone-900" style={{ fontSize: "28px", letterSpacing: "-0.05em" }}>
+                  EXECUTA<tspan fill="#E85239">.</tspan>
+                </text>
+              </svg>
+            </motion.div>
+          </motion.div>
+
+          {/* I/O animation cards */}
+          <motion.div style={{ opacity: heroElementsOpacity }} className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none hidden sm:flex">
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ maskImage: "radial-gradient(circle at center, transparent 96px, black 98px)", WebkitMaskImage: "radial-gradient(circle at center, transparent 96px, black 98px)" }}>
+              <AnimatePresence mode="wait">
+                <motion.div key={`in-${inputIndex}`} className="absolute bg-white/95 backdrop-blur-3xl border border-stone-200 p-6 lg:p-7 rounded-2xl shadow-sm w-[300px] lg:w-[380px] will-change-transform"
+                  animate={{ x: HERO_CYCLE_PAIRS[inputIndex].type === "freelancer" ? ["-60vw", "-26vw", "-26vw", "0vw", "0vw"] : ["60vw", "26vw", "26vw", "0vw", "0vw"], scale: [1, 1, 1, 0.4, 0.4] }}
+                  transition={{ duration: 6, times: [0, 0.18, 0.40, 0.48, 1], ease: "easeInOut" }}>
+                  <div className="flex items-center gap-3 mb-4"><div className="w-2.5 h-2.5 rounded-full bg-stone-400" /><p className="text-[11px] font-mono font-bold text-stone-600 uppercase tracking-widest">{HERO_CYCLE_PAIRS[inputIndex].inputTitle}</p></div>
+                  <p className="text-[15px] lg:text-[18px] font-mono text-stone-800 font-medium leading-relaxed">&ldquo;{HERO_CYCLE_PAIRS[inputIndex].input}&rdquo;</p>
+                </motion.div>
+              </AnimatePresence>
+              <AnimatePresence mode="wait">
+                <motion.div key={`out-${inputIndex}`} className={`absolute bg-[#FFF7F5]/95 backdrop-blur-xl border-2 border-accent/20 p-6 lg:p-7 rounded-3xl shadow-[0_20px_40px_-12px_rgba(230,62,0,0.08)] w-[320px] lg:w-[420px] will-change-transform`}
+                  animate={{ x: HERO_CYCLE_PAIRS[inputIndex].type === "freelancer" ? ["0vw", "0vw", "26vw", "26vw", "60vw"] : ["0vw", "0vw", "-26vw", "-26vw", "-60vw"], scale: [0.4, 0.4, 1, 1, 1] }}
+                  transition={{ duration: 6, times: [0, 0.52, 0.60, 0.82, 1], ease: "easeInOut" }}>
+                  <div className="flex items-center gap-3 mb-4"><div className={`w-2.5 h-2.5 rounded-full animate-pulse bg-accent shadow-[0_0_8px_rgba(230,62,0,0.5)]`} /><p className={`text-[11px] font-mono font-bold uppercase tracking-widest text-accent`}>{HERO_CYCLE_PAIRS[inputIndex].outputTitle}</p></div>
+                  <p className="text-[17px] lg:text-[21px] font-mono font-semibold text-stone-900 leading-snug mb-2">{HERO_CYCLE_PAIRS[inputIndex].output}</p>
+                  <p className="text-[13px] lg:text-[14px] font-mono text-stone-600 leading-relaxed">{HERO_CYCLE_PAIRS[inputIndex].detail}</p>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        </div>
+
+        <motion.div style={{ opacity: heroElementsOpacity }} className="absolute inset-x-0 bottom-0 pb-8 md:pb-12 px-6 md:px-16 z-[70] flex justify-between pointer-events-auto">
+          <Link href="/auth/login?role=freelancer">
+            <button className={`group flex items-center gap-2 text-base font-semibold px-6 py-3 rounded-full transition-all duration-500 shadow-lg ${HERO_CYCLE_PAIRS[inputIndex].type === "freelancer" ? "bg-accent text-white hover:bg-accent-hover" : "bg-orange-50 text-accent opacity-60 scale-95"}`}>
+              Join as Freelancer <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+            </button>
+          </Link>
+          <Link href="/auth/login?role=client" className="ml-auto">
+            <button className={`group flex items-center gap-2 text-base font-semibold px-6 py-3 rounded-full transition-all duration-500 shadow-lg ${HERO_CYCLE_PAIRS[inputIndex].type === "client" ? "bg-accent text-white hover:bg-accent-hover" : "bg-orange-50 text-accent opacity-60 scale-95"}`}>
+              Hire Freelancers <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+            </button>
+          </Link>
+        </motion.div>
+
+        {/* ── STAGE 2: PROBLEM STATE ── */}
+        <motion.div style={{ pointerEvents: sec2PointerEvents }} className="absolute inset-0 z-40 flex flex-col items-center justify-start overflow-hidden px-4 md:px-12 pt-[10vh]">
+
+          <motion.div className="relative w-full max-w-[1200px] flex flex-col items-center justify-start">
+            <motion.div style={{ opacity: sec2TitleOp, y: sec2TitleY }} className="text-center mb-6 shrink-0 relative z-20">
+              <div className="flex items-center justify-center gap-3 mb-2.5">
+                <div className="h-px w-8 bg-stone-300" />
+                <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-accent">The Honest Problem</span>
+                <div className="h-px w-8 bg-stone-300" />
+              </div>
+              <h2 className="font-sans font-bold tracking-tight text-stone-900 leading-[1.05]" style={{ fontSize: "clamp(2rem, 3.8vw, 3rem)" }}>
+                Freelancing is broken<br />
+                <span className="font-normal italic text-transparent bg-clip-text bg-gradient-to-r from-accent to-[#FF5B3A]">for both sides.</span>
+              </h2>
+            </motion.div>
+
+            {/* Cards Row */}
+            <div className="relative w-full flex justify-center h-[460px]">
+
+              {/* CLIENT CARD */}
+              <motion.div
+                style={{ x: sec2ClientX, opacity: sec2CardsOp, filter: sec2CardsFilter, scale: cardScale }}
+                className="absolute right-[calc(50%+12px)] top-0 bg-[#FDFDFD] rounded-[2rem] p-8 shadow-[0_25px_60px_-15px_rgba(232,82,57,0.04),0_1px_4px_rgba(232,82,57,0.01)] border border-stone-200/80 w-[440px] h-[450px] flex flex-col z-10 overflow-hidden group/card transition-shadow hover:shadow-[0_30px_70px_-10px_rgba(232,82,57,0.06)] duration-500"
               >
-                {/* Left */}
-                <div className="flex items-start gap-4">
-                  <span className="text-xs font-medium text-text-tertiary tabular-nums mt-0.5">{system.number}</span>
+                <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-accent to-[#FF5B3A]" />
+
+                <motion.div style={{ opacity: cardInnerOp }} className="flex flex-col h-full justify-between">
                   <div>
-                    <div className="text-text-tertiary mb-3 group-hover:text-accent transition-colors duration-200">
-                      {system.icon}
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-50 border border-orange-100 text-[9px] font-bold text-accent uppercase tracking-wider mb-4">
+                      <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+                      For Clients
                     </div>
-                    <div className="text-sm font-semibold text-text-primary">{system.name}</div>
+
+                    <h4 className="text-[22px] font-bold text-stone-900 leading-[1.25] tracking-tight mb-5">
+                      You keep paying.<br />
+                      <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-[#FF5B3A]">Nothing gets done.</span>
+                    </h4>
                   </div>
-                </div>
-                {/* Right */}
-                <div>
-                  <h3 className="text-xl font-semibold tracking-tight text-text-primary mb-3">{system.headline}</h3>
-                  <p className="text-text-secondary leading-relaxed text-sm mb-5">{system.body}</p>
-                  <div className="flex flex-wrap gap-2">
-                    {system.tags.map((tag) => (
-                      <span key={tag} className="px-2.5 py-0.5 rounded-full bg-surface border border-border text-xs text-text-secondary">
-                        {tag}
-                      </span>
+
+                  <div className="space-y-3.5">
+                    {[
+                      { num: "01", title: "No fixed price", desc: "Hourly billing. The invoice is always a surprise." },
+                      { num: "02", title: "No clear scope", desc: "Requirements drift. Deadlines shift." },
+                      { num: "03", title: "No way to verify", desc: "CVs hide what they can't actually build." },
+                      { num: "04", title: "No protection", desc: "If it goes wrong, you're on your own." }
+                    ].map((item, idx) => (
+                      <div key={idx} className="flex items-start gap-4 p-3 bg-stone-50/50 border border-stone-100 rounded-2xl transition-all duration-300 hover:bg-stone-50 hover:border-accent/30 hover:translate-x-1 group">
+                        <div className="flex items-center gap-1.5 shrink-0 mt-0.5 select-none">
+                          <span className="font-mono text-xs font-bold text-accent/40 group-hover:text-accent transition-colors duration-300">{item.num}</span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent/20 group-hover:bg-accent transition-colors duration-300" />
+                        </div>
+                        <div>
+                          <p className="text-[14px] font-bold text-stone-900 leading-none mb-0.5 group-hover:text-accent transition-colors duration-300">{item.title}</p>
+                          <p className="text-[12px] text-stone-500 leading-snug">{item.desc}</p>
+                        </div>
+                      </div>
                     ))}
                   </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+                </motion.div>
+              </motion.div>
 
-      {/* ── WORKFLOWS ── */}
-      <section className="py-28 px-6 bg-surface border-y border-border" id="workflow">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-20">
-            {/* Client */}
-            <div>
-              <p className="text-xs font-medium text-text-tertiary uppercase tracking-widest mb-5">Client workflow</p>
-              <h2 className="text-2xl font-semibold tracking-tight text-text-primary mb-10">
-                From requirement to execution in five steps.
-              </h2>
-              <div className="space-y-8">
-                {CLIENT_STEPS.map((s) => (
-                  <div key={s.step} className="flex gap-5">
-                    <div className="text-xs font-medium text-text-tertiary tabular-nums pt-0.5 w-6 shrink-0">{s.step}</div>
-                    <div>
-                      <div className="text-sm font-semibold text-text-primary mb-1">{s.title}</div>
-                      <div className="text-sm text-text-secondary leading-relaxed">{s.body}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <Link
-                href="/auth/signup?role=client"
-                className="inline-flex items-center gap-2 mt-10 text-sm font-medium text-accent hover:text-accent-hover transition-colors"
+              {/* FREELANCER CARD */}
+              <motion.div
+                style={{ x: sec2FreelanX, opacity: sec2CardsOp, filter: sec2CardsFilter, scale: cardScale }}
+                className="absolute left-[calc(50%+12px)] top-0 bg-[#FDFDFD] rounded-[2rem] p-8 shadow-[0_25px_60px_-15px_rgba(232,82,57,0.04),0_1px_4px_rgba(232,82,57,0.01)] border border-stone-200/80 w-[440px] h-[450px] flex flex-col z-10 overflow-hidden group/card transition-shadow hover:shadow-[0_30px_70px_-10px_rgba(232,82,57,0.06)] duration-500"
               >
-                Start your first project {Icon.arrow}
-              </Link>
-            </div>
+                <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-accent to-[#FF5B3A]" />
 
-            {/* Freelancer */}
-            <div>
-              <p className="text-xs font-medium text-text-tertiary uppercase tracking-widest mb-5">Freelancer workflow</p>
-              <h2 className="text-2xl font-semibold tracking-tight text-text-primary mb-10">
-                Prove capability. Get matched. Execute.
-              </h2>
-              <div className="space-y-8">
-                {FREELANCER_STEPS.map((s) => (
-                  <div key={s.step} className="flex gap-5">
-                    <div className="text-xs font-medium text-text-tertiary tabular-nums pt-0.5 w-6 shrink-0">{s.step}</div>
-                    <div>
-                      <div className="text-sm font-semibold text-text-primary mb-1">{s.title}</div>
-                      <div className="text-sm text-text-secondary leading-relaxed">{s.body}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <Link
-                href="/auth/signup?role=freelancer"
-                className="inline-flex items-center gap-2 mt-10 text-sm font-medium text-accent hover:text-accent-hover transition-colors"
-              >
-                Apply as a freelancer {Icon.arrow}
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── PRICING PREVIEW ── */}
-      <section className="py-28 px-6" id="pricing">
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-14">
-            <p className="text-xs font-medium text-text-tertiary uppercase tracking-widest mb-4">Pricing structure</p>
-            <h2 className="text-3xl font-semibold tracking-tight text-text-primary max-w-xl">
-              Price = Effort Score × Rate per Point. No negotiation.
-            </h2>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-5">
-            {[
-              { level: "Level 1", range: "40–100 pts", label: "Executor", devRate: "₹120–160 / pt", designRate: "₹100–140 / pt", desc: "Execution-focused work. Defined tasks, clear outputs." },
-              { level: "Level 2", range: "100–220 pts", label: "Independent", devRate: "₹160–240 / pt", designRate: "₹140–210 / pt", desc: "Independent thinking. Ambiguity handled with judgment.", featured: true },
-              { level: "Level 3", range: "220–400 pts", label: "Systems Thinker", devRate: "₹240–350 / pt", designRate: "₹210–320 / pt", desc: "System design, edge cases, architectural decisions." },
-            ].map((tier) => (
-              <div
-                key={tier.level}
-                className={`rounded-xl border p-7 ${tier.featured ? "bg-accent-light border-accent/30 ring-1 ring-accent/20" : "bg-white border-border"}`}
-              >
-                <div className="flex items-start justify-between mb-5">
+                <motion.div style={{ opacity: cardInnerOp }} className="flex flex-col h-full justify-between">
                   <div>
-                    <div className="text-xs font-medium text-text-tertiary uppercase tracking-wider mb-1">{tier.level}</div>
-                    <div className="text-lg font-semibold text-text-primary">{tier.label}</div>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-50 border border-orange-100 text-[9px] font-bold text-accent uppercase tracking-wider mb-4">
+                      <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+                      For Freelancers
+                    </div>
+
+                    <h4 className="text-[22px] font-bold text-stone-900 leading-[1.25] tracking-tight mb-5">
+                      You keep working.<br />
+                      <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-[#FF5B3A]">You never get paid fairly.</span>
+                    </h4>
                   </div>
-                  <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${tier.featured ? "bg-accent text-white" : "bg-stone-100 text-stone-600"}`}>
-                    {tier.range}
-                  </span>
+
+                  <div className="space-y-3.5">
+                    {[
+                      { num: "01", title: "Race to the bottom", desc: "Platforms push you to cut rates just to win." },
+                      { num: "02", title: "Scope creep", desc: "One task turns into months of unpaid extras." },
+                      { num: "03", title: "Specs always shift", desc: "You build one thing. They want another." },
+                      { num: "04", title: "No proof of skill", desc: "Experience means nothing without a track record." }
+                    ].map((item, idx) => (
+                      <div key={idx} className="flex items-start gap-4 p-3 bg-stone-50/50 border border-stone-100 rounded-2xl transition-all duration-300 hover:bg-stone-50 hover:border-accent/30 hover:translate-x-1 group">
+                        <div className="flex items-center gap-1.5 shrink-0 mt-0.5 select-none">
+                          <span className="font-mono text-xs font-bold text-accent/40 group-hover:text-accent transition-colors duration-300">{item.num}</span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent/20 group-hover:bg-accent transition-colors duration-300" />
+                        </div>
+                        <div>
+                          <p className="text-[14px] font-bold text-stone-900 leading-none mb-0.5 group-hover:text-accent transition-colors duration-300">{item.title}</p>
+                          <p className="text-[12px] text-stone-500 leading-snug">{item.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              </motion.div>
+
+            </div>
+          </motion.div>
+
+        </motion.div>
+
+        {/* ── STAGE 2.5: SOLUTION BOX ── */}
+        <motion.div
+          style={{ opacity: sec2SolOp, scale: sec2SolScale, filter: sec2SolFilter, y: sec2SolY, pointerEvents: solPointerEvents }}
+          className="absolute inset-0 flex items-center justify-center p-4 md:p-12 z-40 pointer-events-none"
+        >
+          <div className="w-full max-w-[1000px] bg-white rounded-[2.5rem] p-12 md:p-16 shadow-[0_40px_120px_-25px_rgba(232,82,57,0.1),0_1px_4px_rgba(0,0,0,0.01)] border border-stone-200/80 relative overflow-hidden flex flex-col items-center pointer-events-auto mt-4 transition-all duration-500">
+
+            <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-accent via-accent to-[#FF5B3A]" />
+            <div className="absolute -top-[120px] left-1/2 -translate-x-1/2 w-[80%] h-[350px] bg-gradient-to-b from-accent/5 to-transparent rounded-full blur-3xl pointer-events-none" />
+
+            <div className="inline-flex items-center gap-2.5 px-6 py-2.5 rounded-full bg-white border border-stone-200/60 shadow-[0_4px_16px_rgba(0,0,0,0.03)] mb-6 relative z-10">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-accent shrink-0">
+                <path d="M12 2L14.8 9.2L22 12L14.8 14.8L12 22L9.2 14.8L2 12L9.2 9.2L12 2Z" fill="currentColor" opacity="0.15" />
+                <path d="M12 2L14.8 9.2L22 12L14.8 14.8L12 22L9.2 14.8L2 12L9.2 9.2L12 2Z" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round" />
+                <circle cx="6" cy="18" r="1.5" fill="currentColor" />
+              </svg>
+              <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-stone-600">The Solution</span>
+            </div>
+
+            <h3 className="text-3xl md:text-5xl font-sans font-bold text-stone-900 mb-12 tracking-tight relative z-10 max-w-xl text-center leading-none">
+              Built to fix <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-[#FF5B3A]">both sides.</span>
+            </h3>
+
+            <div className="grid md:grid-cols-2 gap-8 w-full mb-12 relative z-10">
+
+              {/* Highlighted Scope Card */}
+              <div className="bg-[#FCFCFC] rounded-3xl p-8 border border-stone-200/80 flex flex-col items-start text-left transition-all hover:bg-white hover:border-accent/40 hover:shadow-[0_20px_50px_-15px_rgba(232,82,57,0.06)] duration-500 group relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-accent/5 to-transparent rounded-bl-full pointer-events-none" />
+
+                <div className="w-12 h-12 rounded-2xl bg-orange-50 flex items-center justify-center mb-6 border border-orange-100 group-hover:scale-105 transition-transform duration-300">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="#E85239" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 </div>
-                <p className="text-sm text-text-secondary leading-relaxed mb-6">{tier.desc}</p>
-                <div className="space-y-2.5 pt-5 border-t border-border">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-text-secondary">Development</span>
-                    <span className="font-medium text-text-primary">{tier.devRate}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-text-secondary">Design</span>
-                    <span className="font-medium text-text-primary">{tier.designRate}</span>
-                  </div>
-                </div>
+
+                <span className="text-[11px] font-bold text-accent uppercase tracking-widest mb-1.5">01 / Predictability</span>
+
+                <h4 className="text-3xl font-extrabold text-stone-900 tracking-tight mb-4 leading-none">
+                  Scope <span className="text-accent">Locked.</span>
+                </h4>
+
+                <p className="text-stone-500 text-[14px] leading-relaxed">
+                  Price is agreed and locked before work starts. We eliminate hourly billing entirely, meaning no surprise invoices, no scope creep, and zero budget overruns.
+                </p>
               </div>
+
+              {/* Highlighted Talent Card */}
+              <div className="bg-[#FCFCFC] rounded-3xl p-8 border border-stone-200/80 flex flex-col items-start text-left transition-all hover:bg-white hover:border-accent/40 hover:shadow-[0_20px_50px_-15px_rgba(232,82,57,0.06)] duration-500 group relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-accent/5 to-transparent rounded-bl-full pointer-events-none" />
+
+                <div className="w-12 h-12 rounded-2xl bg-orange-50 flex items-center justify-center mb-6 border border-orange-100 group-hover:scale-105 transition-transform duration-300">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M22 11.08V12a10 10 0 11-5.93-9.14M22 4L12 14.01l-3-3" stroke="#E85239" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                </div>
+
+                <span className="text-[11px] font-bold text-accent uppercase tracking-widest mb-1.5">02 / Assurance</span>
+
+                <h4 className="text-3xl font-extrabold text-stone-900 tracking-tight mb-4 leading-none">
+                  Talent <span className="text-accent">Tested.</span>
+                </h4>
+
+                <p className="text-stone-500 text-[14px] leading-relaxed">
+                  Every engineering expert has passed our rigorous, multi-hour technical test. No self-reported CVs. You only work with the top 1% of vetted experts.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-5 w-full relative z-10">
+              <Link href="/auth/login?role=client" className="w-full sm:w-auto">
+                <button className="flex items-center justify-center gap-2.5 bg-accent text-white px-9 py-4 rounded-full font-bold text-[14px] shadow-[0_12px_24px_-8px_rgba(232,82,57,0.4)] hover:bg-accent-hover hover:-translate-y-0.5 hover:shadow-[0_15px_30px_-6px_rgba(232,82,57,0.5)] transition-all duration-300 w-full sm:w-auto group">
+                  Hire Freelancers
+                  <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform duration-300" />
+                </button>
+              </Link>
+              <Link href="/auth/login?role=freelancer" className="w-full sm:w-auto">
+                <button className="flex items-center justify-center gap-2.5 bg-white text-stone-800 border border-stone-200 px-9 py-4 rounded-full font-bold text-[14px] shadow-[0_4px_12px_rgba(0,0,0,0.02)] hover:bg-stone-50 hover:border-stone-300 hover:-translate-y-0.5 transition-all duration-300 w-full sm:w-auto group">
+                  Join as Freelancer
+                  <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform duration-300" />
+                </button>
+              </Link>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* ── STAGE 3: COMMITMENTS SNAP-LOCKS (Absolute Overlay inside Unified Sequence) ── */}
+        <motion.div
+          style={{ opacity: commitmentsLayerOp, pointerEvents: commitPointerEvents }}
+          className="absolute inset-0 z-40 flex flex-col items-center justify-start overflow-hidden px-4 md:px-12 pt-[10vh]"
+        >
+          {/* Consistent Floated Header matching 'The Honest Problem' exactly */}
+          <motion.div
+            style={{ opacity: s3HeaderOp, y: s3HeaderY }}
+            className="absolute top-[10vh] inset-x-0 z-20 text-center flex flex-col items-center select-none"
+          >
+            <div className="flex items-center justify-center gap-3 mb-2.5">
+              <div className="h-px w-8 bg-stone-300" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-accent">Our Commitments</span>
+              <div className="h-px w-8 bg-stone-300" />
+            </div>
+            <h2 className="font-sans font-bold tracking-tight text-stone-900 leading-[1.05]" style={{ fontSize: "clamp(2rem, 3.8vw, 3rem)" }}>
+              Three things that make<br />
+              <span className="font-normal italic text-transparent bg-clip-text bg-gradient-to-r from-accent to-[#FF5B3A]">every project land.</span>
+            </h2>
+          </motion.div>
+
+          <div className="relative w-full max-w-[1000px] h-[75%] flex items-center justify-center px-6">
+
+            {/* ── COMMITMENT 01 (Predictability) ── */}
+            <motion.div
+              style={{ opacity: item1Op, y: item1Y, scale: item1Scale }}
+              className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none"
+            >
+              <div className="absolute font-sans font-extrabold text-[24vw] leading-none text-accent/5 select-none z-0 mt-8">
+                01
+              </div>
+              <div className="relative z-10 flex flex-col items-center max-w-xl px-4 mt-32 md:mt-36">
+                <div className="px-3.5 py-1.5 rounded-full bg-orange-50/80 border border-accent/15 text-[10px] font-bold text-accent uppercase tracking-widest mb-6">
+                  Predictability First
+                </div>
+                <h3 className="text-3xl md:text-5xl font-sans font-bold text-stone-900 tracking-tight leading-[1.1] mb-6">
+                  Scope locked before <span className="text-accent font-extrabold">work starts.</span>
+                </h3>
+                <p className="text-[15px] md:text-[16px] text-stone-500 leading-relaxed font-medium">
+                  Every project begins with a structured scope document — deliverables, milestones, and pricing — all agreed before a single line of code is written. No scope creep. No surprises.
+                </p>
+              </div>
+            </motion.div>
+
+            {/* ── COMMITMENT 02 (Quality) ── */}
+            <motion.div
+              style={{ opacity: item2Op, y: item2Y, scale: item2Scale }}
+              className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none"
+            >
+              <div className="absolute font-sans font-extrabold text-[24vw] leading-none text-accent/5 select-none z-0 mt-8">
+                02
+              </div>
+              <div className="relative z-10 flex flex-col items-center max-w-xl px-4 mt-32 md:mt-36">
+                <div className="px-3.5 py-1.5 rounded-full bg-orange-50/80 border border-accent/15 text-[10px] font-bold text-accent uppercase tracking-widest mb-6">
+                  Guaranteed Quality
+                </div>
+                <h3 className="text-3xl md:text-5xl font-sans font-bold text-stone-900 tracking-tight leading-[1.1] mb-6">
+                  Talent tested before <span className="text-accent font-extrabold">they join.</span>
+                </h3>
+                <p className="text-[15px] md:text-[16px] text-stone-500 leading-relaxed font-medium">
+                  Every expert has passed a rigorous multi-hour technical assessment. No self-reported CVs. No guessing. You work with developers who have genuinely proven their skills.
+                </p>
+              </div>
+            </motion.div>
+
+            {/* ── COMMITMENT 03 (Accountability) ── */}
+            <motion.div
+              style={{ opacity: item3Op, y: item3Y }}
+              className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none"
+            >
+              <div className="absolute font-sans font-extrabold text-[24vw] leading-none text-accent/5 select-none z-0 mt-8">
+                03
+              </div>
+              <div className="relative z-10 flex flex-col items-center max-w-xl px-4 mt-32 md:mt-36">
+                <div className="px-3.5 py-1.5 rounded-full bg-orange-50/80 border border-accent/15 text-[10px] font-bold text-accent uppercase tracking-widest mb-6">
+                  Absolute Accountability
+                </div>
+                <h3 className="text-3xl md:text-5xl font-sans font-bold text-stone-900 tracking-tight leading-[1.1] mb-6">
+                  Accountability in <span className="text-accent font-extrabold">every milestone.</span>
+                </h3>
+                <p className="text-[15px] md:text-[16px] text-stone-500 leading-relaxed font-medium">
+                  Payment is tied to milestone completion — not hours worked. If a milestone isn&apos;t delivered, you don&apos;t pay. Simple.
+                </p>
+              </div>
+            </motion.div>
+
+          </div>
+
+          {/* Centered Progress dots positioned horizontally right in the bottom center (elevated to bottom-[16vh] to prevent overlaps) */}
+          <div className="absolute bottom-[16vh] left-1/2 -translate-x-1/2 flex gap-3.5 z-50 select-none pointer-events-auto">
+            {[
+              { op: dot1Op, scale: dot1Scale },
+              { op: dot2Op, scale: dot2Scale },
+              { op: dot3Op, scale: dot3Scale }
+            ].map((dot, idx) => (
+              <motion.div
+                key={idx}
+                style={{ opacity: dot.op, scale: dot.scale }}
+                className="w-2.5 h-2.5 rounded-full bg-accent shadow-sm"
+              />
             ))}
           </div>
 
-          <p className="text-xs text-text-tertiary mt-8">
-            Platform fees applied: Scope Fee (₹999) + Accountability Fee (₹599) + Execution Fee (5% of freelancer price).
-            Accountability Mode is optional.
-          </p>
-        </div>
-      </section>
+        </motion.div>
 
-      {/* ── CTA ── */}
-      <section className="py-28 px-6 bg-text-primary">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-4xl font-semibold tracking-tight text-white mb-6 leading-tight">
-            Where scope becomes structure.<br />Where structure becomes execution.
-          </h2>
-          <p className="text-stone-400 text-lg mb-12 leading-relaxed">
-            No gigs. No bidding. No chaos. Just clearly defined work, evaluated capability, and enforced outcomes.
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-4">
-            <Link
-              href="/auth/signup?role=client"
-              className="px-7 py-3.5 bg-white text-text-primary text-sm font-semibold rounded hover:bg-stone-100 transition-colors"
-            >
-              Start a project
-            </Link>
-            <Link
-              href="/auth/signup?role=freelancer"
-              className="px-7 py-3.5 border border-stone-600 text-stone-300 text-sm font-semibold rounded hover:border-stone-400 hover:text-white transition-all"
-            >
-              Apply as a freelancer
-            </Link>
-          </div>
-        </div>
-      </section>
+        {/* ── STAGE 4: YOUR JOURNEY (ROADMAP SCROLL SNAPPING) ── */}
+        <motion.div
+          style={{ opacity: journeyLayerOp, pointerEvents: journeyPointerEvents }}
+          className="absolute inset-0 z-50 flex items-center justify-center overflow-hidden px-6 md:px-16"
+        >
+          <div className="w-full max-w-[1140px] flex flex-col md:flex-row items-center justify-between gap-12 select-none relative z-10 -mt-6 md:-mt-12">
 
-      {/* ── FOOTER ── */}
-      <footer className="py-10 px-6 border-t border-stone-800 bg-text-primary">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 bg-accent rounded flex items-center justify-center">
-              <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
-                <rect x="1" y="1" width="5" height="5" rx="1" fill="white" />
-                <rect x="8" y="8" width="5" height="5" rx="1" fill="white" />
-              </svg>
+            {/* Left Column: Fixed big editorial header text */}
+            <motion.div
+              style={{ opacity: s5HeaderOp, y: s5HeaderY }}
+              className="w-full md:w-[35%] text-left relative z-20 shrink-0"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-accent">Your Journey</span>
+                <div className="h-px w-8 bg-stone-300" />
+              </div>
+              <h2 className="font-sans font-bold tracking-tight text-stone-900 leading-[1.02] mb-6 animate-fade-in" style={{ fontSize: "clamp(2.5rem, 4.8vw, 3.8rem)" }}>
+                How it works<br />
+                <span className="font-normal italic text-transparent bg-clip-text bg-gradient-to-r from-accent to-[#FF5B3A]">for you.</span>
+              </h2>
+              <p className="text-[14.5px] text-stone-500 font-medium leading-relaxed max-w-[280px]">
+                A predictable, transparent roadmap designed to keep every step clear, vetted, and accounted for.
+              </p>
+            </motion.div>
+
+            {/* Right Column: Switcher, 3D Deck and Vertical Indicator Dots */}
+            <div className="w-full md:w-[60%] flex flex-col items-center justify-center relative min-h-[480px]">
+
+              {/* Centered Horizontal tab Switcher Selector */}
+              <div className="flex items-center gap-1 p-1 bg-stone-100/80 rounded-full w-fit mb-8 shrink-0 relative z-30 pointer-events-auto shadow-sm">
+                {(["client", "freelancer"] as const).map((tab) => (
+                  <button key={tab} onClick={() => handleTabToggle(tab)}
+                    className={`px-6 py-2 rounded-full text-[13px] font-bold transition-all duration-300 ${activeTab === tab ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-700"}`}>
+                    {tab === "client" ? "I'm a Client" : "I'm a Freelancer"}
+                  </button>
+                ))}
+              </div>
+
+              {/* Stop-Motion Snapping Cards Container */}
+              <div className="relative w-full max-w-[700px] h-[360px] md:h-[300px] flex items-center justify-center" style={{ perspective: "1500px" }}>
+                {[
+                  {
+                    n: "01",
+                    client: {
+                      tag: "Milestone 01",
+                      title: "Describe what you need",
+                      body: "No technical jargon required. Describe your goal in plain language — we turn it into a structured, priced scope document.",
+                      specTitle: "Scope Blueprint",
+                      checks: ["Plain language input received", "AI scope document auto-generated", "Priced deliverables mapped"]
+                    },
+                    freelancer: {
+                      tag: "Requirement 01",
+                      title: "Apply and prove your skills",
+                      body: "Take our technical assessment — no CV required. If you're in the top 1%, you're in.",
+                      specTitle: "Technical Screening",
+                      checks: ["Real-world coding test starting", "Algorithmic review passed", "Architecture evaluation cleared"]
+                    }
+                  },
+                  {
+                    n: "02",
+                    client: {
+                      tag: "Milestone 02",
+                      title: "Review scope + fixed price",
+                      body: "Before anyone starts, you see the full breakdown: deliverables, milestones, and a single fixed price. Approve it, and work begins.",
+                      specTitle: "Milestone Locked",
+                      checks: ["Deliverables outline approved", "Fixed-price quote locked", "Secure escrow deposit funded"]
+                    },
+                    freelancer: {
+                      tag: "Requirement 02",
+                      title: "Get matched to real projects",
+                      body: "We bring you projects that match your skills and availability. No bidding wars. No undercutting.",
+                      specTitle: "Project Pairing",
+                      checks: ["Matching skills analysis completed", "Active projects available", "Direct assignment offered"]
+                    }
+                  },
+                  {
+                    n: "03",
+                    client: {
+                      tag: "Milestone 03",
+                      title: "Matched with a vetted expert",
+                      body: "We assign a developer who has passed our technical assessment for your specific domain. No guesswork.",
+                      specTitle: "Vetting Check",
+                      checks: ["Top 1% technical screen passed", "Domain-expert dev matched", "Kickoff workspace launched"]
+                    },
+                    freelancer: {
+                      tag: "Requirement 03",
+                      title: "Build with a clear scope",
+                      body: "Every project comes with a fully defined scope. You know exactly what to build and what you'll earn.",
+                      specTitle: "Development Specs",
+                      checks: ["Detailed blueprint reviewed", "Earning thresholds confirmed", "Milestone roadmap claimed"]
+                    }
+                  },
+                  {
+                    n: "04",
+                    client: {
+                      tag: "Milestone 04",
+                      title: "Pay per milestone, not per hour",
+                      body: "Funds release as milestones are completed and verified. You stay in control throughout.",
+                      specTitle: "Delivery Quality",
+                      checks: ["Deliverable milestone verified", "Auto quality review check passed", "Escrow funds released safely"]
+                    },
+                    freelancer: {
+                      tag: "Requirement 04",
+                      title: "Get paid when you deliver",
+                      body: "Milestone payments are released automatically on completion. No chasing. No disputes.",
+                      specTitle: "Secure Payments",
+                      checks: ["Milestone task completed", "Code quality checks verified", "Payment released automatically"]
+                    }
+                  }
+                ].map(({ n, client, freelancer }, idx) => {
+                  const stepOp = idx === 0 ? step1Op : idx === 1 ? step2Op : idx === 2 ? step3Op : step4Op;
+                  const stepY = idx === 0 ? step1Y : idx === 1 ? step2Y : idx === 2 ? step3Y : step4Y;
+                  const stepScale = idx === 0 ? step1Scale : idx === 1 ? step2Scale : idx === 2 ? step3Scale : step4Scale;
+                  const stepRotX = idx === 0 ? step1RotX : idx === 1 ? step2RotX : idx === 2 ? step3RotX : step4RotX;
+                  const stepDisp = idx === 0 ? step1Disp : idx === 1 ? step2Disp : idx === 2 ? step3Disp : step4Disp;
+
+                  return (
+                    <motion.div
+                      key={n}
+                      style={{
+                        opacity: stepOp,
+                        y: stepY,
+                        scale: stepScale,
+                        rotateX: stepRotX,
+                        display: stepDisp,
+                        transformStyle: "preserve-3d"
+                      }}
+                      className="absolute inset-x-0 mx-auto w-full max-w-[660px] h-[380px] md:h-[290px] pointer-events-none select-none z-10"
+                    >
+                      <div
+                        style={{ transformStyle: "preserve-3d" }}
+                        className="relative w-full h-full pointer-events-auto cursor-pointer"
+                      >
+                        {/* FRONT FACE (Client) */}
+                        <motion.div
+                          animate={{ rotateY: activeTab === "client" ? 0 : 180 }}
+                          transition={{ duration: 0.65, ease: [0.23, 1, 0.32, 1] }}
+                          style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transformStyle: "preserve-3d" }}
+                          className="absolute inset-0 w-full h-full bg-white/95 backdrop-blur-xl border border-stone-200/50 rounded-[2.5rem] p-8 shadow-[0_20px_50px_rgba(232,82,57,0.03)] flex flex-col md:flex-row gap-6 items-center justify-between transition-transform duration-300 hover:scale-[1.015] hover:shadow-[0_25px_60px_rgba(232,82,57,0.06)] active:scale-[0.99] border-t-2 border-t-accent/20"
+                        >
+                          {/* Left half: Copy editorial */}
+                          <div className="flex-1 text-left">
+                            <div className="px-3.5 py-1 rounded-full bg-orange-50/80 border border-accent/20 text-[10px] font-bold text-accent uppercase tracking-widest mb-4 inline-block shadow-sm">
+                              {client.tag}
+                            </div>
+                            <h3 className="text-xl md:text-2xl font-sans font-bold text-stone-900 tracking-tight leading-snug mb-3">
+                              {client.title.split(" ").slice(0, -2).join(" ")} <span className="text-accent font-extrabold">{client.title.split(" ").slice(-2).join(" ")}</span>
+                            </h3>
+                            <p className="text-[13px] text-stone-500 font-medium leading-relaxed max-w-sm">
+                              {client.body}
+                            </p>
+                          </div>
+
+                          {/* Right half: Dynamic spec checklists container */}
+                          <div className="bg-stone-50/60 backdrop-blur-md border border-stone-100 p-5 rounded-2xl w-full md:w-[250px] shrink-0 text-left space-y-3 select-none shadow-inner">
+                            <div className="flex items-center justify-between pb-1.5 border-b border-stone-200/50">
+                              <span className="text-[9px] font-bold uppercase tracking-wider text-stone-400">
+                                {client.specTitle}
+                              </span>
+                              <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+                            </div>
+                            <div className="space-y-2.5">
+                              {client.checks.map((check, cIdx) => (
+                                <div key={cIdx} className="flex items-start gap-2">
+                                  <CheckCircle2 size={12} className="text-accent mt-0.5 shrink-0" strokeWidth={2.5} />
+                                  <p className="text-[11px] text-stone-600 font-semibold leading-tight">
+                                    {check}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </motion.div>
+
+                        {/* BACK FACE (Freelancer) */}
+                        <motion.div
+                          animate={{ rotateY: activeTab === "client" ? -180 : 0 }}
+                          transition={{ duration: 0.65, ease: [0.23, 1, 0.32, 1] }}
+                          style={{
+                            backfaceVisibility: "hidden",
+                            WebkitBackfaceVisibility: "hidden",
+                            transformStyle: "preserve-3d"
+                          }}
+                          className="absolute inset-0 w-full h-full bg-white/95 backdrop-blur-xl border border-stone-200/50 rounded-[2.5rem] p-8 shadow-[0_20px_50px_rgba(232,82,57,0.03)] flex flex-col md:flex-row gap-6 items-center justify-between transition-transform duration-300 hover:scale-[1.015] hover:shadow-[0_25px_60px_rgba(232,82,57,0.06)] active:scale-[0.99] border-t-2 border-t-accent/20"
+                        >
+                          {/* Left half: Copy editorial */}
+                          <div className="flex-1 text-left">
+                            <div className="px-3.5 py-1 rounded-full bg-orange-50/80 border border-accent/20 text-[10px] font-bold text-accent uppercase tracking-widest mb-4 inline-block shadow-sm">
+                              {freelancer.tag}
+                            </div>
+                            <h3 className="text-xl md:text-2xl font-sans font-bold text-stone-900 tracking-tight leading-snug mb-3">
+                              {freelancer.title.split(" ").slice(0, -2).join(" ")} <span className="text-accent font-extrabold">{freelancer.title.split(" ").slice(-2).join(" ")}</span>
+                            </h3>
+                            <p className="text-[13px] text-stone-500 font-medium leading-relaxed max-w-sm">
+                              {freelancer.body}
+                            </p>
+                          </div>
+
+                          {/* Right half: Dynamic spec checklists container */}
+                          <div className="bg-stone-50/60 backdrop-blur-md border border-stone-100 p-5 rounded-2xl w-full md:w-[250px] shrink-0 text-left space-y-3 select-none shadow-inner">
+                            <div className="flex items-center justify-between pb-1.5 border-b border-stone-200/50">
+                              <span className="text-[9px] font-bold uppercase tracking-wider text-stone-400">
+                                {freelancer.specTitle}
+                              </span>
+                              <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+                            </div>
+                            <div className="space-y-2.5">
+                              {freelancer.checks.map((check, cIdx) => (
+                                <div key={cIdx} className="flex items-start gap-2">
+                                  <CheckCircle2 size={12} className="text-accent mt-0.5 shrink-0" strokeWidth={2.5} />
+                                  <p className="text-[11px] text-stone-600 font-semibold leading-tight">
+                                    {check}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </motion.div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+                {/* Vertical Progress dots on the right side for Stage 5 */}
+                <div className="absolute right-[-20px] md:right-[-40px] top-1/2 -translate-y-1/2 flex flex-col gap-3.5 z-50 select-none pointer-events-auto">
+                  {[
+                    { op: jDot1Op, h: jDot1Height },
+                    { op: jDot2Op, h: jDot2Height },
+                    { op: jDot3Op, h: jDot3Height },
+                    { op: jDot4Op, h: jDot4Height }
+                  ].map((dot, idx) => (
+                    <motion.div
+                      key={idx}
+                      style={{ opacity: dot.op, height: dot.h }}
+                      className="w-2.5 rounded-full bg-accent shadow-sm"
+                    />
+                  ))}
+                </div>
+              </div>
+
             </div>
-            <span className="text-sm text-stone-400">Executa</span>
           </div>
-          <p className="text-xs text-stone-600">© 2026 Executa. A governed execution platform.</p>
+
+        </motion.div>
+
+        {/* Scroll nudge positioned in the horizontal bottom center with mouse scroll animation */}
+        <motion.div style={{ opacity: sec2ScrollNudgeOp }} className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 select-none pointer-events-none z-50">
+          <span className="text-[9px] font-bold uppercase tracking-[0.35em] text-stone-400">Keep Scrolling</span>
+          <motion.div className="w-[18px] h-[28px] md:w-[22px] md:h-[34px] rounded-full border-2 border-stone-300 flex justify-center pt-1.5 md:pt-2">
+            <motion.div animate={{ y: [0, 8, 0], opacity: [0.5, 1, 0.5] }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }} className="w-1 md:w-1.5 h-1 md:h-1.5 rounded-full bg-accent" />
+          </motion.div>
+        </motion.div>
+
+      </section>
+
+      {/* ════════════════════════════════════════════════
+          SECTION 6 — EDITORIAL FOOTER · SINGLE FRAME
+      ════════════════════════════════════════════════ */}
+      <section
+        className="w-full relative flex flex-col justify-center overflow-hidden"
+        style={{
+          height: "100svh",
+          paddingBottom: "calc(clamp(110px, 20vw, 260px) * 0.82 + 16px)",
+          background: "linear-gradient(150deg, #FFF7F6 0%, #FFF2EE 45%, #FDEAE4 100%)",
+        }}
+      >
+        {/* ── Ambient glow blobs ── */}
+        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-[#E85239]/5 rounded-full blur-[140px] pointer-events-none" />
+        <div className="absolute top-10 right-0 w-[450px] h-[450px] bg-orange-300/10 rounded-full blur-[110px] pointer-events-none" />
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[80vw] h-[40vh] bg-[#E85239]/4 rounded-full blur-[120px] pointer-events-none" />
+
+        {/* ── Top separator ── */}
+        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#E85239]/25 to-transparent" />
+
+        {/* ── MAIN CONTENT — left/right split ── */}
+        <div
+          className="relative z-10 w-full max-w-[1280px] mx-auto px-8 md:px-16"
+        >
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-10 md:gap-20">
+
+            {/* LEFT — headline + description + buttons */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+              className="flex-1"
+            >
+              <h2
+                className="font-sans font-black leading-[1.02] tracking-tight text-stone-900 mb-1"
+                style={{ fontSize: "clamp(2.6rem, 6vw, 4.5rem)" }}
+              >
+                Lock scope. Hire talent.
+              </h2>
+              <h2
+                className="font-sans leading-[1.0] tracking-tight mb-4"
+                style={{ fontSize: "clamp(2.6rem, 6vw, 4.5rem)" }}
+              >
+                <span
+                  className="font-light italic text-transparent bg-clip-text bg-gradient-to-r from-accent to-[#FF5B3A]"
+                  style={{ letterSpacing: "-0.02em" }}
+                >
+                  execute flawlessly.
+                </span>
+              </h2>
+              <p className="text-[14px] text-stone-500 font-medium leading-[1.7] max-w-[500px] mb-6">
+                Define your requirements and secure milestone payments in escrow.<br />
+                We instantly match you with verified experts to build and deliver<br />
+                your project precisely on time.
+              </p>
+
+              <div className="flex flex-wrap items-center gap-4">
+                <Link href="/auth/login?role=client">
+                  <button className="group inline-flex items-center gap-2 bg-[#E85239] text-white font-bold text-[14px] tracking-wide px-7 py-3.5 rounded-full shadow-[0_6px_24px_-6px_rgba(232,82,57,0.55)] hover:shadow-[0_14px_32px_-6px_rgba(232,82,57,0.65)] transition-all duration-300 hover:-translate-y-0.5">
+                    Hire a Freelancer <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform" />
+                  </button>
+                </Link>
+                <Link href="/auth/login?role=freelancer">
+                  <button className="group inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm text-stone-800 font-bold text-[14px] tracking-wide px-7 py-3.5 rounded-full border border-stone-200 hover:bg-white hover:border-stone-300 transition-all duration-300 hover:-translate-y-0.5">
+                    Join as Freelancer <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform" />
+                  </button>
+                </Link>
+              </div>
+            </motion.div>
+
+            {/* RIGHT — nav link columns (top-aligned with headline) */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.65, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+              className="shrink-0 pt-2"
+            >
+              <div className="flex flex-row gap-12 md:gap-16">
+                <div className="flex flex-col gap-2.5">
+                  <span className="text-[12px] font-bold tracking-wider text-stone-700 mb-2">Pages</span>
+                  {[
+                    { label: "For Clients", href: "/auth/login?role=client" },
+                    { label: "For Freelancers", href: "/auth/login?role=freelancer" },
+                  ].map((l) => (
+                    <Link key={l.label} href={l.href} className="text-[12px] text-stone-500 hover:text-[#E85239] transition-colors duration-200 font-medium">
+                      {l.label}
+                    </Link>
+                  ))}
+                </div>
+                <div className="flex flex-col gap-2.5">
+                  <span className="text-[12px] font-bold tracking-wider text-stone-700 mb-2">Contact & legal</span>
+                  {[
+                    { label: "Contact Us", href: "/contact" },
+                    { label: "Terms of Service", href: "/terms" },
+                    { label: "Privacy Policy", href: "/privacy" },
+                    { label: "LinkedIn", href: "#" },
+                  ].map((l) => (
+                    <Link key={l.label} href={l.href} className="text-[12px] text-stone-500 hover:text-[#E85239] transition-colors duration-200 font-medium">
+                      {l.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+
+          </div>
         </div>
-      </footer>
+
+        {/* ── Centered gradient line — fades from both sides ── */}
+        <div
+          className="absolute left-0 right-0 pointer-events-none px-8 md:px-16"
+          style={{ bottom: "calc(clamp(110px, 20vw, 260px) * 0.82 + 20px)" }}
+        >
+          <div className="w-full h-[1px] bg-gradient-to-r from-transparent via-[#E85239]/25 to-transparent" />
+        </div>
+
+        {/* ── GIANT WORDMARK — gradient-filled, bleeds off the bottom ── */}
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex items-end justify-center select-none pointer-events-none">
+          <div
+            style={{
+              fontFamily: "var(--font-sans, sans-serif)",
+              fontWeight: 900,
+              fontSize: "clamp(110px, 20vw, 260px)",
+              lineHeight: 0.82,
+              letterSpacing: "-0.045em",
+              textTransform: "uppercase",
+              whiteSpace: "nowrap",
+              background: "linear-gradient(180deg, rgba(232,82,57,0.22) 0%, rgba(240,120,90,0.14) 30%, rgba(253,200,180,0.10) 60%, rgba(254,234,228,0.06) 82%, transparent 100%)",
+              WebkitBackgroundClip: "text",
+              backgroundClip: "text",
+              color: "transparent",
+              WebkitTextStroke: "1px rgba(232,82,57,0.10)",
+              filter: "drop-shadow(0 -2px 0 rgba(232,82,57,0.06))",
+            }}
+          >
+            EXECUTA
+          </div>
+        </div>
+
+      </section>
+
     </div>
   );
 }
