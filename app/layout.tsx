@@ -23,11 +23,14 @@ const caveat = Caveat({
 
 export const metadata: Metadata = {
   title: {
-    default: "Executa — Governed Execution Platform",
+    default: "Executa",
     template: "%s | Executa",
   },
   description:
     "A governed execution platform that defines work, evaluates freelancer capability, calculates structured pricing, and enforces outcomes.",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
