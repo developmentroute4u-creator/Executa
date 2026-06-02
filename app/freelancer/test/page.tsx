@@ -1,11 +1,11 @@
 "use client";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui";
 import { ArrowLeft, FileDown, CheckCircle, Info } from "lucide-react";
 
-export default function FreelancerTestPage() {
+function TestContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const source = searchParams.get("source");
@@ -701,5 +701,17 @@ export default function FreelancerTestPage() {
 
       </div>
     </div>
+  );
+}
+
+export default function FreelancerTestPage() {
+  return (
+    <React.Suspense fallback={
+      <div className="flex h-screen items-center justify-center bg-stone-50">
+        <div className="w-8 h-8 border-4 border-[#E85239]/20 border-t-[#E85239] rounded-full animate-spin" />
+      </div>
+    }>
+      <TestContent />
+    </React.Suspense>
   );
 }
