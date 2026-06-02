@@ -6,6 +6,7 @@ import { FreelancerProfile } from "@/models/FreelancerProfile";
 import { Test } from "@/models/Test";
 import { User } from "@/models/User";
 import { Project } from "@/models/Project";
+import { askGeminiForCustomTest } from "@/lib/gemini";
 
 // GET /api/freelancer/profile
 export async function GET(req: NextRequest) {
@@ -16,6 +17,7 @@ export async function GET(req: NextRequest) {
   const userId = (session.user as any).id;
   const profile = await FreelancerProfile.findOne({ userId }).lean();
   const test = await Test.findOne({ freelancerId: userId }).sort({ createdAt: -1 }).lean();
+  const user = await User.findById(userId).lean();
 
   let activeProjects: any[] = [];
   let pendingUpgrades: any[] = [];
@@ -29,7 +31,19 @@ export async function GET(req: NextRequest) {
     }).lean();
   }
 
-  return NextResponse.json({ profile, test, activeProjects, pendingUpgrades });
+  return NextResponse.json({ 
+    profile, 
+    test, 
+    activeProjects, 
+    pendingUpgrades,
+    user: user ? {
+      name: user.name,
+      email: user.email,
+      avatar: user.avatar,
+      onboardingComplete: user.onboardingComplete
+    } : null,
+    onboardingComplete: user?.onboardingComplete || false 
+  });
 }
 
 // PATCH /api/freelancer/profile — update profile fields
@@ -42,9 +56,21 @@ export async function PATCH(req: NextRequest) {
     await connectDB();
     const userId = (session.user as any).id;
 
+    // Extract User fields
+    const { name, email, avatar, ...profileData } = body;
+
+    // Update User if any User fields are changed
+    if (name !== undefined || email !== undefined || avatar !== undefined) {
+      const userUpdate: any = {};
+      if (name !== undefined) userUpdate.name = name;
+      if (email !== undefined) userUpdate.email = email;
+      if (avatar !== undefined) userUpdate.avatar = avatar;
+      await User.findByIdAndUpdate(userId, userUpdate);
+    }
+
     const profile = await FreelancerProfile.findOneAndUpdate(
       { userId },
-      { $set: body },
+      { $set: profileData },
       { new: true }
     );
 
@@ -58,13 +84,12 @@ export async function PATCH(req: NextRequest) {
 
       let customTask = null;
       try {
-        const { askGeminiForCustomTest } = require("@/lib/gemini");
         customTask = await askGeminiForCustomTest(profile.field, domains, specs);
       } catch (e) {
         console.error("Gemini custom test generation failed, falling back to local task:", e);
       }
 
-      const taskPrompt = customTask?.prompt || `Vetting Project: Build a high-performance system incorporating your expert skills in: ${specs.join(", ")}. Ensure beautiful interface design, robust logic handling, proper edge case validation, and clean structure.`;
+      const taskPrompt = customTask?.taskPrompt || customTask?.prompt || `Vetting Project: Build a high-performance system incorporating your expert skills in: ${specs.join(", ")}. Ensure beautiful interface design, robust logic handling, proper edge case validation, and clean structure.`;
       const taskRequirements = customTask?.requirements || [
         `Complete functional implementation of a ${specs.join(" / ")} prototype`,
         "Modern, premium visual layout with smooth transitions",
@@ -73,8 +98,8 @@ export async function PATCH(req: NextRequest) {
         "Documentation of technical decisions and how to run it",
       ];
 
-      // Remove any existing active test
-      await Test.deleteMany({ freelancerId: userId });
+      // Remove any existing active/incomplete test to clear the verification pipeline
+      await Test.deleteMany({ freelancerId: userId, status: { $in: ["assigned", "in_progress"] } });
 
       // Build capability specific dimensions matching the generated result
       const capabilityScores = customTask?.capabilitySpecificDimensions?.map((d: any) => ({

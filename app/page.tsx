@@ -282,12 +282,12 @@ export default function LandingPage() {
         </div>
 
         <motion.div style={{ opacity: heroElementsOpacity }} className="absolute inset-x-0 bottom-0 pb-8 md:pb-12 px-6 md:px-16 z-[70] flex justify-between pointer-events-auto">
-          <Link href="/auth/login?role=freelancer">
+          <Link href="/auth/login?role=freelancer&mode=signup">
             <button className={`group flex items-center gap-2 text-base font-semibold px-6 py-3 rounded-full transition-all duration-500 shadow-lg ${HERO_CYCLE_PAIRS[inputIndex].type === "freelancer" ? "bg-accent text-white hover:bg-accent-hover" : "bg-orange-50 text-accent opacity-60 scale-95"}`}>
               Join as Freelancer <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
             </button>
           </Link>
-          <Link href="/auth/login?role=client" className="ml-auto">
+          <Link href="/auth/login?role=client&mode=signup" className="ml-auto">
             <button className={`group flex items-center gap-2 text-base font-semibold px-6 py-3 rounded-full transition-all duration-500 shadow-lg ${HERO_CYCLE_PAIRS[inputIndex].type === "client" ? "bg-accent text-white hover:bg-accent-hover" : "bg-orange-50 text-accent opacity-60 scale-95"}`}>
               Hire Freelancers <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
             </button>
@@ -467,13 +467,13 @@ export default function LandingPage() {
             </div>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-5 w-full relative z-10">
-              <Link href="/auth/login?role=client" className="w-full sm:w-auto">
+              <Link href="/auth/login?role=client&mode=signup" className="w-full sm:w-auto">
                 <button className="flex items-center justify-center gap-2.5 bg-accent text-white px-9 py-4 rounded-full font-bold text-[14px] shadow-[0_12px_24px_-8px_rgba(232,82,57,0.4)] hover:bg-accent-hover hover:-translate-y-0.5 hover:shadow-[0_15px_30px_-6px_rgba(232,82,57,0.5)] transition-all duration-300 w-full sm:w-auto group">
                   Hire Freelancers
                   <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform duration-300" />
                 </button>
               </Link>
-              <Link href="/auth/login?role=freelancer" className="w-full sm:w-auto">
+              <Link href="/auth/login?role=freelancer&mode=signup" className="w-full sm:w-auto">
                 <button className="flex items-center justify-center gap-2.5 bg-white text-stone-800 border border-stone-200 px-9 py-4 rounded-full font-bold text-[14px] shadow-[0_4px_12px_rgba(0,0,0,0.02)] hover:bg-stone-50 hover:border-stone-300 hover:-translate-y-0.5 transition-all duration-300 w-full sm:w-auto group">
                   Join as Freelancer
                   <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform duration-300" />
@@ -899,12 +899,12 @@ export default function LandingPage() {
               </p>
 
               <div className="flex flex-wrap items-center gap-4">
-                <Link href="/auth/login?role=client">
+                <Link href="/auth/login?role=client&mode=signup">
                   <button className="group inline-flex items-center gap-2 bg-[#E85239] text-white font-bold text-[14px] tracking-wide px-7 py-3.5 rounded-full shadow-[0_6px_24px_-6px_rgba(232,82,57,0.55)] hover:shadow-[0_14px_32px_-6px_rgba(232,82,57,0.65)] transition-all duration-300 hover:-translate-y-0.5">
                     Hire a Freelancer <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform" />
                   </button>
                 </Link>
-                <Link href="/auth/login?role=freelancer">
+                <Link href="/auth/login?role=freelancer&mode=signup">
                   <button className="group inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm text-stone-800 font-bold text-[14px] tracking-wide px-7 py-3.5 rounded-full border border-stone-200 hover:bg-white hover:border-stone-300 transition-all duration-300 hover:-translate-y-0.5">
                     Join as Freelancer <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform" />
                   </button>
@@ -924,8 +924,8 @@ export default function LandingPage() {
                 <div className="flex flex-col gap-2.5">
                   <span className="text-[12px] font-bold tracking-wider text-stone-700 mb-2">Pages</span>
                   {[
-                    { label: "For Clients", href: "/auth/login?role=client" },
-                    { label: "For Freelancers", href: "/auth/login?role=freelancer" },
+                    { label: "For Clients", href: "/auth/login?role=client&mode=signup" },
+                    { label: "For Freelancers", href: "/auth/login?role=freelancer&mode=signup" },
                   ].map((l) => (
                     <Link key={l.label} href={l.href} className="text-[12px] text-stone-500 hover:text-[#E85239] transition-colors duration-200 font-medium">
                       {l.label}

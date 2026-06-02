@@ -4,85 +4,9 @@ import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { Test } from "@/models/Test";
 import { FreelancerProfile } from "@/models/FreelancerProfile";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const TASK_BANK: Record<string, Record<string, { prompt: string; requirements: string[] }>> = {
-  development: {
-    frontend: {
-      prompt: "Build a responsive task management board component. The component should support multiple columns (Todo, In Progress, Done), drag-to-reorder cards within a column, card creation with title and priority, and persistent state. Focus on clean state management, edge case handling, and production-ready code quality.",
-      requirements: [
-        "Multiple swimlane columns with drag-and-drop reordering",
-        "Card CRUD: create, edit, delete, mark complete",
-        "Priority levels: low, medium, high, critical with visual indicators",
-        "Optimistic UI updates with error rollback",
-        "Empty states, loading states, error states handled",
-        "Keyboard accessibility (ARIA compliant)",
-        "Local state persistence across page reloads",
-      ],
-    },
-    backend: {
-      prompt: "Design and implement a RESTful API for a booking system. Include endpoints for resource availability checking, booking creation with conflict detection, cancellation with refund logic, and waitlist management. Handle edge cases around double-booking, timezone differences, and concurrent requests.",
-      requirements: [
-        "Resource availability endpoint with time-range queries",
-        "Booking creation with real-time conflict detection",
-        "Cancellation flow with configurable refund windows",
-        "Waitlist system with automatic promotion",
-        "Rate limiting and input validation",
-        "Comprehensive error responses with actionable messages",
-        "Unit tests for conflict detection logic",
-      ],
-    },
-    fullstack: {
-      prompt: "Build a complete user authentication system with role-based access control. Include registration, login, email verification, password reset, session management, and an admin panel for user management. Demonstrate full-stack thinking from database schema to UI.",
-      requirements: [
-        "Registration with email verification flow",
-        "JWT + refresh token architecture",
-        "Role-based route protection (user, admin, moderator)",
-        "Password reset via email with expiring tokens",
-        "Admin panel: list, search, deactivate users",
-        "Rate limiting on auth endpoints",
-        "Security audit: SQL injection, XSS, CSRF protections documented",
-      ],
-    },
-    mobile: {
-      prompt: "Build a mobile expense tracker app. Users can log expenses by category, set monthly budgets, view spending analytics, and receive budget alerts. Focus on offline-first architecture, smooth animations, and intuitive UX patterns.",
-      requirements: [
-        "Expense logging: amount, category, date, notes, receipt photo",
-        "Budget management per category with visual progress",
-        "Analytics: weekly/monthly breakdowns, trends",
-        "Push notifications for budget thresholds",
-        "Offline mode with background sync",
-        "Biometric authentication option",
-        "CSV export functionality",
-      ],
-    },
-  },
-  design: {
-    ui_ux: {
-      prompt: "Design a complete onboarding flow for a B2B SaaS analytics platform. The product helps data teams track KPIs and build reports. Design for first-time users who need to connect a data source, configure their first dashboard, and invite team members. Deliver high-fidelity screens and an interactive prototype.",
-      requirements: [
-        "Welcome screen with role selection (analyst, manager, exec)",
-        "Data source connection: guided step-by-step with validation",
-        "Dashboard template gallery with preview and selection",
-        "Team invitation: bulk email input, role assignment",
-        "Progress indicator and skip options throughout",
-        "Empty states with next-action prompts",
-        "Success screen with quick-start guide",
-      ],
-    },
-    branding: {
-      prompt: "Create a complete brand identity system for a fintech startup called 'Vault' — a personal finance platform targeting young professionals. Develop logo, color system, typography, and usage guidelines that feel premium, trustworthy, and modern without feeling corporate.",
-      requirements: [
-        "Primary logo + wordmark + icon-only variants",
-        "Color palette: primary, secondary, semantic (success/error/warning)",
-        "Typography system: heading, body, UI, mono scales",
-        "Brand voice and tone guidelines",
-        "Application samples: mobile app screen, marketing email header",
-        "Dark mode adaptations",
-        "Logo misuse examples",
-      ],
-    },
-  },
-};
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 // POST /api/freelancer/test/start
 export async function POST(req: NextRequest) {
@@ -100,7 +24,54 @@ export async function POST(req: NextRequest) {
     const existing = await Test.findOne({ freelancerId: userId, status: { $in: ["assigned", "in_progress", "submitted", "under_review"] } });
     if (existing) return NextResponse.json({ error: "Active test already exists", testId: existing._id }, { status: 409 });
 
-    const taskData = TASK_BANK[field]?.[domain] || TASK_BANK.development.frontend;
+    let taskData;
+    try {
+      const model = genAI.getGenerativeModel({ 
+        model: "gemini-2.5-flash", 
+        generationConfig: { responseMimeType: "application/json" } 
+      });
+      const prompt = `You are an expert technical recruiter and Senior Principal Engineer at a top-tier tech company.
+You are generating a "Level 2 Skills Assessment" for a freelancer applying to work on your platform.
+Field: ${field}
+Domain: ${domain}
+Specialization: ${specialization}
+
+Your goal is to create an extremely realistic, high-quality, production-level assignment that will test their expertise in this specific specialization. 
+The test MUST NOT be trivial. It should feel like a real-world, scoped feature request from a product manager.
+
+Follow these strict guidelines:
+1. "taskPrompt": Make it an engaging, specific project title.
+2. "projectContext": Provide a professional 2-3 sentence background about a fictional company and their core product. 
+3. "businessProblem": Clearly articulate the complex business challenge that necessitates this project.
+4. "taskRequirements": Provide 5-7 highly technical, rigorous requirements. Use industry-standard terminology (e.g. "state management", "CI/CD", "accessibility (WCAG)", "responsive architecture").
+5. "constraints": Provide 3-5 strict limitations (e.g., "Must be fully offline-capable", "Do not use UI libraries like Material UI").
+6. "deliverables": Provide 3-5 exact deliverables expected (e.g., "A GitHub repository link", "A Loom video walk-through").
+
+Return ONLY valid JSON with this exact schema:
+{
+  "taskPrompt": "String",
+  "projectContext": "String",
+  "businessProblem": "String",
+  "taskRequirements": ["String", "String", ...],
+  "constraints": ["String", "String", ...],
+  "deliverables": ["String", "String", ...]
+}`;
+
+      const result = await model.generateContent(prompt);
+      const text = result.response.text();
+      taskData = JSON.parse(text);
+    } catch (aiError) {
+      console.error("Gemini failed:", aiError);
+      // Fallback
+      taskData = {
+        taskPrompt: `Custom Assessment for ${specialization || domain}`,
+        projectContext: "We are an innovative startup looking to expand our capabilities.",
+        businessProblem: "We need an expert to help us solve complex challenges in this domain.",
+        taskRequirements: ["Demonstrate best practices", "Ensure high quality deliverables", "Include clear documentation"],
+        constraints: ["Must be completed within the standard timeframe", "Follow industry standards"],
+        deliverables: ["Source files / code repository", "Documentation / summary"]
+      };
+    }
 
     const test = await Test.create({
       freelancerId: userId,
@@ -108,8 +79,12 @@ export async function POST(req: NextRequest) {
       domain,
       specialization,
       level: 2,
-      taskPrompt: taskData.prompt,
-      taskRequirements: taskData.requirements,
+      taskPrompt: taskData.taskPrompt,
+      projectContext: taskData.projectContext,
+      businessProblem: taskData.businessProblem,
+      taskRequirements: taskData.taskRequirements,
+      constraints: taskData.constraints,
+      deliverables: taskData.deliverables,
       status: "assigned",
     });
 
@@ -120,20 +95,31 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ testId: test._id.toString(), test });
   } catch (err) {
+    console.error(err);
     return NextResponse.json({ error: "Failed to start test" }, { status: 500 });
   }
 }
 
-// GET /api/freelancer/test/start — get current test
+// GET /api/freelancer/test/start — get current test or test by id, plus all tests
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   await connectDB();
   const userId = (session.user as any).id;
-  const test = await Test.findOne({ freelancerId: userId }).sort({ createdAt: -1 }).lean();
+  const url = new URL(req.url);
+  const testId = url.searchParams.get("id");
 
-  return NextResponse.json({ test });
+  let test;
+  if (testId) {
+    test = await Test.findOne({ _id: testId, freelancerId: userId }).lean();
+  } else {
+    test = await Test.findOne({ freelancerId: userId }).sort({ createdAt: -1 }).lean();
+  }
+
+  const tests = await Test.find({ freelancerId: userId }).sort({ createdAt: -1 }).lean();
+
+  return NextResponse.json({ test, tests });
 }
 
 // PATCH /api/freelancer/test — Start the assigned custom test

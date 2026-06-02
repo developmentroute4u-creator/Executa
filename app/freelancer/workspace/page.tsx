@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { formatCurrency } from "@/lib/utils";
@@ -24,23 +25,85 @@ function getFormattedDate() {
 export default function WorkspaceEnvironment() {
   const { data: session } = useSession();
   const [profile, setProfile] = useState<any>(null);
+  const [test, setTest] = useState<any>(null);
+  const [dashboardSubmissionUrl, setDashboardSubmissionUrl] = useState("");
+  const [dashboardSubmissionNotes, setDashboardSubmissionNotes] = useState("");
+  const [dashboardSubmitting, setDashboardSubmitting] = useState(false);
+  const [dashboardError, setDashboardError] = useState("");
   const [allProjects, setAllProjects] = useState<any[]>([]);
   const [pendingUpgrades, setPendingUpgrades] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [reviewUpgrade, setReviewUpgrade] = useState<any>(null);
+  const [showTestBanner, setShowTestBanner] = useState(false);
 
+  const router = useRouter();
   const user = session?.user as any;
 
   useEffect(() => {
     fetch("/api/freelancer/profile")
       .then((r) => r.json())
       .then((d) => {
+        if (d.onboardingComplete === false) {
+          router.push("/freelancer/onboarding");
+          return;
+        }
+        if (d.test && d.test.status === "assigned") {
+          router.push("/freelancer/test");
+          return;
+        }
         setProfile(d.profile);
+        setTest(d.test);
+        if (d.test?.submissionUrl) setDashboardSubmissionUrl(d.test.submissionUrl);
+        if (d.test?.submissionNotes) setDashboardSubmissionNotes(d.test.submissionNotes);
+        
+        if (d.test) {
+          const seenStatus = localStorage.getItem("seenTestBannerStatus");
+          if (seenStatus !== d.test.status) {
+            setShowTestBanner(true);
+            localStorage.setItem("seenTestBannerStatus", d.test.status);
+          }
+        }
+
         setAllProjects(d.activeProjects || []);
         setPendingUpgrades(d.pendingUpgrades || []);
+        setLoading(false);
       })
-      .finally(() => setLoading(false));
-  }, []);
+      .catch(() => setLoading(false));
+  }, [router]);
+
+  const handleDashboardSubmitTest = async () => {
+    if (!dashboardSubmissionUrl) return;
+    setDashboardSubmitting(true);
+    setDashboardError("");
+    try {
+      const res = await fetch("/api/freelancer/test", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          action: "submit", 
+          submissionUrl: dashboardSubmissionUrl, 
+          submissionNotes: dashboardSubmissionNotes 
+        })
+      });
+      if (!res.ok) {
+        throw new Error("Failed to submit assignment");
+      }
+      const data = await res.json();
+      setTest(data.test);
+    } catch (e: any) {
+      setDashboardError(e.message || "Something went wrong.");
+    } finally {
+      setDashboardSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-8 pl-24">
+        <div className="h-64 max-w-4xl w-full bg-white/50 animate-pulse rounded-2xl border border-[#EADCDA]/60" />
+      </div>
+    );
+  }
 
   const handleApproveUpgrade = async (upgradeId: string, projectId: string) => {
     try {
@@ -99,6 +162,54 @@ export default function WorkspaceEnvironment() {
             transition={{ duration: 1, delay: 0.2 }}
           >
 
+            {/* Compact Active Assessment Alert Banner */}
+            {showTestBanner && test && test.status === "in_progress" && (
+              <div className="bg-white border border-[#EADCDA]/60 rounded-xl p-4 shadow-[0_2px_12px_-3px_rgba(232,82,57,0.04)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-[#E85239]/10 text-[#E85239] flex items-center justify-center shrink-0">
+                    <Zap size={16} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-text-primary">Skills Assessment Active</h3>
+                    <p className="text-xs text-text-secondary mt-0.5">
+                      You have an active Level 2 skills assessment to complete offline.
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  href="/freelancer/capability"
+                  className="shrink-0 text-xs font-bold text-[#E85239] hover:text-[#d44127] bg-[#FCE1DC]/20 hover:bg-[#FCE1DC]/30 border border-[#E85239]/10 px-4 py-2 rounded-xl transition-all h-[36px] flex items-center justify-center"
+                >
+                  Go to Skills Section
+                </Link>
+              </div>
+            )}
+
+            {/* Compact Active Assessment Review Banner */}
+            {showTestBanner && test && (test.status === "submitted" || test.status === "under_review" || test.status === "evaluated") && (
+              <div className="bg-white border border-[#EADCDA]/60 rounded-xl p-4 shadow-[0_2px_12px_-3px_rgba(232,82,57,0.04)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-[#E85239]/10 text-[#E85239] flex items-center justify-center shrink-0">
+                    <CheckCircle2 size={16} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-text-primary">Verification Review Status</h3>
+                    <p className="text-xs text-text-secondary mt-0.5">
+                      {test.status === "evaluated" 
+                        ? "Evaluation is complete. Check your results in the capability profile." 
+                        : "Your Level 2 assignment solution is under active verification review."}
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  href="/freelancer/capability"
+                  className="shrink-0 text-xs font-bold text-[#E85239] hover:text-[#d44127] bg-[#FCE1DC]/20 hover:bg-[#FCE1DC]/30 border border-[#E85239]/10 px-4 py-2 rounded-xl transition-all h-[36px] flex items-center justify-center"
+                >
+                  View Skill Tier
+                </Link>
+              </div>
+            )}
+
             {pendingUpgrades.length > 0 && (
               <div className="bg-[#FFF7F6] border border-orange-200 rounded-2xl p-8 md:p-10 shadow-sm relative overflow-hidden">
                 <div className="flex items-center justify-between mb-6">
@@ -154,11 +265,21 @@ export default function WorkspaceEnvironment() {
                     <div className="h-12 bg-text-primary w-1/2 rounded-lg" />
                   </div>
                 ) : activeWorkspace.length === 0 ? (
-                  <div className="py-12 text-center border border-dashed border-border/50 rounded-2xl bg-white/30">
-                    <Zap className="mx-auto text-text-tertiary mb-4" size={24} strokeWidth={1.5} />
-                    <p className="text-xs font-medium text-text-tertiary uppercase tracking-wider">
-                      System idle. No active projects.
+                  <div className="py-20 flex flex-col items-center justify-center text-center border border-dashed border-border/50 rounded-2xl bg-white/30">
+                    <div className="w-16 h-16 rounded-full bg-accent/5 flex items-center justify-center text-accent/40 mb-5">
+                      <Zap size={24} strokeWidth={1.5} />
+                    </div>
+                    <h3 className="font-display text-xl text-text-primary tracking-tight mb-2">
+                      System Idle
+                    </h3>
+                    <p className="text-sm text-text-secondary max-w-sm mx-auto leading-relaxed mb-6">
+                      You currently have no active projects. New project matches will appear in your project discovery queue.
                     </p>
+                    <Link href="/freelancer/projects">
+                      <button className="px-5 py-2.5 bg-white border border-border/60 hover:border-accent/40 rounded-full text-sm font-semibold text-text-primary hover:text-accent transition-all shadow-sm">
+                        View Project Queue
+                      </button>
+                    </Link>
                   </div>
                 ) : (
                   activeWorkspace.map((p) => (

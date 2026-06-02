@@ -21,11 +21,12 @@ export async function GET(req: NextRequest) {
   
   try {
     await connectDB();
-    const tests = await Test.find({ status: "under_review" }).sort({ createdAt: 1 }).lean();
+    const tests = await Test.find({}).sort({ status: -1, createdAt: -1 }).lean();
     const withNames = await Promise.all(
       tests.map(async (t) => {
-        const u = await User.findById(t.freelancerId).lean();
-        return { ...t, freelancerName: (u as any)?.name };
+        const u = await User.findById(t.freelancerId).lean() as any;
+        const fp = await FreelancerProfile.findOne({ userId: t.freelancerId }).lean() as any;
+        return { ...t, freelancerName: u?.name, freelancerField: fp?.field || "General", freelancerSpecialization: fp?.specializations?.[0] || "General" };
       })
     );
     return NextResponse.json({ tests: withNames });

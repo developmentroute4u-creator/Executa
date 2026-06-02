@@ -5,14 +5,17 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Mail, Lock, ArrowRight, AlertCircle } from "lucide-react";
-import { signIn, useSession } from "next-auth/react";
+import { signIn } from "next-auth/react";
 
 export default function LoginPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { data: session } = useSession();
-  
+
+  // Role comes from ?role=freelancer|client (set by landing page buttons)
   const initialRole = searchParams.get("role") === "freelancer" ? "freelancer" : "client";
+  // Mode: landing page buttons pass ?mode=signup to open sign-up by default
+  const initialMode = searchParams.get("mode") === "signup";
+
   const [activeRole, setActiveRole] = useState<"client" | "freelancer">(initialRole);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -20,7 +23,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(initialMode);
   const [isFormLoading, setIsFormLoading] = useState(false);
   const [authError, setAuthError] = useState("");
 
@@ -60,14 +63,6 @@ export default function LoginPage() {
 
     try {
       if (isSignUp) {
-        // Block sign-up if user is already logged in
-        if (session) {
-          setIsSubmitting(false);
-          const dashboardLink = (session.user as any)?.role === "freelancer" ? "/freelancer/workspace" : "/client/dashboard";
-          setAuthError(`You already have an active session. Please go to your dashboard to continue.`);
-          setTimeout(() => router.push(dashboardLink), 2500);
-          return;
-        }
 
         // Register the user first
         const registerRes = await fetch("/api/auth/register", {
@@ -119,7 +114,11 @@ export default function LoginPage() {
       }
 
       // If successful, redirect to the correct dashboard based on selected role
-      router.push(activeRole === "client" ? "/client/dashboard" : "/freelancer/workspace");
+      if (activeRole === "freelancer" && isSignUp) {
+        router.push("/freelancer/onboarding");
+      } else {
+        router.push(activeRole === "client" ? "/client/dashboard" : "/freelancer/workspace");
+      }
     } catch (err) {
       setIsSubmitting(false);
       setAuthError("An unexpected error occurred. Please try again.");

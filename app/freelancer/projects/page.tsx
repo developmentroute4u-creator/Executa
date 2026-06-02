@@ -13,12 +13,25 @@ export default function ProjectsEnvironment() {
   const [accepting, setAccepting] = useState(false);
 
   useEffect(() => {
-    fetch("/api/projects")
+    fetch("/api/freelancer/profile")
       .then((res) => res.json())
-      .then((data) => setProjects(data.projects || []))
-      .catch((err) => console.error(err))
-      .finally(() => setLoading(false));
-  }, []);
+      .then((data) => {
+        if (data.onboardingComplete === false) {
+          router.push("/freelancer/onboarding");
+          return;
+        }
+        if (data.test && data.test.status === "assigned") {
+          router.push("/freelancer/test");
+          return;
+        }
+        setProjects(data.activeProjects || []);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, [router]);
 
   const handleAcceptScope = async (id: string) => {
     setAccepting(true);
@@ -72,10 +85,21 @@ export default function ProjectsEnvironment() {
               ))}
             </div>
           ) : projects.length === 0 ? (
-            <div className="py-24 text-center">
-              <p className="text-xs font-medium text-text-tertiary uppercase tracking-wider text-center mt-12">
-                No matching projects.
+            <div className="py-32 flex flex-col items-center justify-center text-center">
+              <div className="w-20 h-20 rounded-full bg-accent/5 flex items-center justify-center text-accent/40 mb-6">
+                <FileText size={32} strokeWidth={1.5} />
+              </div>
+              <h3 className="font-display text-2xl text-text-primary tracking-tight mb-3">
+                No matching projects yet
+              </h3>
+              <p className="text-sm text-text-secondary max-w-md mx-auto leading-relaxed">
+                When clients post projects that align with your verified skills and tier, they will appear here. Make sure your skills evaluation is up to date.
               </p>
+              <Link href="/freelancer/capability">
+                <button className="mt-8 px-6 py-3 bg-white border border-border/60 hover:border-accent/40 rounded-full text-sm font-semibold text-text-primary hover:text-accent transition-all shadow-sm">
+                  View Skill Tier
+                </button>
+              </Link>
             </div>
           ) : (
             <div className="space-y-6">

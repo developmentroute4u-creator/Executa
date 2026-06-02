@@ -9,6 +9,7 @@ export interface IUser extends Document {
   role: "client" | "freelancer" | "admin";
   avatar?: string;
   onboardingComplete: boolean;
+  suspended: boolean;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidate: string): Promise<boolean>;
@@ -22,6 +23,7 @@ const UserSchema = new Schema<IUser>(
     role: { type: String, enum: ["client", "freelancer", "admin"], required: true },
     avatar: { type: String },
     onboardingComplete: { type: Boolean, default: false },
+    suspended: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
