@@ -53,6 +53,10 @@ export const authOptions: AuthOptions = {
     signIn: "/auth/login",
     error: "/auth/login",
   },
-  session: { strategy: "jwt" },
+  session: { 
+    strategy: "jwt",
+    maxAge: 48 * 60 * 60, // 48 hours of inactivity timeout
+    updateAge: 60 * 60,   // Refresh the session timeout every hour they are active
+  },
   secret: process.env.NEXTAUTH_SECRET,
 };

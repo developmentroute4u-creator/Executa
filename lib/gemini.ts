@@ -404,7 +404,7 @@ export async function askGeminiForCustomTest(
   }>;
 } | null> {
   const prompt = `You are a premium technical vetting director for a governed execution platform.
-Your job is to generate a custom, highly practical, and challenging Level 2 skill evaluation test task for a freelancer.
+Your job is to generate an EXTREMELY DETAILED, custom, highly practical, and challenging Level 2 skill evaluation test task for a freelancer.
 
 The freelancer has selected the following expertise:
 Primary Field: "${field}"
@@ -416,26 +416,23 @@ Do NOT generate separate questions. Do NOT generate generic academic, tutorial-l
 
 The output MUST be a strict, valid JSON matching the following structure:
 {
-  "projectContext": "Provide a realistic business scenario (e.g., 'A fast-growing fintech startup that serves low-income users...')",
-  "businessProblem": "State a real-world operational problem they need to solve.",
-  "prompt": "A clear, inspiring, and professional task description outlining the project goal, context, and what the freelancer needs to build.",
+  "projectContext": "Provide a massive, highly realistic business scenario (2-3 detailed paragraphs) outlining a premium company commission (e.g. 'A high-growth multi-tenant SaaS analytics platform designed for...'). Avoid simple, generic contexts.",
+  "businessProblem": "State a comprehensive, highly realistic operational and technical challenge they need to solve (2-3 detailed paragraphs). Explain the specific visual dropoffs, latency bottlenecks, or scaling limits they must address.",
+  "prompt": "A highly concise, action-oriented, and professional assignment title or headline (e.g. 'Build a High-Performance Collaborative white-board component with CRDT sync'). Never use generic titles.",
   "constraints": [
-    "Constraint 1 (e.g. low trust environment, performance thresholds, scaling bounds, offline-first restriction)",
-    "Constraint 2"
+    "5-7 highly specific, strict technical constraints (e.g. strict auto-layout without CSS frameworks, performance loading budgets like LCP under 1.2s, inclusions/exclusions)."
   ],
   "deliverables": [
-    "Deliverable 1 (e.g. High-fidelity interactive prototype, fully responsive React interface)",
-    "Deliverable 2"
+    "4-6 high-quality tangible deliverables (e.g. 'Production-ready GitHub repository with strict commit hygiene', 'Hosted live URL on Vercel', 'Comprehensive architectural trade-off document')."
   ],
   "requirements": [
-    "Objective technical requirement 1...",
-    "Objective technical requirement 2..."
+    "7-10 highly technical, granular, actionable requirements specific to their exact micro-capabilities (e.g. edge cases, state hydration, precise API routing protections)."
   ],
   "capabilitySpecificDimensions": [
     {
-      "capabilityName": "Select one of the micro-capabilities (e.g. UX Writing)",
-      "dimensionName": "Evaluation metric name (e.g. User Reassurance)",
-      "description": "Specific focus of evaluation (e.g. clarity, tone, reassuring labels on high-dropoff fields)"
+      "capabilityName": "Must be exactly one of the selected micro-capabilities (e.g., from: ${specializations.join(", ")})",
+      "dimensionName": "Advanced dynamic evaluation dimension name (e.g., 'Optimistic UI & Cache Synchronization')",
+      "description": "Comprehensive specific focus of dynamic scoring evaluation"
     }
   ]
 }
@@ -521,6 +518,3 @@ Return your response strictly in the following JSON format. Do not wrap in markd
   console.warn("[GEMINI UPGRADE] All models failed. Returning null.");
   return null;
 }
-
-
-

@@ -352,7 +352,7 @@ export default function ClientOnboardingPage() {
         {!loading && (
         <div className="fixed bottom-0 inset-x-0 bg-background/90 backdrop-blur-md border-t border-border p-4 px-8 z-40">
           <div className="max-w-3xl mx-auto flex items-center justify-between">
-            <Button variant="ghost" onClick={() => step === 0 ? router.push('/client/workspace') : setStep((s) => s - 1)}>
+            <Button variant="ghost" onClick={() => step === 0 ? router.push('/client/dashboard') : setStep((s) => s - 1)}>
               Back
             </Button>
             {step < 3 ? (

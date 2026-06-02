@@ -36,7 +36,7 @@ export default function ClientWorkspace() {
       });
   }, []);
 
-  const activeProjects = projects.filter(p => ["execution", "scoping", "scope_review"].includes(p.status));
+  const activeProjects = projects.filter(p => p.status === "execution");
   const requiresAttention = projects.filter(p => p.status === "scope_review").length;
 
   return (
@@ -167,9 +167,8 @@ export default function ClientWorkspace() {
                 {activeProjects.length > 0 ? (
                   activeProjects.map((project, i) => (
                     <div key={i} className="flex gap-4">
-                      <div className="flex flex-col items-center min-w-[40px]">
-                        <span className="text-[11px] font-bold uppercase text-stone-400">TBD</span>
-                        <span className="text-xl font-black text-stone-900">--</span>
+                      <div className="flex flex-col justify-center items-center min-w-[40px]">
+                        <span className="text-xl font-black text-stone-300">—</span>
                       </div>
                       <div className="w-[1px] bg-stone-100 mt-2" />
                       <div className="pt-1">

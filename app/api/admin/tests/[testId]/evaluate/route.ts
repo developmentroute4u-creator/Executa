@@ -19,7 +19,7 @@ export async function POST(req: NextRequest, { params }: { params: { testId: str
   }
 
   try {
-    const { functionalCoverage, logic, usability, edgeCases, outputQuality, evaluatorNotes, capabilityScores } = await req.json();
+    const { functionalCoverage, logic, usability, edgeCases, outputQuality, evaluatorNotes, capabilityScores, action } = await req.json();
     const total = functionalCoverage + logic + usability + edgeCases + outputQuality;
     const level = assignLevel(total);
 
@@ -36,16 +36,27 @@ export async function POST(req: NextRequest, { params }: { params: { testId: str
 
     if (!test) return NextResponse.json({ error: "Test not found" }, { status: 404 });
 
-    // Update freelancer profile with performance-based rate per point
+    const isRejected = action === "reject";
+
+    // Update freelancer profile with performance-based rate per point (or mark as rejected)
     const userDoc = await User.findById(test.freelancerId).lean();
     const field = (userDoc as any)?.field || "development";
     const ratePerPoint = calculateRatePerPoint(level, total, field);
 
     await FreelancerProfile.findOneAndUpdate(
       { userId: test.freelancerId },
-      { level, testStatus: "approved", testScore: total, scoreBreakdown: { functionalCoverage, logic, usability, edgeCases, outputQuality }, ratePerPoint }
+      { 
+        level, 
+        testStatus: isRejected ? "rejected" : "approved", 
+        testScore: total, 
+        scoreBreakdown: { functionalCoverage, logic, usability, edgeCases, outputQuality }, 
+        ratePerPoint 
+      }
     );
-    await User.findByIdAndUpdate(test.freelancerId, { onboardingComplete: true });
+    
+    if (!isRejected) {
+      await User.findByIdAndUpdate(test.freelancerId, { onboardingComplete: true });
+    }
 
     return NextResponse.json({ test, level });
   } catch (err) {
