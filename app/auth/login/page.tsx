@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Mail, Lock, ArrowRight, AlertCircle } from "lucide-react";
 import { signIn } from "next-auth/react";
 
-export default function LoginPage() {
+function LoginContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -378,5 +378,17 @@ export default function LoginPage() {
 
       </div>
     </>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <React.Suspense fallback={
+      <div className="flex h-screen items-center justify-center bg-white">
+        <div className="w-8 h-8 border-4 border-[#E85239]/20 border-t-[#E85239] rounded-full animate-spin" />
+      </div>
+    }>
+      <LoginContent />
+    </React.Suspense>
   );
 }
