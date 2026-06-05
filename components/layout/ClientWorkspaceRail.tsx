@@ -57,9 +57,10 @@ export default function ClientWorkspaceRail() {
             <ExecutaLogo expanded={isExpanded} />
           </div>
 
-          {/* ── Nav Items (filtered by feature flags) ── */}
           {visibleItems.map((item) => {
-            const isActive = pathname === item.path || pathname.startsWith(`${item.path}/`);
+            const isActive = pathname === item.path || 
+              pathname.startsWith(`${item.path}/`) ||
+              (item.path === "/client/support" && (pathname === "/client/articles" || pathname.startsWith("/client/articles/")));
             return (
               <Link
                 key={item.path}
@@ -119,7 +120,9 @@ export default function ClientWorkspaceRail() {
       <nav className="lg:hidden fixed bottom-0 inset-x-0 z-50 bg-white/90 backdrop-blur-xl border-t border-border/40 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
         <div className="flex items-center justify-around px-2 py-2 safe-area-pb">
           {visibleItems.slice(0, 5).map((item) => {
-            const isActive = pathname === item.path || pathname.startsWith(`${item.path}/`);
+            const isActive = pathname === item.path || 
+              pathname.startsWith(`${item.path}/`) ||
+              (item.path === "/client/support" && (pathname === "/client/articles" || pathname.startsWith("/client/articles/")));
             return (
               <Link
                 key={item.path}
