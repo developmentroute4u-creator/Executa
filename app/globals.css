@@ -216,3 +216,192 @@
     min-height: -webkit-fill-available;
   }
 }
+
+/* ── Height-based responsiveness for Mobile/Tablet Landing Page ── */
+@media (max-height: 780px) {
+  .executa-mobile-viewport .pt-12 {
+    padding-top: 1.5rem !important; /* pt-6 */
+  }
+  .executa-mobile-viewport .pt-14 {
+    padding-top: 1.5rem !important; /* pt-6 */
+  }
+  .executa-mobile-viewport .pt-\[40px\] {
+    padding-top: 1.5rem !important; /* pt-6 */
+  }
+  .executa-mobile-viewport .h-6 {
+    height: 0.5rem !important; /* h-2 */
+  }
+  .executa-mobile-viewport .pb-8 {
+    padding-bottom: 0.75rem !important; /* pb-3 */
+  }
+  .executa-mobile-viewport .pb-10 {
+    padding-bottom: 1.25rem !important; /* pb-5 */
+  }
+  .executa-mobile-viewport .mb-8 {
+    margin-bottom: 1rem !important; /* mb-4 */
+  }
+  .executa-mobile-viewport .mb-\[30px\] {
+    margin-bottom: 1rem !important;
+  }
+  .executa-mobile-viewport .mb-\[24px\] {
+    margin-bottom: 0.75rem !important;
+  }
+  .executa-mobile-viewport .mb-\[16px\] {
+    margin-bottom: 0.5rem !important;
+  }
+  .executa-mobile-viewport .mb-\[12px\] {
+    margin-bottom: 0.5rem !important;
+  }
+  .executa-mobile-viewport .text-\[34px\] {
+    font-size: 1.625rem !important; /* 26px */
+    line-height: 1.15 !important;
+  }
+  .executa-mobile-viewport .text-\[30px\] {
+    font-size: 1.5rem !important; /* 24px */
+    line-height: 1.15 !important;
+  }
+  .executa-mobile-viewport .text-\[31px\] {
+    font-size: 1.5rem !important; /* 24px */
+    line-height: 1.15 !important;
+  }
+  
+  /* SharedCard layout optimizations */
+  .executa-mobile-viewport .p-5 {
+    padding: 0.875rem !important; /* ~14px */
+  }
+  .executa-mobile-viewport .mt-5 {
+    margin-top: 0.75rem !important;
+  }
+  .executa-mobile-viewport .gap-3 {
+    gap: 0.5rem !important;
+  }
+  .executa-mobile-viewport .p-3\.5 {
+    padding: 0.5rem 0.75rem !important;
+  }
+  .executa-mobile-viewport .rounded-\[18px\] {
+    border-radius: 12px !important;
+  }
+  .executa-mobile-viewport .text-\[21px\] {
+    font-size: 1.05rem !important; /* ~17px */
+  }
+  .executa-mobile-viewport .text-\[13px\] {
+    font-size: 0.75rem !important; /* ~12px */
+  }
+  .executa-mobile-viewport .text-\[15px\] {
+    font-size: 0.825rem !important;
+  }
+  
+  /* Hero card font size adjust */
+  .executa-mobile-viewport .text-\[18px\] {
+    font-size: 1.05rem !important;
+  }
+  .executa-mobile-viewport .space-y-2 > div {
+    font-size: 0.75rem !important;
+  }
+  .executa-mobile-viewport .font-mono.text-\[11px\] {
+    font-size: 9px !important;
+  }
+
+  /* Responsive styles for logo and rings on medium height screens */
+  .executa-mobile-viewport .logo-cta-btn {
+    font-size: 24px !important;
+    padding: 14px 24px !important;
+  }
+  .executa-mobile-viewport .logo-cta-text {
+    font-size: 24px !important;
+  }
+  .executa-mobile-viewport .logo-ripple-ring {
+    width: 152px !important;
+    height: 52px !important;
+  }
+}
+
+@media (max-height: 680px) {
+  /* Extremely small phones (e.g. iPhone SE) */
+  .executa-mobile-viewport .pt-12 {
+    padding-top: 1rem !important; /* pt-4 */
+  }
+  .executa-mobile-viewport .pt-14 {
+    padding-top: 1rem !important; /* pt-4 */
+  }
+  .executa-mobile-viewport .pt-\[40px\] {
+    padding-top: 0.5rem !important; /* pt-2 */
+  }
+  .executa-mobile-viewport .h-6 {
+    height: 0px !important; /* 0px */
+  }
+  .executa-mobile-viewport .pb-10 {
+    padding-bottom: 0.75rem !important; /* pb-3 */
+  }
+  .executa-mobile-viewport .mb-8 {
+    margin-bottom: 0.5rem !important; /* mb-2 */
+  }
+  .executa-mobile-viewport .mb-\[30px\] {
+    margin-bottom: 0.75rem !important;
+  }
+  .executa-mobile-viewport .text-\[34px\] {
+    font-size: 1.375rem !important; /* 22px */
+  }
+  .executa-mobile-viewport .text-\[30px\] {
+    font-size: 1.25rem !important; /* 20px */
+  }
+  .executa-mobile-viewport .text-\[31px\] {
+    font-size: 1.25rem !important; /* 20px */
+  }
+  .executa-mobile-viewport .py-\[15px\] {
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+  }
+  .executa-mobile-viewport .w-36.h-36 {
+    width: 6.5rem !important;
+    height: 6.5rem !important;
+  }
+  .executa-mobile-viewport .h-12 {
+    height: 2.5rem !important;
+  }
+  .executa-mobile-viewport .p-5 {
+    padding: 0.75rem !important;
+  }
+  .executa-mobile-viewport .mt-5 {
+    margin-top: 0.5rem !important;
+  }
+  .executa-mobile-viewport .gap-3 {
+    gap: 0.375rem !important;
+  }
+  .executa-mobile-viewport .p-3\.5 {
+    padding: 0.375rem 0.5rem !important;
+  }
+  
+  /* Hide watermark to save space on tiny viewports */
+  .executa-mobile-viewport .font-mono.font-black.text-accent\/6 {
+    display: none !important;
+  }
+
+  /* Responsive styles for logo and rings on extremely short screens */
+  .executa-mobile-viewport .logo-cta-btn {
+    font-size: 20px !important;
+    padding: 11px 18px !important;
+  }
+  .executa-mobile-viewport .logo-cta-text {
+    font-size: 20px !important;
+  }
+  .executa-mobile-viewport .logo-ripple-ring {
+    width: 124px !important;
+    height: 42px !important;
+  }
+}
+
+/* Base values for screens height > 780px */
+.executa-mobile-viewport .logo-cta-btn {
+  font-size: 28px !important;
+  padding: 16px 28px !important; /* py-4 px-7 */
+}
+.executa-mobile-viewport .logo-cta-text {
+  font-size: 28px !important;
+}
+.executa-mobile-viewport .logo-ripple-ring {
+  width: 172px !important;
+  height: 60px !important;
+}
+
+

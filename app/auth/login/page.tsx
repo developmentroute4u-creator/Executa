@@ -254,7 +254,7 @@ function LoginContent() {
                           required 
                           value={firstName}
                           onChange={(e) => setFirstName(e.target.value)}
-                          placeholder="John" 
+                          placeholder="Arjun" 
                           className="w-full bg-stone-50 border border-stone-200 rounded-[1.25rem] px-5 py-4 text-[15px] outline-none focus:bg-white focus:border-[#E85239] focus:ring-4 focus:ring-[#E85239]/10 transition-all placeholder:text-stone-300 font-medium text-stone-800" 
                         />
                       </div>
@@ -265,7 +265,7 @@ function LoginContent() {
                           required 
                           value={lastName}
                           onChange={(e) => setLastName(e.target.value)}
-                          placeholder="Doe" 
+                          placeholder="Sharma" 
                           className="w-full bg-stone-50 border border-stone-200 rounded-[1.25rem] px-5 py-4 text-[15px] outline-none focus:bg-white focus:border-[#E85239] focus:ring-4 focus:ring-[#E85239]/10 transition-all placeholder:text-stone-300 font-medium text-stone-800" 
                         />
                       </div>

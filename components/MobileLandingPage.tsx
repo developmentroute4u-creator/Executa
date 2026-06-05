@@ -271,7 +271,7 @@ function LiveTransformCard() {
 ───────────────────────────────────────────────────────── */
 function StageHero({ onNext }: { onNext: () => void }) {
   return (
-    <div className="w-full h-full flex flex-col justify-between overflow-hidden select-none relative"
+    <div className="w-full h-full flex flex-col justify-between overflow-y-auto scrollbar-hide select-none relative"
       style={{ background: "linear-gradient(160deg, #FDFAF9 0%, #FFF3EF 55%, #FFF7F5 100%)" }}>
       <Orb x="75%" y="15%" size={280} opacity={0.10} delay={0} />
       <Orb x="8%" y="60%" size={220} opacity={0.07} delay={2} />
@@ -564,7 +564,7 @@ function StageProblem({ onNext, onPrev, initialCard = 0 }: { onNext: () => void;
     : frontCards[Math.min(activeCard, frontCards.length - 1)];
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden select-none"
+    <div className="w-full h-full flex flex-col overflow-y-auto scrollbar-hide select-none"
       style={{ background: "linear-gradient(160deg, #FDFAF9 0%, #FFF3EF 55%, #FFF7F5 100%)" }}>
       <Orb x="80%" y="12%" size={240} opacity={0.08} delay={0} />
       <Orb x="5%" y="65%" size={200} opacity={0.06} delay={1.5} />
@@ -741,7 +741,7 @@ function StageCommitments({ onNext, onPrev }: { onNext: () => void; onPrev: () =
   };
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden select-none"
+    <div className="w-full h-full flex flex-col overflow-y-auto scrollbar-hide select-none"
       style={{ background: "linear-gradient(160deg, #FDFAF9 0%, #FFF3EF 55%, #FFF7F5 100%)" }}>
       <Orb x="50%" y="20%" size={320} opacity={0.08} delay={0} />
       <Orb x="15%" y="75%" size={200} opacity={0.06} delay={2} />
@@ -814,7 +814,7 @@ function StageCTA({ onPrev }: { onPrev: () => void }) {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
-    <div className="w-full h-full flex flex-col justify-between overflow-hidden select-none relative"
+    <div className="w-full h-full flex flex-col justify-between overflow-y-auto scrollbar-hide select-none relative"
       style={{ background: "linear-gradient(160deg, #FDFAF9 0%, #FFF3EF 55%, #FFF7F5 100%)" }}>
       {/* Background Dot Grid Pattern */}
       <div className="absolute inset-0 bg-[radial-gradient(#E85239_1px,transparent_1px)] [background-size:20px_20px] opacity-[0.03] pointer-events-none" />
@@ -842,36 +842,28 @@ function StageCTA({ onPrev }: { onPrev: () => void }) {
           {/* Subtle breathing double outline contour behind the logo */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <motion.div
-              className="absolute border border-[#E85239]/15 rounded-full"
-              style={{
-                width: 220,
-                height: 76,
-              }}
+              className="absolute border-2 border-[#E85239] rounded-full logo-ripple-ring"
               animate={{
-                scale: [1, 1.05, 1],
-                opacity: [0.4, 0.7, 0.4],
+                scale: [1, 1.7],
+                opacity: [0, 0.2, 0],
               }}
               transition={{
-                duration: 4.0,
+                duration: 2.8,
                 repeat: Infinity,
                 ease: "easeInOut",
               }}
             />
             <motion.div
-              className="absolute border border-[#E85239]/8 rounded-full"
-              style={{
-                width: 240,
-                height: 84,
-              }}
+              className="absolute border-2 border-[#E85239] rounded-full logo-ripple-ring"
               animate={{
-                scale: [1, 1.03, 1],
-                opacity: [0.3, 0.5, 0.3],
+                scale: [1, 1.7],
+                opacity: [0, 0.2, 0],
               }}
               transition={{
-                duration: 4.0,
+                duration: 2.8,
                 repeat: Infinity,
                 ease: "easeInOut",
-                delay: 0.5,
+                delay: 1.4,
               }}
             />
           </div>
@@ -889,10 +881,10 @@ function StageCTA({ onPrev }: { onPrev: () => void }) {
                 : "0 12px 36px rgba(232, 82, 57, 0.08)"
             }}
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
-            className="relative z-10 flex items-center bg-white px-7 py-3 rounded-full border border-stone-200/80 cursor-pointer"
+            className="relative z-10 flex items-center bg-white px-7 py-4 rounded-full border border-[#E85239]/25 cursor-pointer logo-cta-btn"
           >
-            <span className="font-black text-[28px] tracking-tight text-stone-900 leading-none select-none">EXECUTA</span>
-            <span className="font-black text-[28px] text-accent ml-0.5 leading-none select-none">.</span>
+            <span className="font-black text-[28px] tracking-tight text-stone-900 leading-none select-none logo-cta-text">EXECUTA</span>
+            <span className="font-black text-[28px] text-accent ml-0.5 leading-none select-none logo-cta-text">.</span>
           </motion.div>
         </div>
 
@@ -1032,7 +1024,7 @@ export default function MobileLandingPage() {
   ];
 
   return (
-    <div className="relative w-full overflow-hidden" style={{ height: "100svh" }}
+    <div className="relative w-full overflow-hidden executa-mobile-viewport" style={{ height: "100svh" }}
       onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       <AnimatePresence mode="wait">
         <motion.div key={stage} className="absolute inset-0"
