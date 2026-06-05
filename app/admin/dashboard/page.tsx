@@ -15,6 +15,7 @@ import { ProjectsTab } from "@/components/admin/tabs/ProjectsTab";
 import { DisputesTab } from "@/components/admin/tabs/DisputesTab";
 import { FeatureControlsTab } from "@/components/admin/tabs/FeatureControlsTab";
 import { SettingsTab } from "@/components/admin/tabs/SettingsTab";
+import { SupportTab } from "@/components/admin/tabs/SupportTab";
 
 const SidebarIcons = {
   home: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 6.5L8 2l6 4.5V14a1 1 0 01-1 1H3a1 1 0 01-1-1V6.5z" stroke="currentColor" strokeWidth="1.3"/></svg>,
@@ -105,6 +106,7 @@ export default function AdminDashboardPage() {
               {activeTab === "clients" && <ClientsTab clients={overview.clients || []} projects={overview.projects || []} setActiveTab={setActiveTab} fetchOverview={fetchOverview} />}
               {activeTab === "projects" && <ProjectsTab projects={overview.projects || []} freelancers={overview.freelancers || []} fetchOverview={fetchOverview} />}
               {activeTab === "disputes" && <DisputesTab projects={overview.projects || []} setActiveTab={setActiveTab} fetchOverview={fetchOverview} />}
+              {activeTab === "support" && <SupportTab />}
               {activeTab === "features" && <FeatureControlsTab />}
               {activeTab === "settings" && <SettingsTab />}
             </>

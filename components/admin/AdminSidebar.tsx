@@ -2,21 +2,22 @@
 import Link from "next/link";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Home, ClipboardList, Users, UserCheck, Briefcase, AlertTriangle, ToggleLeft, Settings, LogOut } from "lucide-react";
+import { Home, ClipboardList, Users, UserCheck, Briefcase, AlertTriangle, ToggleLeft, Settings, LogOut, MessageSquare } from "lucide-react";
 import ExecutaLogo from "@/components/layout/ExecutaLogo";
 
 export function AdminSidebar({ activeTab, setActiveTab }: { activeTab: string, setActiveTab: (tab: string) => void }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const sidebarItems = [
-    { id: "overview", label: "Overview", icon: <Home size={18} strokeWidth={2} /> },
-    { id: "tests", label: "Test Review", icon: <ClipboardList size={18} strokeWidth={2} /> },
-    { id: "freelancers", label: "Freelancers", icon: <UserCheck size={18} strokeWidth={2} /> },
-    { id: "clients", label: "Clients", icon: <Users size={18} strokeWidth={2} /> },
-    { id: "projects", label: "Projects", icon: <Briefcase size={18} strokeWidth={2} /> },
-    { id: "disputes", label: "Disputes", icon: <AlertTriangle size={18} strokeWidth={2} /> },
-    { id: "features", label: "Feature Controls", icon: <ToggleLeft size={18} strokeWidth={2} /> },
-    { id: "settings", label: "Settings", icon: <Settings size={18} strokeWidth={2} /> },
+    { id: "overview",  label: "Overview",        icon: <Home size={18} strokeWidth={2} /> },
+    { id: "tests",     label: "Test Review",      icon: <ClipboardList size={18} strokeWidth={2} /> },
+    { id: "freelancers", label: "Freelancers",    icon: <UserCheck size={18} strokeWidth={2} /> },
+    { id: "clients",   label: "Clients",          icon: <Users size={18} strokeWidth={2} /> },
+    { id: "projects",  label: "Projects",         icon: <Briefcase size={18} strokeWidth={2} /> },
+    { id: "disputes",  label: "Disputes",         icon: <AlertTriangle size={18} strokeWidth={2} /> },
+    { id: "support",   label: "Support Chat",     icon: <MessageSquare size={18} strokeWidth={2} /> },
+    { id: "features",  label: "Feature Controls", icon: <ToggleLeft size={18} strokeWidth={2} /> },
+    { id: "settings",  label: "Settings",         icon: <Settings size={18} strokeWidth={2} /> },
   ];
 
   const handleLogout = () => {

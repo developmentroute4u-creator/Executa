@@ -2,6 +2,8 @@
 import { motion } from "framer-motion";
 import { MessageSquare, Mail, BookOpen, ChevronDown, ChevronUp, Phone } from "lucide-react";
 import { useState } from "react";
+import Link from "next/link";
+import { SupportChatWidget } from "@/components/SupportChatWidget";
 
 const faqs = [
   {
@@ -32,6 +34,7 @@ const faqs = [
 
 export default function FreelancerSupport() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
 
   return (
     <div className="flex-1 w-full max-w-7xl mx-auto p-12">
@@ -123,7 +126,10 @@ export default function FreelancerSupport() {
               <div>
                 <h3 className="text-[14px] font-black text-stone-900 mb-1">Live Chat</h3>
                 <p className="text-[13px] text-stone-500 mb-3">Available Mon–Fri, 10am–7pm IST.</p>
-                <button className="px-4 py-2 bg-[#E85239] text-white text-[12px] font-bold rounded-lg hover:bg-[#d44127] transition-colors">
+                <button
+                  onClick={() => setChatOpen(true)}
+                  className="px-4 py-2 bg-[#E85239] text-white text-[12px] font-bold rounded-lg hover:bg-[#d44127] transition-colors"
+                >
                   Start Chat
                 </button>
               </div>
@@ -156,14 +162,17 @@ export default function FreelancerSupport() {
               <div>
                 <h3 className="text-[14px] font-black text-white mb-1">Help Center</h3>
                 <p className="text-[13px] text-stone-400 mb-4">Browse our full documentation and guides for freelancers.</p>
-                <button className="px-4 py-2 bg-white text-stone-900 text-[12px] font-bold rounded-lg hover:bg-stone-100 transition-colors">
-                  Browse Articles
-                </button>
+                <Link href="/freelancer/articles">
+                  <button className="px-4 py-2 bg-white text-stone-900 text-[12px] font-bold rounded-lg hover:bg-stone-100 transition-colors">
+                    Browse Articles
+                  </button>
+                </Link>
               </div>
             </div>
           </div>
         </div>
       </div>
+      <SupportChatWidget userRole="freelancer" triggerOpen={chatOpen} onClose={() => setChatOpen(false)} />
     </div>
   );
 }

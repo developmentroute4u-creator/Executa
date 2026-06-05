@@ -9,13 +9,15 @@ export default function GlobalCommandSystem() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
-  // Hide on onboarding, scope review, match pages, and the payment step — user needs distraction-free focus
+  // Hide on onboarding, scope review, match pages, payment, execution, and support — user needs distraction-free focus
   if (
     pathname.startsWith("/client/onboarding") ||
     pathname.includes("/scope") ||
     pathname.includes("/match") ||
     pathname.includes("/execution") ||
-    pathname.includes("/pay")
+    pathname.includes("/pay") ||
+    pathname.startsWith("/client/support") ||
+    pathname.startsWith("/freelancer/support")
   ) {
     return null;
   }

@@ -943,6 +943,8 @@ export default function LandingPage() {
                   {[
                     { label: "For Clients", href: "/auth/login?role=client&mode=signup" },
                     { label: "For Freelancers", href: "/auth/login?role=freelancer&mode=signup" },
+                    { label: "Client Help Center", href: "/client/articles" },
+                    { label: "Freelancer Help Center", href: "/freelancer/articles" },
                   ].map((l) => (
                     <Link key={l.label} href={l.href} className="text-[12px] text-stone-500 hover:text-[#E85239] transition-colors duration-200 font-medium">
                       {l.label}
