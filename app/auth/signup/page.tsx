@@ -113,7 +113,7 @@ function SignupForm() {
                 <p className="text-sm text-text-secondary">You'll be taken through onboarding after signup.</p>
               </div>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <Input label="Full name" type="text" placeholder="Alex Johnson" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+                <Input label="Full name" type="text" placeholder="Arjun Sharma" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
                 <Input label="Email address" type="email" placeholder="you@company.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
                 <Input label="Password" type="password" placeholder="Min. 8 characters" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={8} hint="At least 8 characters" />
                 {error && <div className="p-3 bg-error-light border border-error/20 rounded text-xs text-error">{error}</div>}

@@ -1,17 +1,17 @@
 "use client";
 import { motion, AnimatePresence } from "framer-motion";
-import { Building, Users, Settings, Plus, Shield, X, QrCode, CheckCircle2 } from "lucide-react";
+import { Building, Settings, Plus, X } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useState } from "react";
 
 export default function ClientOrganization() {
   const { data: session } = useSession();
-  
+
   const [isEditing, setIsEditing] = useState(false);
   const [workspaceName, setWorkspaceName] = useState("My Workspace");
   const [industry, setIndustry] = useState("Unspecified");
 
-  const [activeModal, setActiveModal] = useState<'settings' | 'invite' | '2fa' | null>(null);
+  const [activeModal, setActiveModal] = useState<'settings' | 'invite' | null>(null);
 
   // Settings State
   const [userNameState, setUserNameState] = useState((session?.user as any)?.name || "Client");
@@ -26,15 +26,8 @@ export default function ClientOrganization() {
   const [inviteRole, setInviteRole] = useState("Member");
   const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
 
-  // 2FA State
-  const [is2FAEnabled, setIs2FAEnabled] = useState(false);
-  const [twoFactorStep, setTwoFactorStep] = useState(1);
-  const [twoFactorCode, setTwoFactorCode] = useState("");
-
   const closeModal = () => {
     setActiveModal(null);
-    setTwoFactorStep(1);
-    setTwoFactorCode("");
     setInviteEmail("");
     setEditName(userNameState);
     setEditEmail(userEmailState);
@@ -51,16 +44,6 @@ export default function ClientOrganization() {
     if (!inviteEmail) return;
     alert(`Invite sent to ${inviteEmail} as ${inviteRole}`);
     closeModal();
-  };
-
-  const handleVerify2FA = () => {
-    if (twoFactorCode.length >= 6) {
-      setTwoFactorStep(2);
-      setTimeout(() => {
-        setIs2FAEnabled(true);
-        closeModal();
-      }, 1500);
-    }
   };
 
   return (
@@ -84,7 +67,7 @@ export default function ClientOrganization() {
         <div className="lg:col-span-8 flex flex-col gap-8">
           <div className="flex items-center justify-between border-b border-stone-200/60 pb-4">
             <h2 className="text-[14px] font-bold tracking-wide text-stone-900 uppercase">Team Members</h2>
-            <button 
+            <button
               onClick={() => setActiveModal('invite')}
               className="flex items-center gap-2 text-[13px] font-bold text-[#E85239] hover:text-[#d44127] transition-colors"
             >
@@ -107,7 +90,7 @@ export default function ClientOrganization() {
                 <span className="px-3 py-1 bg-stone-100 text-stone-900 text-[11px] font-bold uppercase tracking-wider rounded-lg">
                   Owner
                 </span>
-                <button 
+                <button
                   onClick={() => setActiveModal('settings')}
                   className="text-stone-400 hover:text-stone-900 transition-colors"
                 >
@@ -127,8 +110,8 @@ export default function ClientOrganization() {
               </div>
               <div className="flex-1">
                 {isEditing ? (
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={workspaceName}
                     onChange={(e) => setWorkspaceName(e.target.value)}
                     className="text-[20px] font-black text-stone-900 leading-tight w-full bg-transparent border-b border-stone-300 focus:outline-none focus:border-stone-900 mb-1"
@@ -144,8 +127,8 @@ export default function ClientOrganization() {
               <div>
                 <label className="text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-1 block">Industry</label>
                 {isEditing ? (
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={industry}
                     onChange={(e) => setIndustry(e.target.value)}
                     className="text-[14px] font-bold text-stone-900 w-full bg-transparent border-b border-stone-300 focus:outline-none focus:border-stone-900"
@@ -155,33 +138,12 @@ export default function ClientOrganization() {
                 )}
               </div>
             </div>
-            
-            <button 
+
+            <button
               onClick={() => setIsEditing(!isEditing)}
               className="w-full mt-8 py-3 text-[13px] font-bold bg-white text-stone-900 border border-stone-200 hover:border-stone-300 rounded-xl transition-colors shadow-sm"
             >
               {isEditing ? "Save Profile" : "Edit Profile"}
-            </button>
-          </div>
-
-          <div className="bg-[#FFF7F6] border border-orange-100 rounded-3xl p-8">
-            <h3 className="text-[16px] font-bold text-stone-900 mb-2 flex items-center gap-2">
-              <Shield size={16} className={is2FAEnabled ? "text-emerald-500" : "text-[#E85239]"} /> Security
-            </h3>
-            <p className="text-[13px] text-stone-500 mb-6">
-              {is2FAEnabled 
-                ? "Two-Factor Authentication is currently enabled." 
-                : "Require Two-Factor Authentication for all team members."}
-            </p>
-            <button 
-              onClick={() => is2FAEnabled ? setIs2FAEnabled(false) : setActiveModal('2fa')}
-              className={`px-4 py-2 text-[12px] font-bold rounded-lg shadow-sm transition-colors ${
-                is2FAEnabled 
-                  ? "bg-white border border-stone-200 text-stone-900 hover:bg-stone-50" 
-                  : "bg-[#E85239] text-white hover:bg-[#d44127]"
-              }`}
-            >
-              {is2FAEnabled ? "Disable 2FA" : "Enable 2FA"}
             </button>
           </div>
         </div>
@@ -191,20 +153,20 @@ export default function ClientOrganization() {
       <AnimatePresence>
         {activeModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={closeModal}
               className="absolute inset-0 bg-stone-900/20 backdrop-blur-sm"
             />
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               className="relative bg-white w-full max-w-md rounded-3xl shadow-2xl border border-stone-100 p-8 m-4"
             >
-              <button 
+              <button
                 onClick={closeModal}
                 className="absolute top-6 right-6 text-stone-400 hover:text-stone-900 transition-colors"
               >
@@ -218,8 +180,8 @@ export default function ClientOrganization() {
                   <div className="flex flex-col gap-4">
                     <div>
                       <label className="text-[12px] font-bold uppercase tracking-wider text-stone-500 mb-2 block">Name</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
                         className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-[14px] font-medium text-stone-900 focus:outline-none focus:border-stone-900 focus:bg-white transition-colors"
@@ -227,15 +189,15 @@ export default function ClientOrganization() {
                     </div>
                     <div>
                       <label className="text-[12px] font-bold uppercase tracking-wider text-stone-500 mb-2 block">Email Address</label>
-                      <input 
-                        type="email" 
+                      <input
+                        type="email"
                         value={editEmail}
                         onChange={(e) => setEditEmail(e.target.value)}
                         className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-[14px] font-medium text-stone-900 focus:outline-none focus:border-stone-900 focus:bg-white transition-colors"
                       />
                     </div>
                   </div>
-                  <button 
+                  <button
                     onClick={handleSaveSettings}
                     className="w-full mt-8 py-3 bg-[#E85239] text-white text-[14px] font-bold rounded-xl hover:bg-[#d44127] transition-colors"
                   >
@@ -251,8 +213,8 @@ export default function ClientOrganization() {
                   <div className="flex flex-col gap-4">
                     <div>
                       <label className="text-[12px] font-bold uppercase tracking-wider text-stone-500 mb-2 block">Email Address</label>
-                      <input 
-                        type="email" 
+                      <input
+                        type="email"
                         placeholder="colleague@company.com"
                         value={inviteEmail}
                         onChange={(e) => setInviteEmail(e.target.value)}
@@ -262,7 +224,7 @@ export default function ClientOrganization() {
                     <div>
                       <label className="text-[12px] font-bold uppercase tracking-wider text-stone-500 mb-2 block">Role</label>
                       <div className="relative">
-                        <div 
+                        <div
                           onClick={() => setIsRoleDropdownOpen(!isRoleDropdownOpen)}
                           className={`w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 pr-10 text-[14px] font-medium text-stone-900 cursor-pointer transition-colors ${isRoleDropdownOpen ? 'bg-white border-stone-900' : ''}`}
                         >
@@ -270,13 +232,13 @@ export default function ClientOrganization() {
                         </div>
                         <div className={`absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-stone-400 transition-transform ${isRoleDropdownOpen ? 'rotate-180' : ''}`}>
                           <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1.5 1.75L6 6.25L10.5 1.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M1.5 1.75L6 6.25L10.5 1.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
                         </div>
-                        
+
                         <AnimatePresence>
                           {isRoleDropdownOpen && (
-                            <motion.div 
+                            <motion.div
                               initial={{ opacity: 0, y: -10 }}
                               animate={{ opacity: 1, y: 0 }}
                               exit={{ opacity: 0, y: -10 }}
@@ -285,15 +247,11 @@ export default function ClientOrganization() {
                               {["Admin", "Member", "Viewer"].map((role) => (
                                 <button
                                   key={role}
-                                  onClick={() => {
-                                    setInviteRole(role);
-                                    setIsRoleDropdownOpen(false);
-                                  }}
-                                  className={`w-full text-left px-4 py-3 text-[14px] font-medium transition-colors rounded-none ${
-                                    inviteRole === role 
-                                      ? "bg-[#E85239] text-white" 
-                                      : "text-stone-900 hover:bg-[#E85239]/10 hover:text-[#E85239]"
-                                  }`}
+                                  onClick={() => { setInviteRole(role); setIsRoleDropdownOpen(false); }}
+                                  className={`w-full text-left px-4 py-3 text-[14px] font-medium transition-colors rounded-none ${inviteRole === role
+                                    ? "bg-[#E85239] text-white"
+                                    : "text-stone-900 hover:bg-[#E85239]/10 hover:text-[#E85239]"
+                                    }`}
                                 >
                                   {role}
                                 </button>
@@ -303,65 +261,20 @@ export default function ClientOrganization() {
                         </AnimatePresence>
                       </div>
                       <p className="text-[12px] font-medium text-stone-500 mt-3 leading-relaxed bg-stone-50 p-3 rounded-lg border border-stone-100">
-                        <span className="font-bold text-stone-700">{inviteRole} permissions: </span> 
+                        <span className="font-bold text-stone-700">{inviteRole} permissions: </span>
                         {inviteRole === 'Admin' && "Full access to manage projects, billing, organization settings, and invite members."}
                         {inviteRole === 'Member' && "Can view, edit, and collaborate on active projects. Cannot manage billing or organization settings."}
                         {inviteRole === 'Viewer' && "Read-only access to projects. Cannot make changes, invite members, or view billing."}
                       </p>
                     </div>
                   </div>
-                  <button 
+                  <button
                     onClick={handleSendInvite}
                     disabled={!inviteEmail}
                     className="w-full mt-8 py-3 bg-[#E85239] disabled:bg-stone-200 disabled:text-stone-400 text-white text-[14px] font-bold rounded-xl hover:bg-[#d44127] disabled:hover:bg-stone-200 transition-colors"
                   >
                     Send Invite
                   </button>
-                </div>
-              )}
-
-              {/* 2FA Modal */}
-              {activeModal === '2fa' && (
-                <div>
-                  {twoFactorStep === 1 ? (
-                    <div>
-                      <h2 className="text-[24px] font-black text-stone-900 mb-2">Setup 2FA</h2>
-                      <p className="text-[14px] text-stone-500 mb-6">Scan the QR code below with your authenticator app.</p>
-                      
-                      <div className="w-full aspect-square bg-stone-50 border border-stone-200 rounded-2xl flex flex-col items-center justify-center mb-6 text-stone-400 gap-4">
-                        <QrCode size={80} strokeWidth={1} />
-                        <span className="text-[12px] font-bold tracking-widest uppercase">Dummy QR Code</span>
-                      </div>
-
-                      <div>
-                        <label className="text-[12px] font-bold uppercase tracking-wider text-stone-500 mb-2 block">Verification Code</label>
-                        <input 
-                          type="text" 
-                          placeholder="000000"
-                          maxLength={6}
-                          value={twoFactorCode}
-                          onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, ''))}
-                          className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-[14px] font-medium text-stone-900 focus:outline-none focus:border-stone-900 focus:bg-white transition-colors text-center tracking-[0.5em]"
-                        />
-                      </div>
-                      
-                      <button 
-                        onClick={handleVerify2FA}
-                        disabled={twoFactorCode.length < 6}
-                        className="w-full mt-6 py-3 bg-[#E85239] disabled:bg-stone-200 disabled:text-stone-400 text-white text-[14px] font-bold rounded-xl hover:bg-[#d44127] disabled:hover:bg-stone-200 transition-colors"
-                      >
-                        Verify & Enable
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="text-center py-6 flex flex-col items-center">
-                      <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mb-4">
-                        <CheckCircle2 size={32} className="text-emerald-500" />
-                      </div>
-                      <h2 className="text-[24px] font-black text-stone-900 mb-2">2FA Enabled</h2>
-                      <p className="text-[14px] text-stone-500">Your account is now protected by Two-Factor Authentication.</p>
-                    </div>
-                  )}
                 </div>
               )}
 

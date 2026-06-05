@@ -122,6 +122,10 @@ function PaymentSuccessContent() {
             <p className="text-[14px] text-stone-500 leading-relaxed">
               Your platform fees have been paid. Your full project scope is now unlocked.
             </p>
+            <div className="flex items-center gap-2 text-[12px] text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-2.5">
+              <CheckCircle2 size={13} />
+              Payment method saved to Billing &amp; Finances
+            </div>
             <div className="flex items-center gap-2 text-[13px] text-stone-400">
               <Loader2 size={14} className="animate-spin" />
               Redirecting to your project…

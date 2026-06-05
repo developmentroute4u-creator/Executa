@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { Project } from "@/models/Project";
+import { PaymentMethod } from "@/models/PaymentMethod";
+import mongoose from "mongoose";
 
 const PHONEPE_BASE = process.env.PHONEPE_ENV === "UAT"
   ? "https://api-preprod.phonepe.com/apis/pg-sandbox"
@@ -71,6 +73,72 @@ export async function GET(req: NextRequest) {
         paidAt: new Date(),
       };
       await project.save();
+
+      // ── Auto-capture payment instrument into PaymentMethod ──────────────
+      try {
+        const instrument = statusData?.paymentInstrument || statusData?.data?.paymentInstrument;
+        if (instrument && project.clientId) {
+          const clientId = project.clientId.toString();
+          const instrType: string = (instrument.type || "").toUpperCase();
+
+          let pmData: Record<string, any> = {
+            userId: new mongoose.Types.ObjectId(clientId),
+            consentGiven: true,
+          };
+
+          if (instrType === "UPI" || instrType.includes("UPI")) {
+            const upiId = instrument.upiId || instrument.vpa || instrument.payerVpa || "";
+            pmData = {
+              ...pmData,
+              type: "upi",
+              label: upiId || `UPI (${phonePeTxnId?.slice(-6)})`,
+              upiId: upiId || undefined,
+            };
+          } else if (instrType === "CARD" || instrType.includes("CARD") || instrType.includes("CREDIT") || instrType.includes("DEBIT")) {
+            const last4 = instrument.cardLast4 || instrument.last4 || "????";
+            const brand = instrument.cardType || instrument.networkType || "Card";
+            const expiry = instrument.cardExpiry || "";
+            pmData = {
+              ...pmData,
+              type: "card",
+              label: `${brand} •••• ${last4}`,
+              cardLast4: last4,
+              cardBrand: brand,
+              cardExpiry: expiry,
+            };
+          } else if (instrType === "NET_BANKING" || instrType.includes("NETBANKING") || instrType.includes("NET")) {
+            const bank = instrument.bankId || instrument.bankName || "Net Banking";
+            pmData = {
+              ...pmData,
+              type: "netbanking",
+              label: `${bank} Net Banking`,
+              bank,
+            };
+          } else {
+            // Generic fallback — store as UPI placeholder
+            pmData = {
+              ...pmData,
+              type: "upi",
+              label: `Payment via PhonePe (${phonePeTxnId?.slice(-6) || ""})`,
+            };
+          }
+
+          // Only create if not already saved (idempotent)
+          const existing = await PaymentMethod.findOne({
+            userId: new mongoose.Types.ObjectId(clientId),
+            label: pmData.label,
+          });
+          if (!existing) {
+            const isDefault = (await PaymentMethod.countDocuments({ userId: new mongoose.Types.ObjectId(clientId) })) === 0;
+            await PaymentMethod.create({ ...pmData, isDefault });
+          }
+        }
+      } catch (captureErr) {
+        // Non-fatal — don't fail the payment verification
+        console.error("[PaymentMethod capture]", captureErr);
+      }
+      // ────────────────────────────────────────────────────────────────────
+
       return NextResponse.json({ paid: true, projectId: project._id });
     } else if (state === "FAILED" || state === "ERROR") {
       project.payment = { ...project.payment, status: "failed" };
@@ -109,6 +177,39 @@ export async function POST(req: NextRequest) {
         paidAt: new Date(),
       };
       await project.save();
+
+      // ── Auto-capture instrument via webhook ─────────────────────────────
+      try {
+        const instrument = body?.paymentInstrument || body?.data?.paymentInstrument;
+        if (instrument && project.clientId) {
+          const clientId = project.clientId.toString();
+          const instrType: string = (instrument.type || "").toUpperCase();
+          let pmData: Record<string, any> = { userId: new mongoose.Types.ObjectId(clientId), consentGiven: true };
+
+          if (instrType.includes("UPI")) {
+            const upiId = instrument.upiId || instrument.vpa || instrument.payerVpa || "";
+            pmData = { ...pmData, type: "upi", label: upiId || `UPI (${phonePeTxnId?.slice(-6)})`, upiId: upiId || undefined };
+          } else if (instrType.includes("CARD") || instrType.includes("CREDIT") || instrType.includes("DEBIT")) {
+            const last4 = instrument.cardLast4 || instrument.last4 || "????";
+            const brand = instrument.cardType || instrument.networkType || "Card";
+            pmData = { ...pmData, type: "card", label: `${brand} •••• ${last4}`, cardLast4: last4, cardBrand: brand };
+          } else if (instrType.includes("NET") || instrType.includes("BANK")) {
+            const bank = instrument.bankId || instrument.bankName || "Net Banking";
+            pmData = { ...pmData, type: "netbanking", label: `${bank} Net Banking`, bank };
+          } else {
+            pmData = { ...pmData, type: "upi", label: `Payment via PhonePe (${phonePeTxnId?.slice(-6) || ""})` };
+          }
+
+          const existing = await PaymentMethod.findOne({ userId: new mongoose.Types.ObjectId(clientId), label: pmData.label });
+          if (!existing) {
+            const isDefault = (await PaymentMethod.countDocuments({ userId: new mongoose.Types.ObjectId(clientId) })) === 0;
+            await PaymentMethod.create({ ...pmData, isDefault });
+          }
+        }
+      } catch (captureErr) {
+        console.error("[PaymentMethod webhook capture]", captureErr);
+      }
+      // ────────────────────────────────────────────────────────────────────
     } else if (state === "FAILED" || state === "ERROR") {
       project.payment = { ...project.payment, status: "failed" };
       await project.save();
