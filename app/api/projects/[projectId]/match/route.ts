@@ -154,14 +154,22 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
     const scope = await Scope.findById(project.scopeId);
     if (!scope) return NextResponse.json({ error: "Scope not found" }, { status: 404 });
 
-    // Query approved and available freelancers across the entire database
-    const rawFreelancers = await FreelancerProfile.find({
+    // Build query based on project field to ensure we only match relevant specialists
+    const query: any = {
       testStatus: "approved",
       $or: [
         { available: true },
         { userId: project.freelancerId }
       ]
-    });
+    };
+
+    if (project.field === "design") {
+      query.field = "design";
+    } else if (project.field === "development") {
+      query.field = "development";
+    }
+
+    const rawFreelancers = await FreelancerProfile.find(query);
 
     const freelancers = [];
     for (const f of rawFreelancers) {
@@ -216,7 +224,7 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
         fitScore: matchDetails ? matchDetails.fitScore : 75,
         fitReason: matchDetails ? matchDetails.fitReason : "Solid overall technical candidate."
       };
-    }).sort((a, b) => b.fitScore - a.fitScore).slice(0, 8);
+    }).sort((a, b) => b.fitScore - a.fitScore);
 
     // Calculate split pricing based on functional units sum
     let designTotalScore = 0;

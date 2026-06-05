@@ -174,7 +174,7 @@ CRITICAL RULES FOR MAXIMAL COMPREHENSIVENESS:
 - "Included" arrays MUST be extremely detailed, spelling out exactly "what includes what" at a granular level. Do not be vague. List every expected micro-feature, flow, or screen component.
 - The "excluded" items should be realistic premium add-ons that the client did NOT mention.
 - NEVER generate simple screen or page counts. Focus on comprehensive capability delivery.
-- Your unitScores should be generous (typically 30-50 per unit) to accurately reflect full premium pricing for elite work.
+- Your unitScores should reflect realistic India-market effort (typically 12-28 per unit). A standard feature like auth = 14, a complex feature like payment = 22. Keep total project score between 60-180 for most projects so pricing feels fair and competitive for Indian clients.
 
 INSTRUCTIONS:
 1. Generate OUTPUT 1: Project Summary.
@@ -182,7 +182,7 @@ INSTRUCTIONS:
    - If Domain is 'Design', include ONLY UI/UX, wireframing, and design-focused units.
    - If Domain is 'Development', include ONLY technical implementation units (Frontend, Backend, DB).
    - If Domain is 'Design & Development', you MUST explicitly generate separate, comprehensive units for the Design phase AND the Development phase, doubling the expected scope size.
-3. For each Functional Unit, assign a unitScore between 20 and 50 points based on logic depth and implementation complexity, and build an effortDrivers object.
+3. For each Functional Unit, assign a unitScore between 12 and 28 points based on logic depth and implementation complexity for India market rates, and build an effortDrivers object.
 4. Generate OUTPUT 3: Expected Deliverables (derived strictly from the client's domain. E.g. Figma files for Design, Source Code for Development).
 5. Generate OUTPUT 4: Included Scope (explicit, measurable, execution-focused items that the client mentioned or clearly needs).
 6. Generate OUTPUT 5: Excluded Scope (protect both client and freelancer, e.g., Future Enhancements, 3rd Party Costs, things NOT mentioned).
@@ -202,9 +202,9 @@ Return your response strictly in the following JSON format. Do not wrap in markd
       "included": ["Granular detail 1 (what includes what)", "Granular detail 2", "Granular detail 3"],
       "excluded": ["Premium add-on not mentioned by client"],
       "deliverables": ["Concrete deliverable"],
-      "unitScore": 45,
+      "unitScore": 20,
       "effortDrivers": {
-        "logicDepth": 7, "interactionDensity": 5, "dataHandling": 6, "dependencyLevel": 5, "variations": 4, "outputExpectation": 7, "totalScore": 45
+        "logicDepth": 7, "interactionDensity": 5, "dataHandling": 6, "dependencyLevel": 5, "variations": 4, "outputExpectation": 7, "totalScore": 20
       }
     }
   ],

@@ -47,6 +47,13 @@ export interface IProject extends Document {
     ratePerPoint: number;
     accountabilityMode: "basic" | "accountability";
   };
+  payment?: {
+    status: "pending" | "initiated" | "paid" | "failed";
+    transactionId?: string;
+    merchantTransactionId?: string;
+    amount?: number;
+    paidAt?: Date;
+  };
   accountabilityMode: "basic" | "accountability";
   milestones: {
     title: string;
@@ -99,6 +106,13 @@ const ProjectSchema = new Schema<IProject>(
       total: Number,
       ratePerPoint: Number,
       accountabilityMode: { type: String, enum: ["basic", "accountability"] },
+    },
+    payment: {
+      status: { type: String, enum: ["pending", "initiated", "paid", "failed"], default: "pending" },
+      transactionId: { type: String },
+      merchantTransactionId: { type: String },
+      amount: { type: Number },
+      paidAt: { type: Date },
     },
     accountabilityMode: { type: String, enum: ["basic", "accountability"], default: "basic" },
     milestones: [

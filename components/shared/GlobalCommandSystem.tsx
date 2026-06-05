@@ -9,12 +9,13 @@ export default function GlobalCommandSystem() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
-  // Hide on onboarding, scope review, and match pages — user needs distraction-free focus
+  // Hide on onboarding, scope review, match pages, and the payment step — user needs distraction-free focus
   if (
     pathname.startsWith("/client/onboarding") ||
     pathname.includes("/scope") ||
     pathname.includes("/match") ||
-    pathname.includes("/execution")
+    pathname.includes("/execution") ||
+    pathname.includes("/pay")
   ) {
     return null;
   }
@@ -34,12 +35,12 @@ export default function GlobalCommandSystem() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setIsOpen(false)}
-            className="fixed inset-0 bg-stone-900/20 backdrop-blur-[2px] z-[55]"
+            className="hidden lg:block fixed inset-0 bg-stone-900/20 backdrop-blur-[2px] z-[55]"
           />
         )}
       </AnimatePresence>
 
-      <div className="fixed bottom-8 right-8 z-[60] flex flex-col items-end">
+      <div className="hidden lg:flex fixed bottom-8 right-8 z-[60] flex-col items-end">
         <AnimatePresence>
           {isOpen && (
             <motion.div 

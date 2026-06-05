@@ -13,7 +13,7 @@ export default function NotFound() {
 
       {/* Main Content Container */}
       <div className="relative z-10 flex flex-col items-center text-center px-6 max-w-3xl w-full">
-        
+
         {/* Executa Logo */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}

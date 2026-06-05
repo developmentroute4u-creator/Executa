@@ -31,32 +31,16 @@ export default function MatchFreelancerPage() {
   const [appointing, setAppointing] = useState(false);
   const [success, setSuccess] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [displayCount, setDisplayCount] = useState(5);
 
   async function handleRefresh() {
     if (refreshing) return;
     setRefreshing(true);
-    try {
-      const res = await fetch(`/api/projects/${projectId}/match`);
-      const d = await res.json();
-      
-      // Shuffle the freelancers slightly so it feels like new data
-      if (d.freelancers && d.freelancers.length > 0) {
-        d.freelancers = d.freelancers.sort(() => Math.random() - 0.5);
-        // Slightly tweak match scores to make it seem like a fresh evaluation
-        d.freelancers = d.freelancers.map((f: any) => ({
-          ...f,
-          fitScore: Math.min(99, Math.max(75, f.fitScore + (Math.floor(Math.random() * 7) - 3)))
-        })).sort((a: any, b: any) => b.fitScore - a.fitScore);
-      }
-      
-      setTimeout(() => {
-        setData(d);
-        setRefreshing(false);
-      }, 1200); // 1.2s soft animation delay
-    } catch (err) {
-      console.error("Failed to refresh matches:", err);
+    // Simulate generation time to give a premium AI feel without hitting the DB again, since we already fetched all matches
+    setTimeout(() => {
+      setDisplayCount(prev => prev + 5);
       setRefreshing(false);
-    }
+    }, 1200);
   }
 
   useEffect(() => {
@@ -152,17 +136,17 @@ export default function MatchFreelancerPage() {
     return (
       <div className="fixed inset-0 z-[100] bg-background flex flex-col">
         {/* Header bar */}
-        <div className="fixed top-0 inset-x-0 z-[110] bg-background/90 backdrop-blur-md border-b border-border h-14 flex items-center px-8 justify-between">
-          <Link href={`/client/projects/${projectId}/scope`} className="text-sm text-text-secondary hover:text-text-primary transition-colors">← Scope Confirmed</Link>
-          <span className="text-sm font-medium text-text-primary">Qualified Execution Match</span>
-          <Link href="/client/workspace" className="text-sm text-text-secondary hover:text-text-primary transition-colors">Go to Dashboard →</Link>
+        <div className="fixed top-0 inset-x-0 z-[110] bg-background/90 backdrop-blur-md border-b border-border h-14 flex items-center px-4 sm:px-8 justify-between gap-2">
+          <Link href={`/client/projects/${projectId}/scope`} className="text-sm text-text-secondary hover:text-text-primary transition-colors whitespace-nowrap">← Scope</Link>
+          <span className="text-sm font-medium text-text-primary hidden sm:block">Qualified Execution Match</span>
+          <Link href="/client/workspace" className="text-sm text-text-secondary hover:text-text-primary transition-colors whitespace-nowrap">Dashboard →</Link>
         </div>
 
-        <div className="flex-1 pt-14 flex items-center justify-center p-6">
+        <div className="flex-1 pt-14 flex items-center justify-center p-4 sm:p-6">
           <motion.div 
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-2xl p-12 border border-stone-100 shadow-sm w-full max-w-xl flex flex-col items-center justify-center"
+            className="bg-white rounded-2xl p-8 sm:p-12 border border-stone-100 shadow-sm w-full max-w-xl flex flex-col items-center justify-center"
           >
             {/* Wordmark logo pulse */}
             <div className="mb-10 flex items-center justify-center animate-pulse" style={{ animationDuration: "2.5s" }}>
@@ -173,9 +157,9 @@ export default function MatchFreelancerPage() {
 
             <div className="w-full max-w-sm flex flex-col items-center">
               {/* Heading with fixed + dynamic text */}
-              <div className="flex items-center gap-2 text-[22px] font-black text-stone-900 mb-8">
+              <div className="flex flex-wrap items-center justify-center gap-2 text-[18px] sm:text-[22px] font-black text-stone-900 mb-8">
                 <span>Finding</span>
-                <div className="text-[#E85239] relative min-w-[220px] text-left h-8 flex items-center">
+                <div className="text-[#E85239] relative min-w-[160px] sm:min-w-[220px] text-left h-8 flex items-center">
                   <AnimatePresence mode="wait">
                     <motion.span
                       key={matchLoadingText}
@@ -210,13 +194,13 @@ export default function MatchFreelancerPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header bar */}
-      <div className="fixed top-0 inset-x-0 z-50 bg-background/90 backdrop-blur-md border-b border-border h-14 flex items-center px-8 justify-between">
-        <Link href={`/client/projects/${projectId}/scope`} className="text-sm text-text-secondary hover:text-text-primary transition-colors">← Scope Confirmed</Link>
-        <span className="text-sm font-medium text-text-primary">Qualified Execution Match</span>
-        <Link href="/client/workspace" className="text-sm text-text-secondary hover:text-text-primary transition-colors">Go to Dashboard →</Link>
+      <div className="fixed top-0 inset-x-0 z-50 bg-background/90 backdrop-blur-md border-b border-border h-14 flex items-center px-4 sm:px-8 justify-between gap-2">
+        <Link href={`/client/projects/${projectId}/scope`} className="text-sm text-text-secondary hover:text-text-primary transition-colors whitespace-nowrap">← Scope</Link>
+        <span className="text-sm font-medium text-text-primary hidden sm:block">Qualified Execution Match</span>
+        <Link href="/client/workspace" className="text-sm text-text-secondary hover:text-text-primary transition-colors whitespace-nowrap">Dashboard →</Link>
       </div>
 
-      <div className="pt-24 pb-16 px-6 max-w-4xl mx-auto space-y-10">
+      <div className="pt-20 sm:pt-24 pb-10 sm:pb-16 px-4 sm:px-6 max-w-4xl mx-auto space-y-6 sm:space-y-10">
 
         {matchStatus === "empty" && (
           <Card className="p-12 text-center space-y-3 border-dashed mt-12">
@@ -238,12 +222,12 @@ export default function MatchFreelancerPage() {
             className="bg-white rounded-2xl border border-stone-100 shadow-sm overflow-hidden"
           >
             {/* Card header */}
-            <div className="px-6 py-5 border-b border-stone-100 flex items-center justify-between">
+            <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-stone-100 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h2 className="text-[16px] font-black text-stone-900">
+                <h2 className="text-[15px] sm:text-[16px] font-black text-stone-900">
                   {isSplitMode ? "AI‑Matched Execution Team" : "AI‑Matched Specialists"}
                 </h2>
-                <p className="text-[12px] text-stone-400 mt-0.5">
+                <p className="text-[11px] sm:text-[12px] text-stone-400 mt-0.5">
                   {isSplitMode ? "A dedicated designer and developer paired for your project." : "Click a specialist to review their profile and appoint them."}
                 </p>
               </div>
@@ -251,7 +235,7 @@ export default function MatchFreelancerPage() {
                 <span className="px-3 py-1 bg-[#FFF7F6] text-[#E85239] text-[11px] font-bold rounded-full border border-orange-100 uppercase tracking-wider">
                   {isSplitMode ? "2 Experts Found" : `${freelancers?.length || 0} Found`}
                 </span>
-                {!isSplitMode && (
+                {!isSplitMode && freelancers?.length > displayCount && (
                   <button
                     onClick={handleRefresh}
                     disabled={refreshing}
@@ -311,7 +295,7 @@ export default function MatchFreelancerPage() {
                 </div>
               ) : (
                 // Single Freelancer List View
-                freelancers?.map((f: any, idx: number) => (
+                freelancers?.slice(0, displayCount).map((f: any, idx: number) => (
                   <div
                     key={f.id}
                     onClick={() => setModalFreelancer(f)}
@@ -357,13 +341,21 @@ export default function MatchFreelancerPage() {
                   </div>
                 ))
               )}
+              {/* Exhausted list message */}
+              {!isSplitMode && freelancers?.length > 0 && freelancers.length <= displayCount && (
+                <div className="text-center py-5 border-t border-stone-100 mt-2">
+                  <p className="text-[12px] text-stone-500 max-w-xl mx-auto">
+                    <span className="font-bold text-stone-700">Note:</span> These are the top specialists available right now. If you are not completely satisfied, please check back later as new experts are vetted daily.
+                  </p>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
 
         {/* Still show scope summary at the bottom so they know it is fixed for everyone */}
         {matchStatus === "loaded" && data?.scope && (
-          <div className="grid grid-cols-2 gap-4 animate-fade-in-up mt-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-in-up mt-4 sm:mt-8">
             {[
               { 
                 label: "Estimated Timeline", 
@@ -376,9 +368,9 @@ export default function MatchFreelancerPage() {
                 sub: "Fixed budget for any candidate" 
               },
             ].map(m => (
-              <div key={m.label} className="bg-white rounded-2xl p-6 border border-stone-100 shadow-sm">
+              <div key={m.label} className="bg-white rounded-2xl p-4 sm:p-6 border border-stone-100 shadow-sm">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-1">{m.label}</p>
-                <p className="text-[20px] font-black text-stone-900">{m.value}</p>
+                <p className="text-[18px] sm:text-[20px] font-black text-stone-900">{m.value}</p>
                 {m.sub && <p className="text-[12px] text-stone-400 mt-0.5">{m.sub}</p>}
               </div>
             ))}
@@ -399,7 +391,7 @@ export default function MatchFreelancerPage() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.94 }}
             transition={{ duration: 0.22 }}
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
           >
             {success ? (
@@ -457,7 +449,7 @@ export default function MatchFreelancerPage() {
                 </div>
 
                 {/* Modal footer */}
-                <div className="px-6 py-5 border-t border-stone-100 flex items-center justify-between gap-4 bg-stone-50/50">
+                <div className="px-4 sm:px-6 py-4 sm:py-5 border-t border-stone-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 bg-stone-50/50">
                   <div>
                     <div className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Project Value</div>
                     <div className="text-[20px] font-black text-stone-900 mt-0.5">{pricing?.total ? formatCurrency(pricing.total) : "—"}</div>
@@ -465,14 +457,14 @@ export default function MatchFreelancerPage() {
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => setModalFreelancer(null)}
-                      className="h-11 px-5 border border-stone-200 rounded-xl text-stone-600 text-[13px] font-bold hover:border-stone-300 transition-all"
+                      className="flex-1 sm:flex-none h-11 px-5 border border-stone-200 rounded-xl text-stone-600 text-[13px] font-bold hover:border-stone-300 transition-all"
                     >
                       View Others
                     </button>
                     <button
                       onClick={() => handleAppoint([{ freelancerId: modalFreelancer.id, role: "fullstack", pricingCut: 1 }])}
                       disabled={appointing}
-                      className="h-11 px-6 bg-[#E85239] text-white text-[13px] font-black rounded-xl flex items-center gap-2 hover:bg-[#d44530] hover:shadow-[0_6px_20px_rgba(232,82,57,0.35)] transition-all disabled:opacity-60"
+                      className="flex-1 sm:flex-none h-11 px-6 bg-[#E85239] text-white text-[13px] font-black rounded-xl flex items-center justify-center gap-2 hover:bg-[#d44530] hover:shadow-[0_6px_20px_rgba(232,82,57,0.35)] transition-all disabled:opacity-60"
                     >
                       {appointing ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle2 size={15} />}
                       {appointing ? "Please wait…" : "Hire Now"}

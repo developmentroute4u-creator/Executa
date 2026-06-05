@@ -40,17 +40,17 @@ export default function ClientWorkspace() {
   const requiresAttention = projects.filter(p => p.status === "scope_review").length;
 
   return (
-    <div className="flex-1 w-full max-w-7xl mx-auto p-12">
+    <div className="flex-1 w-full max-w-7xl mx-auto p-6 sm:p-8 lg:p-12">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-        className="mb-16"
+        className="mb-8 sm:mb-16"
       >
-        <h1 className="text-[40px] font-black tracking-tight text-stone-900 leading-[1.1] mb-4">
+        <h1 className="text-[28px] sm:text-[40px] font-black tracking-tight text-stone-900 leading-[1.1] mb-3 sm:mb-4">
           {getGreeting()}, {userName.split(' ')[0]}.
         </h1>
-        <p className="text-[18px] font-medium text-stone-500 max-w-2xl leading-relaxed">
+        <p className="text-[15px] sm:text-[18px] font-medium text-stone-500 max-w-2xl leading-relaxed">
           You have {requiresAttention} item{requiresAttention !== 1 ? 's' : ''} requiring your attention, and {activeProjects.length} project{activeProjects.length !== 1 ? 's' : ''} active.
         </p>
       </motion.div>

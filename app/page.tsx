@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import MobileLandingPage from "@/components/MobileLandingPage";
 import {
   motion,
   AnimatePresence,
@@ -22,7 +23,7 @@ import {
 
 const HERO_CYCLE_PAIRS = [
   { type: "client", inputTitle: "Raw Input", input: "I need a payment system, make it work fast.", outputTitle: "Structured Scope", output: "Stripe Billing Integration", detail: "4 milestones · webhook validation · retry logic", iconColor: "text-accent", bgColor: "bg-[#FFF7F5]/95", borderColor: "border-accent/20" },
-  { type: "freelancer", inputTitle: "Unknown Developer", input: "3 years experience, knows React and Node.", outputTitle: "Verified Expert", output: "Top 1% React Engineer", detail: "Passed 4-hour technical test · Verified architecture skills", iconColor: "text-blue-600", bgColor: "bg-[#FFF7F5]/90", borderColor: "border-accent/20" },
+  { type: "freelancer", inputTitle: "Unknown Developer", input: "3 years experience, knows React and Node.", outputTitle: "Verified Expert", output: "Top 1% React Engineer", detail: "Passed Level 2 Skills Assessment · Verified design & code quality", iconColor: "text-blue-600", bgColor: "bg-[#FFF7F5]/90", borderColor: "border-accent/20" },
   { type: "client", inputTitle: "Raw Input", input: "Build me a login page with social stuff.", outputTitle: "Structured Scope", output: "Multi-Provider Auth System", detail: "3 milestones · OAuth flows · session mgmt", iconColor: "text-accent", bgColor: "bg-[#FFF7F5]/95", borderColor: "border-accent/20" },
   { type: "freelancer", inputTitle: "Unknown Developer", input: "I built a chat app in college.", outputTitle: "Verified Systems Expert", output: "Top 1% Backend Engineer", detail: "Passed real-time WebSocket architecture evaluation", iconColor: "text-blue-600", bgColor: "bg-[#FFF7F5]/90", borderColor: "border-accent/20" },
 ];
@@ -156,6 +157,8 @@ export default function LandingPage() {
   const journeyPointerEvents = useTransform(seq, (v) => (v > 1.96) ? "auto" : "none");
 
   useEffect(() => {
+    // Only run wheel-lock on desktop (lg+)
+    if (typeof window !== "undefined" && window.innerWidth < 1024) return;
     const onWheel = (e: WheelEvent) => {
       if (unlockedRef.current) return;
       e.preventDefault();
@@ -179,6 +182,8 @@ export default function LandingPage() {
   }, [seqRaw]);
 
   useEffect(() => {
+    // Only run scroll-lock on desktop (lg+)
+    if (typeof window !== "undefined" && window.innerWidth < 1024) return;
     const onScroll = () => {
       if (window.scrollY <= 0 && unlockedRef.current) {
         unlockedRef.current = false;
@@ -196,6 +201,18 @@ export default function LandingPage() {
   return (
     <div className="bg-background text-text-primary font-sans antialiased overflow-x-hidden">
 
+      {/* ══════════════════════════════════════════════════
+          MOBILE / TABLET VIEW (< lg) — Non-scrollable app
+      ══════════════════════════════════════════════════ */}
+      <div className="block lg:hidden">
+        <MobileLandingPage />
+      </div>
+
+      {/* ══════════════════════════════════════════════════
+          DESKTOP VIEW (lg+) — Wheel-locked scroll sequence
+      ══════════════════════════════════════════════════ */}
+      <div className="hidden lg:block">
+
       {/* ════════════════════════════════════════════════
           STAGE 1, 2, 2.5, & 3 — LOCKED UNIFIED SEQUENCE
       ════════════════════════════════════════════════ */}
@@ -210,7 +227,7 @@ export default function LandingPage() {
             </h2>
             {HERO_CYCLE_PAIRS[inputIndex].type === "freelancer" && (
               <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4 text-sm text-stone-400 leading-relaxed">
-                Top 1% vetted engineering talent, assessed and ready to execute your vision.
+                Top 1% vetted talent, assessed and ready to execute your vision.
               </motion.p>
             )}
           </div>
@@ -461,7 +478,7 @@ export default function LandingPage() {
                 </h4>
 
                 <p className="text-stone-500 text-[14px] leading-relaxed">
-                  Every engineering expert has passed our rigorous, multi-hour technical test. No self-reported CVs. You only work with the top 1% of vetted experts.
+                  Every expert has passed our Level 2 Skills Assessment. No self-reported CVs. You only work with the top 1% of vetted talent.
                 </p>
               </div>
             </div>
@@ -543,7 +560,7 @@ export default function LandingPage() {
                   Talent tested before <span className="text-accent font-extrabold">they join.</span>
                 </h3>
                 <p className="text-[15px] md:text-[16px] text-stone-500 leading-relaxed font-medium">
-                  Every expert has passed a rigorous multi-hour technical assessment. No self-reported CVs. No guessing. You work with developers who have genuinely proven their skills.
+                  Every expert has passed our Level 2 Skills Assessment. No self-reported CVs. No guessing. You work with experts who have genuinely proven their skills.
                 </p>
               </div>
             </motion.div>
@@ -984,6 +1001,7 @@ export default function LandingPage() {
 
       </section>
 
+      </div>{/* end desktop */}
     </div>
   );
 }

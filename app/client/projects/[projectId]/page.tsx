@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft, FileText, Clock, User, CheckCircle2, Loader2,
-  Sparkles, ChevronRight, Shield, Zap, AlertCircle
+  Sparkles, ChevronRight, Shield, Zap, AlertCircle, Lock, CreditCard, Eye
 } from "lucide-react";
 
 function formatCurrency(val: number) {
@@ -47,6 +47,7 @@ export default function ProjectDetailView({ params }: { params: { projectId: str
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(false);
 
   // Inline matching state variables
   const [matchStatus, setMatchStatus] = useState<"idle" | "loading" | "loaded" | "empty">("idle");
@@ -60,7 +61,7 @@ export default function ProjectDetailView({ params }: { params: { projectId: str
   const triggerMatchLoad = () => {
     setMatchStatus("loading");
     setMatchLoadingText("Initiating AI match engine...");
-    
+
     fetch(`/api/projects/${params.projectId}/match`)
       .then(res => {
         if (!res.ok) throw new Error("Match fetch failed");
@@ -170,6 +171,33 @@ export default function ProjectDetailView({ params }: { params: { projectId: str
   const { project, scope } = data;
   const status = project.status;
   const pricing = project.pricing;
+  const isPaid = project.payment?.status === "paid";
+  const platformFees = pricing ? (pricing.scopeFee || 0) + (pricing.accountabilityFee || 0) + (pricing.executionFee || 0) : 0;
+
+  async function handlePayNow() {
+    setPaymentLoading(true);
+    try {
+      const res = await fetch("/api/payment/initiate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId: params.projectId }),
+      });
+      const data = await res.json();
+      if (data.alreadyPaid) {
+        reload();
+        return;
+      }
+      if (data.redirectUrl) {
+        window.location.href = data.redirectUrl;
+      } else {
+        alert("Payment initiation failed. Please try again.");
+      }
+    } catch {
+      alert("Payment initiation failed. Please try again.");
+    } finally {
+      setPaymentLoading(false);
+    }
+  }
 
   return (
     <div className="flex-1 w-full max-w-7xl mx-auto p-8 md:p-12">
@@ -202,14 +230,25 @@ export default function ProjectDetailView({ params }: { params: { projectId: str
 
         {/* Action button based on status */}
         {status === "scope_review" && (
-          <button
-            onClick={confirmScope}
-            disabled={confirming}
-            className="h-12 px-6 bg-stone-900 text-white text-[14px] font-bold rounded-xl flex items-center gap-2 hover:bg-[#E85239] hover:shadow-[0_8px_20px_rgba(232,82,57,0.25)] transition-all disabled:opacity-60"
-          >
-            {confirming ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
-            {confirming ? "Proceeding..." : "Confirm Scope & Find Freelancer"}
-          </button>
+          isPaid ? (
+            <button
+              onClick={confirmScope}
+              disabled={confirming}
+              className="h-12 px-6 bg-stone-900 text-white text-[14px] font-bold rounded-xl flex items-center gap-2 hover:bg-[#E85239] hover:shadow-[0_8px_20px_rgba(232,82,57,0.25)] transition-all disabled:opacity-60"
+            >
+              {confirming ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+              {confirming ? "Proceeding..." : "Confirm Scope & Find Freelancer"}
+            </button>
+          ) : (
+            <button
+              onClick={handlePayNow}
+              disabled={paymentLoading || !pricing}
+              className="h-12 px-6 bg-[#E85239] text-white text-[14px] font-bold rounded-xl flex items-center gap-2 hover:bg-[#d44530] hover:shadow-[0_8px_20px_rgba(232,82,57,0.4)] transition-all disabled:opacity-60"
+            >
+              {paymentLoading ? <Loader2 size={16} className="animate-spin" /> : <CreditCard size={16} />}
+              {paymentLoading ? "Redirecting..." : `Pay ${formatCurrency(platformFees)} to Unlock`}
+            </button>
+          )
         )}
         {(status === "matching") && matchStatus === "loaded" && (
           <button
@@ -237,16 +276,27 @@ export default function ProjectDetailView({ params }: { params: { projectId: str
           transition={{ delay: 0.1 }}
           className="space-y-8"
         >
-          {/* Alert banner */}
-          <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50 border border-amber-100">
-            <AlertCircle size={18} className="text-amber-500 shrink-0 mt-0.5" />
-            <div>
-              <p className="text-[13px] font-bold text-amber-700">Your AI-generated scope is ready for review</p>
-              <p className="text-[12px] text-amber-600 mt-0.5">Review all functional units below, then confirm to proceed to freelancer matching.</p>
+          {/* Payment gate banner */}
+          {!isPaid ? (
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-[#FFF7F6] border border-orange-200">
+              <Lock size={18} className="text-[#E85239] shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-[13px] font-bold text-[#E85239]">Scope Locked — Payment Required</p>
+                <p className="text-[12px] text-orange-700/70 mt-0.5">Pay the platform fee to unlock your complete AI-generated scope and proceed to freelancer matching.</p>
+              </div>
+              <span className="text-[13px] font-black text-[#E85239] shrink-0">{formatCurrency(platformFees)}</span>
             </div>
-          </div>
+          ) : (
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-emerald-50 border border-emerald-100">
+              <CheckCircle2 size={18} className="text-emerald-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-[13px] font-bold text-emerald-700">Payment Confirmed — Full Scope Unlocked</p>
+                <p className="text-[12px] text-emerald-600 mt-0.5">Review your complete scope below and confirm to proceed to freelancer matching.</p>
+              </div>
+            </div>
+          )}
 
-          {/* Key Metrics */}
+          {/* Key Metrics — always visible */}
           <div className="grid grid-cols-2 gap-4">
             {[
               { label: "Estimated Timeline", value: `${scope.timeline?.estimated} ${scope.timeline?.unit}`, sub: `≈ ${Math.round((scope.timeline?.estimated || 0) / 4.3 * 10) / 10} months` },
@@ -260,132 +310,7 @@ export default function ProjectDetailView({ params }: { params: { projectId: str
             ))}
           </div>
 
-          {/* Project Summary */}
-          {scope.projectSummary?.overview && (
-            <div className="bg-white rounded-2xl p-8 border border-stone-100 shadow-sm">
-              <div className="flex items-center gap-2 mb-4">
-                <FileText size={16} className="text-stone-400" />
-                <h2 className="text-[14px] font-bold text-stone-900 uppercase tracking-wider">Project Summary</h2>
-              </div>
-              <p className="text-[15px] font-medium text-stone-600 leading-relaxed">
-                {scope.projectSummary.overview}
-              </p>
-              {scope.projectSummary.primaryUsers?.length > 0 && (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {scope.projectSummary.primaryUsers.map((u: string) => (
-                    <span key={u} className="px-3 py-1 bg-stone-50 text-stone-600 text-[12px] font-bold rounded-full border border-stone-100">
-                      {u}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Scope Boundaries */}
-          {(scope.overallIncluded?.length > 0 || scope.overallExcluded?.length > 0) && (
-            <div className="grid grid-cols-2 gap-5">
-              <div className="bg-white rounded-2xl p-6 border border-stone-100 shadow-sm">
-                <h3 className="text-[13px] font-bold uppercase tracking-wider text-emerald-600 mb-4 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500" /> In Scope
-                </h3>
-                <ul className="space-y-2.5">
-                  {scope.overallIncluded?.map((item: string) => (
-                    <li key={item} className="text-[13px] text-stone-600 flex items-start gap-2.5">
-                      <span className="text-emerald-500 font-bold mt-0.5">✓</span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="bg-white rounded-2xl p-6 border border-stone-100 shadow-sm">
-                <h3 className="text-[13px] font-bold uppercase tracking-wider text-stone-400 mb-4 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-stone-300" /> Out of Scope
-                </h3>
-                <ul className="space-y-2.5">
-                  {scope.overallExcluded?.map((item: string) => (
-                    <li key={item} className="text-[13px] text-stone-500 flex items-start gap-2.5">
-                      <span className="text-stone-300 font-bold mt-0.5">×</span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          )}
-
-          {/* Functional Units */}
-          <div>
-            <h2 className="text-[16px] font-black text-stone-900 mb-5">Functional Units</h2>
-            <div className="space-y-4">
-              {scope.functionalUnits?.map((unit: any) => (
-                <div key={unit.id} className="bg-white rounded-2xl p-6 border border-stone-100 shadow-sm">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="text-[15px] font-bold text-stone-900">{unit.name}</h3>
-                      <p className="text-[13px] text-stone-500 mt-1">{unit.description}</p>
-                    </div>
-                    <div className="shrink-0 ml-4 text-right">
-                      <div className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">Effort</div>
-                      <div className="text-[18px] font-black text-[#E85239]">{unit.unitScore}pts</div>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-5 pt-4 border-t border-stone-100">
-                    <div>
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-2">Included</p>
-                      <ul className="space-y-1.5">
-                        {unit.included?.map((i: string) => (
-                          <li key={i} className="text-[12px] text-stone-600 flex items-start gap-1.5">
-                            <span className="text-emerald-500 mt-0.5">✓</span>{i}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div>
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-2">Excluded</p>
-                      <ul className="space-y-1.5">
-                        {unit.excluded?.map((e: string) => (
-                          <li key={e} className="text-[12px] text-stone-500 flex items-start gap-1.5">
-                            <span className="text-stone-300 mt-0.5">×</span>{e}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Deliverables */}
-          {scope.expectedDeliverables?.length > 0 && (
-            <div className="bg-white rounded-2xl p-6 border border-stone-100 shadow-sm">
-              <h2 className="text-[14px] font-bold text-stone-900 uppercase tracking-wider mb-4">Expected Deliverables</h2>
-              <div className="flex flex-wrap gap-2">
-                {scope.expectedDeliverables.map((d: string) => (
-                  <span key={d} className="px-3 py-1.5 bg-stone-50 text-stone-600 text-[12px] font-bold rounded-lg border border-stone-100">
-                    {d}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Required Capabilities */}
-          {scope.requiredCapabilities?.length > 0 && (
-            <div className="bg-white rounded-2xl p-6 border border-stone-100 shadow-sm">
-              <h2 className="text-[14px] font-bold text-stone-900 uppercase tracking-wider mb-4">Required Capabilities</h2>
-              <div className="flex flex-wrap gap-2">
-                {scope.requiredCapabilities.map((c: string) => (
-                  <span key={c} className="px-3 py-1.5 bg-[#FFF0EE] text-[#E85239] text-[12px] font-bold rounded-lg border border-[#E85239]/15">
-                    {c}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Pricing */}
+          {/* Pricing Breakdown — always visible */}
           {pricing && (
             <div className="bg-white rounded-2xl p-8 border border-stone-100 shadow-sm">
               <h2 className="text-[16px] font-black text-stone-900 mb-6">Pricing Breakdown</h2>
@@ -420,23 +345,201 @@ export default function ProjectDetailView({ params }: { params: { projectId: str
                   <span className="font-black text-[#E85239]">{formatCurrency(pricing.total)}</span>
                 </div>
               </div>
+
+              {/* Platform fee highlight */}
+              {!isPaid && (
+                <div className="mt-6 p-4 bg-[#FFF7F6] rounded-xl border border-orange-100 flex items-center justify-between">
+                  <div>
+                    <p className="text-[12px] font-bold text-[#E85239] uppercase tracking-wider">Platform Fee (Due Now)</p>
+                    <p className="text-[11px] text-stone-500 mt-0.5">Scope Fee + Accountability Fee + Execution Fee</p>
+                  </div>
+                  <span className="text-[20px] font-black text-[#E85239]">{formatCurrency(platformFees)}</span>
+                </div>
+              )}
             </div>
           )}
 
-          {/* Confirm CTA */}
-          <div className="flex items-center justify-end gap-4 pt-4">
-            <Link href="/client/projects" className="h-12 px-6 border border-stone-200 text-stone-600 text-[14px] font-bold rounded-xl flex items-center hover:border-stone-300 transition-all">
-              Back to Projects
-            </Link>
-            <button
-              onClick={confirmScope}
-              disabled={confirming}
-              className="h-12 px-8 bg-stone-900 text-white text-[14px] font-bold rounded-xl flex items-center gap-2 hover:bg-[#E85239] hover:shadow-[0_8px_20px_rgba(232,82,57,0.25)] transition-all disabled:opacity-60"
-            >
-              {confirming ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
-              {confirming ? "Proceeding..." : "Confirm Scope & Find Freelancer"}
-            </button>
-          </div>
+          {/* ── LOCKED PREVIEW (before payment) ── */}
+          {!isPaid && (
+            <div className="relative">
+              {/* Blurred preview */}
+              <div className="space-y-4 pointer-events-none select-none" style={{ filter: "blur(4px)", opacity: 0.4 }}>
+                {scope.projectSummary?.overview && (
+                  <div className="bg-white rounded-2xl p-8 border border-stone-100 shadow-sm">
+                    <h2 className="text-[14px] font-bold text-stone-900 uppercase tracking-wider mb-4">Project Summary</h2>
+                    <p className="text-[15px] text-stone-600 leading-relaxed">{scope.projectSummary.overview}</p>
+                  </div>
+                )}
+                <div className="bg-white rounded-2xl p-8 border border-stone-100 shadow-sm">
+                  <h2 className="text-[16px] font-black text-stone-900 mb-5">Functional Units</h2>
+                  <div className="space-y-3">
+                    {scope.functionalUnits?.slice(0, 3).map((unit: any) => (
+                      <div key={unit.id} className="h-20 bg-stone-50 rounded-xl border border-stone-100" />
+                    ))}
+                    {(scope.functionalUnits?.length || 0) > 3 && (
+                      <div className="h-12 bg-stone-50 rounded-xl border border-stone-100" />
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Lock overlay */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/70 backdrop-blur-sm rounded-2xl z-10">
+                <div className="flex flex-col items-center gap-4 p-8 text-center">
+                  <div className="w-16 h-16 bg-[#FFF7F6] rounded-2xl border-2 border-orange-200 flex items-center justify-center">
+                    <Lock size={28} className="text-[#E85239]" />
+                  </div>
+                  <div>
+                    <h3 className="text-[18px] font-black text-stone-900 mb-1">Full Scope Locked</h3>
+                    <p className="text-[13px] text-stone-500 max-w-sm">
+                      Pay the platform fee of <strong className="text-[#E85239]">{formatCurrency(platformFees)}</strong> to unlock the complete scope, functional units, deliverables, and capabilities.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handlePayNow}
+                    disabled={paymentLoading}
+                    className="flex items-center gap-2 h-12 px-8 bg-[#E85239] text-white text-[14px] font-bold rounded-xl hover:bg-[#d44530] hover:shadow-[0_8px_20px_rgba(232,82,57,0.35)] transition-all disabled:opacity-60 mt-2"
+                  >
+                    {paymentLoading ? <Loader2 size={16} className="animate-spin" /> : <CreditCard size={16} />}
+                    {paymentLoading ? "Redirecting to PhonePe…" : `Pay ${formatCurrency(platformFees)} via PhonePe`}
+                  </button>
+                  <p className="text-[11px] text-stone-400">Secure payment powered by PhonePe</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── FULL SCOPE (after payment) ── */}
+          {isPaid && (
+            <>
+              {/* Alert banner */}
+              <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50 border border-amber-100">
+                <AlertCircle size={18} className="text-amber-500 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-[13px] font-bold text-amber-700">Your AI-generated scope is ready for review</p>
+                  <p className="text-[12px] text-amber-600 mt-0.5">Review all functional units below, then confirm to proceed to freelancer matching.</p>
+                </div>
+              </div>
+
+              {/* Project Summary */}
+              {scope.projectSummary?.overview && (
+                <div className="bg-white rounded-2xl p-8 border border-stone-100 shadow-sm">
+                  <div className="flex items-center gap-2 mb-4">
+                    <FileText size={16} className="text-stone-400" />
+                    <h2 className="text-[14px] font-bold text-stone-900 uppercase tracking-wider">Project Summary</h2>
+                  </div>
+                  <p className="text-[15px] font-medium text-stone-600 leading-relaxed">{scope.projectSummary.overview}</p>
+                  {scope.projectSummary.primaryUsers?.length > 0 && (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {scope.projectSummary.primaryUsers.map((u: string) => (
+                        <span key={u} className="px-3 py-1 bg-stone-50 text-stone-600 text-[12px] font-bold rounded-full border border-stone-100">{u}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Scope Boundaries */}
+              {(scope.overallIncluded?.length > 0 || scope.overallExcluded?.length > 0) && (
+                <div className="grid grid-cols-2 gap-5">
+                  <div className="bg-white rounded-2xl p-6 border border-stone-100 shadow-sm">
+                    <h3 className="text-[13px] font-bold uppercase tracking-wider text-emerald-600 mb-4 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-emerald-500" /> In Scope</h3>
+                    <ul className="space-y-2.5">
+                      {scope.overallIncluded?.map((item: string) => (
+                        <li key={item} className="text-[13px] text-stone-600 flex items-start gap-2.5">
+                          <span className="text-emerald-500 font-bold mt-0.5">✓</span><span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="bg-white rounded-2xl p-6 border border-stone-100 shadow-sm">
+                    <h3 className="text-[13px] font-bold uppercase tracking-wider text-stone-400 mb-4 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-stone-300" /> Out of Scope</h3>
+                    <ul className="space-y-2.5">
+                      {scope.overallExcluded?.map((item: string) => (
+                        <li key={item} className="text-[13px] text-stone-500 flex items-start gap-2.5">
+                          <span className="text-stone-300 font-bold mt-0.5">×</span><span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+              {/* Functional Units */}
+              <div>
+                <h2 className="text-[16px] font-black text-stone-900 mb-5">Functional Units</h2>
+                <div className="space-y-4">
+                  {scope.functionalUnits?.map((unit: any) => (
+                    <div key={unit.id} className="bg-white rounded-2xl p-6 border border-stone-100 shadow-sm">
+                      <div className="flex items-start justify-between mb-4">
+                        <div>
+                          <h3 className="text-[15px] font-bold text-stone-900">{unit.name}</h3>
+                          <p className="text-[13px] text-stone-500 mt-1">{unit.description}</p>
+                        </div>
+                        <div className="shrink-0 ml-4 text-right">
+                          <div className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">Effort</div>
+                          <div className="text-[18px] font-black text-[#E85239]">{unit.unitScore}pts</div>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-5 pt-4 border-t border-stone-100">
+                        <div>
+                          <p className="text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-2">Included</p>
+                          <ul className="space-y-1.5">
+                            {unit.included?.map((i: string) => <li key={i} className="text-[12px] text-stone-600 flex items-start gap-1.5"><span className="text-emerald-500 mt-0.5">✓</span>{i}</li>)}
+                          </ul>
+                        </div>
+                        <div>
+                          <p className="text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-2">Excluded</p>
+                          <ul className="space-y-1.5">
+                            {unit.excluded?.map((e: string) => <li key={e} className="text-[12px] text-stone-500 flex items-start gap-1.5"><span className="text-stone-300 mt-0.5">×</span>{e}</li>)}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Deliverables */}
+              {scope.expectedDeliverables?.length > 0 && (
+                <div className="bg-white rounded-2xl p-6 border border-stone-100 shadow-sm">
+                  <h2 className="text-[14px] font-bold text-stone-900 uppercase tracking-wider mb-4">Expected Deliverables</h2>
+                  <div className="flex flex-wrap gap-2">
+                    {scope.expectedDeliverables.map((d: string) => (
+                      <span key={d} className="px-3 py-1.5 bg-stone-50 text-stone-600 text-[12px] font-bold rounded-lg border border-stone-100">{d}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Required Capabilities */}
+              {scope.requiredCapabilities?.length > 0 && (
+                <div className="bg-white rounded-2xl p-6 border border-stone-100 shadow-sm">
+                  <h2 className="text-[14px] font-bold text-stone-900 uppercase tracking-wider mb-4">Required Capabilities</h2>
+                  <div className="flex flex-wrap gap-2">
+                    {scope.requiredCapabilities.map((c: string) => (
+                      <span key={c} className="px-3 py-1.5 bg-[#FFF0EE] text-[#E85239] text-[12px] font-bold rounded-lg border border-[#E85239]/15">{c}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Confirm CTA */}
+              <div className="flex items-center justify-end gap-4 pt-4">
+                <Link href="/client/projects" className="h-12 px-6 border border-stone-200 text-stone-600 text-[14px] font-bold rounded-xl flex items-center hover:border-stone-300 transition-all">
+                  Back to Projects
+                </Link>
+                <button
+                  onClick={confirmScope}
+                  disabled={confirming}
+                  className="h-12 px-8 bg-stone-900 text-white text-[14px] font-bold rounded-xl flex items-center gap-2 hover:bg-[#E85239] hover:shadow-[0_8px_20px_rgba(232,82,57,0.25)] transition-all disabled:opacity-60"
+                >
+                  {confirming ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+                  {confirming ? "Proceeding..." : "Confirm Scope & Find Freelancer"}
+                </button>
+              </div>
+            </>
+          )}
         </motion.div>
       )}
 
@@ -467,7 +570,7 @@ export default function ProjectDetailView({ params }: { params: { projectId: str
           )}
 
           {matchStatus === "loading" && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               className="bg-white rounded-2xl p-12 border border-stone-100 shadow-sm overflow-hidden relative min-h-[350px] flex flex-col items-center justify-center"
@@ -476,10 +579,10 @@ export default function ProjectDetailView({ params }: { params: { projectId: str
               <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none">
                 <div className="w-[300px] h-[300px] bg-gradient-to-br from-[#E85239] to-orange-200 rounded-full blur-[80px] animate-pulse" style={{ animationDuration: "2s" }} />
               </div>
-              
+
               <div className="relative z-10 flex flex-col items-center w-full max-w-sm">
                 <div className="relative mb-8">
-                  <motion.div 
+                  <motion.div
                     animate={{ rotate: 360 }}
                     transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                     className="w-24 h-24 rounded-full border-4 border-stone-100 border-t-[#E85239] border-l-[#E85239]/50 border-r-orange-200"
@@ -490,19 +593,19 @@ export default function ProjectDetailView({ params }: { params: { projectId: str
                     </div>
                   </div>
                 </div>
-                
+
                 <h3 className="text-[22px] font-black text-stone-900 mb-4 text-center">AI Match Engine Running</h3>
-                
+
                 <div className="w-full space-y-4">
                   {/* Dynamic text pill */}
                   <div className="flex items-center justify-center text-[13px] font-bold text-[#E85239] bg-[#FFF7F6] px-5 py-2.5 rounded-full border border-orange-100 shadow-sm mx-auto">
                     <Loader2 className="animate-spin mr-2" size={14} />
                     <span className="truncate">{matchLoadingText}</span>
                   </div>
-                  
+
                   {/* Progress bar line */}
                   <div className="h-2 w-full bg-stone-100 rounded-full overflow-hidden shadow-inner">
-                    <motion.div 
+                    <motion.div
                       className="h-full bg-gradient-to-r from-[#E85239] to-orange-400"
                       initial={{ width: "10%" }}
                       animate={{ width: "100%" }}
@@ -659,11 +762,10 @@ export default function ProjectDetailView({ params }: { params: { projectId: str
                       className="group flex items-center gap-4 px-5 py-4 bg-white rounded-xl border border-stone-100 shadow-sm hover:border-orange-200 hover:shadow-md hover:shadow-orange-100/50 cursor-pointer transition-all duration-200"
                     >
                       {/* Rank badge */}
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-[12px] font-black flex-shrink-0 transition-colors ${
-                        idx === 0
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-[12px] font-black flex-shrink-0 transition-colors ${idx === 0
                           ? "bg-[#FFF7F6] text-[#E85239] border-2 border-orange-200 shadow-sm"
                           : "bg-stone-50 text-stone-400 border border-stone-100 group-hover:border-stone-200 group-hover:text-stone-500"
-                      }`}>
+                        }`}>
                         #{idx + 1}
                       </div>
 
@@ -683,9 +785,8 @@ export default function ProjectDetailView({ params }: { params: { projectId: str
                       {/* Score + arrow */}
                       <div className="flex items-center gap-4 flex-shrink-0">
                         <div className="text-right">
-                          <div className={`text-[16px] font-black leading-none ${
-                            f.fitScore >= 90 ? "text-emerald-600" : "text-[#E85239]"
-                          }`}>
+                          <div className={`text-[16px] font-black leading-none ${f.fitScore >= 90 ? "text-emerald-600" : "text-[#E85239]"
+                            }`}>
                             {f.fitScore}%
                           </div>
                           <div className="text-[9px] font-bold text-stone-400 uppercase tracking-wider mt-1">Match</div>
@@ -834,9 +935,8 @@ export default function ProjectDetailView({ params }: { params: { projectId: str
                             <p className="text-[11px] font-bold text-[#E85239] uppercase tracking-wider">{f.role} Specialist</p>
                           </div>
                         </div>
-                        <div className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border ${
-                          f.accepted ? "bg-emerald-50 border-emerald-100" : "bg-amber-50 border-amber-100"
-                        }`}>
+                        <div className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border ${f.accepted ? "bg-emerald-50 border-emerald-100" : "bg-amber-50 border-amber-100"
+                          }`}>
                           {f.accepted ? (
                             <>
                               <CheckCircle2 size={14} className="text-emerald-500" />
@@ -863,9 +963,8 @@ export default function ProjectDetailView({ params }: { params: { projectId: str
                         <p className="text-[12px] font-bold text-[#E85239] uppercase tracking-wider">Level {project.requiredLevel} Specialist</p>
                       </div>
                     </div>
-                    <div className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border ${
-                      project.status === "pending" ? "bg-amber-50 border-amber-100" : "bg-emerald-50 border-emerald-100"
-                    }`}>
+                    <div className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border ${project.status === "pending" ? "bg-amber-50 border-amber-100" : "bg-emerald-50 border-emerald-100"
+                      }`}>
                       {project.status === "pending" ? (
                         <>
                           <Clock size={14} className="text-amber-500" />

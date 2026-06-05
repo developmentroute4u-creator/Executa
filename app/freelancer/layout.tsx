@@ -8,7 +8,7 @@ export default function FreelancerLayout({
   return (
     <div className="min-h-screen bg-background flex flex-col relative selection:bg-accent/10 selection:text-accent">
       <FloatingWorkspaceRail />
-      <div className="flex-1 flex flex-col pl-0 transition-all duration-300">
+      <div className="flex-1 flex flex-col lg:pl-[100px] pb-20 lg:pb-0 transition-all duration-300">
         {children}
       </div>
     </div>

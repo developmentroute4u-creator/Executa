@@ -51,24 +51,24 @@ export async function PATCH(req: NextRequest, { params }: { params: { projectId:
     if (body.reject) {
       const project = await Project.findById(params.projectId);
       if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
-      
+
       const freelancerId = project.freelancerId;
       if (freelancerId) {
         const { FreelancerProfile } = require("@/models/FreelancerProfile");
         await FreelancerProfile.updateOne(
           { userId: freelancerId },
-          { 
+          {
             $pull: { activeProjectIds: project._id },
             $set: { available: true }
           }
         );
       }
-      
+
       project.freelancerId = undefined;
       project.status = "matching";
       project.freelancerAccepted = false;
       await project.save();
-      
+
       return NextResponse.json({ success: true, project });
     }
 
@@ -77,7 +77,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { projectId:
       if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
       const loggedInUserId = (session.user as any).id;
-      
+
       const assignedIdx = project.assignedFreelancers?.findIndex((a: any) => a.userId.toString() === loggedInUserId);
       const isLegacyAssigned = project.freelancerId && project.freelancerId.toString() === loggedInUserId;
 
@@ -91,9 +91,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { projectId:
         }
         project.assignedFreelancers[assignedIdx].accepted = true;
       }
-      
+
       // Update top-level boolean for legacy checks, but it represents "has at least one accepted" until all accept.
-      project.freelancerAccepted = true; 
+      project.freelancerAccepted = true;
 
       // Check if ALL assigned freelancers have accepted
       let allAccepted = true;
@@ -110,7 +110,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { projectId:
       const { FreelancerProfile } = require("@/models/FreelancerProfile");
       await FreelancerProfile.updateOne(
         { userId: new mongoose.Types.ObjectId(loggedInUserId) },
-        { 
+        {
           $addToSet: { activeProjectIds: project._id },
           $set: { available: false }
         }
@@ -208,6 +208,15 @@ export async function PATCH(req: NextRequest, { params }: { params: { projectId:
       await project.save();
 
       return NextResponse.json({ project, scope });
+    }
+
+    // Payment guard: if trying to move to "matching", require payment to be "paid"
+    if (projectUpdates.status === "matching") {
+      const projectForPaymentCheck = await Project.findById(params.projectId).lean() as any;
+      if (!projectForPaymentCheck) return NextResponse.json({ error: "Not found" }, { status: 404 });
+      if (projectForPaymentCheck.payment?.status !== "paid") {
+        return NextResponse.json({ error: "Payment required before confirming scope", paymentRequired: true }, { status: 402 });
+      }
     }
 
     const project = await Project.findByIdAndUpdate(params.projectId, projectUpdates, { new: true });
