@@ -53,41 +53,42 @@ export default function ClientProjectsList() {
   }
 
   return (
-    <div className="flex-1 w-full max-w-7xl mx-auto p-12">
+    <div className="flex-1 w-full max-w-7xl mx-auto p-6 sm:p-8 lg:p-12">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-        className="mb-12 flex justify-between items-end"
+        className="mb-8 sm:mb-12 flex flex-col sm:flex-row sm:justify-between sm:items-end gap-5"
       >
         <div>
-          <h1 className="text-[40px] font-black tracking-tight text-stone-900 leading-[1.1] mb-4">
+          <h1 className="text-[28px] sm:text-[40px] font-black tracking-tight text-stone-900 leading-[1.1] mb-2 sm:mb-4">
             Projects
           </h1>
-          <p className="text-[18px] font-medium text-stone-500 max-w-2xl leading-relaxed">
+          <p className="text-[14px] sm:text-[18px] font-medium text-stone-500 max-w-2xl leading-relaxed">
             Manage your governed executions, track active progress, and oversee completed deliverables.
           </p>
         </div>
         <Link 
           href="/client/onboarding"
-          className="h-12 px-6 bg-stone-900 text-white text-[14px] font-bold rounded-xl flex items-center gap-2 hover:bg-[#E85239] hover:shadow-[0_8px_20px_rgba(232,82,57,0.25)] transition-all"
+          className="h-12 px-6 bg-stone-900 text-white text-[14px] font-bold rounded-xl flex items-center gap-2 hover:bg-[#E85239] hover:shadow-[0_8px_20px_rgba(232,82,57,0.25)] transition-all self-start sm:self-auto whitespace-nowrap"
         >
           <Plus size={18} /> Create new project
         </Link>
       </motion.div>
 
       {/* TABS */}
-      <div className="flex gap-2 mb-10 border-b border-stone-200/60 pb-px">
+      <div className="flex gap-1 sm:gap-2 mb-8 sm:mb-10 border-b border-stone-200/60 pb-px overflow-x-auto scrollbar-hide">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={`relative flex items-center gap-2 px-5 py-3 text-[13px] font-bold tracking-wide uppercase transition-colors ${
+            className={`relative flex items-center gap-2 px-3 sm:px-5 py-3 text-[11px] sm:text-[13px] font-bold tracking-wide uppercase transition-colors whitespace-nowrap ${
               activeTab === tab.id ? "text-stone-900" : "text-stone-400 hover:text-stone-600"
             }`}
           >
             {tab.icon}
-            {tab.label}
+            <span className="hidden sm:inline">{tab.label}</span>
+            <span className="sm:hidden">{tab.id === "draft" ? "Review" : tab.id === "matching" ? "Matching" : tab.id.charAt(0).toUpperCase() + tab.id.slice(1)}</span>
             {activeTab === tab.id && (
               <motion.div 
                 layoutId="project-tab-indicator"

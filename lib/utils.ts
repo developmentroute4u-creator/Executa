@@ -84,13 +84,12 @@ export function calculatePrice(
   executionFee: number;
   total: number;
 } {
-  // Apply 40% market-rate uplift to the freelancer's base price
-  const baseFreelancerPrice = effortScore * ratePerPoint;
-  const freelancerPrice = Math.round(baseFreelancerPrice * 1.4);
+  // 30% uplift applied to reflect fair market pricing and effort quality.
+  const freelancerPrice = Math.round(effortScore * ratePerPoint * 1.30);
 
-  const scopeFee = 99;          // Fixed platform scope fee
+  const scopeFee = 99;           // Fixed platform scope fee
   const accountabilityFee = 199; // Fixed platform accountability fee
-  const executionFee = Math.round(freelancerPrice * 0.05); // 5% of uplifted freelancer price
+  const executionFee = Math.round(freelancerPrice * 0.05); // 5% of freelancer price
 
   const total = freelancerPrice + scopeFee + accountabilityFee + executionFee;
   return { freelancerPrice, scopeFee, accountabilityFee, executionFee, total };
@@ -102,13 +101,13 @@ export function calculateRatePerPoint(
   field: string = "development"
 ): number {
   const range = getRateRange(field, level);
-  
+
   // Generous reward formula to "increase pricing a bit, making it fair for the freelancer":
   // We guarantee a baseline of at least 50% of the rate band (ratio = 0.5 + 0.5 * (testScore / 50)).
   // This scales from mid-band to the maximum rate based on their vetting test score out of 50.
   const scoreRatio = Math.min(50, Math.max(0, testScore)) / 50;
   const generousRatio = 0.5 + 0.5 * scoreRatio;
-  
+
   return range.min + Math.round((range.max - range.min) * generousRatio);
 }
 

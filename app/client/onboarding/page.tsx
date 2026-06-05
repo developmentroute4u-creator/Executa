@@ -5,7 +5,7 @@ import { Input, Textarea, Button } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
-const STEPS = ["Project Foundation", "Project Explanation", "Deep Dive", "Generate Scope"];
+const STEPS = ["Project Foundation", "Project Explanation", "Deep Dive", "Generate Scope", "Unlock Scope"];
 
 export default function ClientOnboardingPage() {
   const router = useRouter();
@@ -63,11 +63,11 @@ export default function ClientOnboardingPage() {
         body: JSON.stringify(form),
       });
       const data = await res.json();
-      
+
       setTimeout(() => {
         clearInterval(textInt);
         clearInterval(progInt);
-        
+
         if (!res.ok) {
           if (res.status === 401) {
             router.push("/auth/login");
@@ -77,10 +77,10 @@ export default function ClientOnboardingPage() {
           setLoading(false);
           return;
         }
-        
+
         setLoadingProgress(100);
         setTimeout(() => {
-          router.push(`/client/projects/${data.projectId}/scope`);
+          router.push(`/client/projects/${data.projectId}/pay`);
         }, 500);
       }, 3500);
     } catch {
@@ -98,31 +98,33 @@ export default function ClientOnboardingPage() {
     !!form.projectDescription && !!form.projectProblem && !!form.targetUsers,
     // Step 3 validation
     !!form.userJourney && !!form.managedEntities && !!form.successCriteria,
-    // Step 4 validation
+    // Step 4 validation (generate scope)
+    true,
+    // Step 5 (payment - handled externally)
     true,
   ][step];
 
   return (
     <div className="min-h-screen bg-background relative">
       {/* Top bar */}
-      <div className="fixed top-0 inset-x-0 z-50 bg-background/90 backdrop-blur-md border-b border-border h-14 flex items-center px-8 justify-between">
+      <div className="fixed top-0 inset-x-0 z-50 bg-background/90 backdrop-blur-md border-b border-border h-14 flex items-center px-4 sm:px-8 justify-between">
         <div className="flex items-center gap-2.5">
-          <span className="font-black text-[22px] tracking-tighter text-stone-900 leading-none">
+          <span className="font-black text-[18px] sm:text-[22px] tracking-tighter text-stone-900 leading-none">
             EXECUTA<span className="text-[#E85239]">.</span>
           </span>
         </div>
         {/* Step indicator */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           {STEPS.map((s, i) => (
-            <div key={s} className="flex items-center gap-2">
+            <div key={s} className="flex items-center gap-1 sm:gap-2">
               <div
                 className={cn(
-                  "w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold transition-all border",
+                  "w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-semibold transition-all border",
                   i < step
                     ? "bg-[#FCE1DC] border-transparent text-accent"
                     : i === step
-                    ? "bg-accent border-accent text-white"
-                    : "bg-transparent border-border text-text-tertiary/60"
+                      ? "bg-accent border-accent text-white"
+                      : "bg-transparent border-border text-text-tertiary/60"
                 )}
               >
                 {i < step ? (
@@ -134,15 +136,15 @@ export default function ClientOnboardingPage() {
                 )}
               </div>
               {i < STEPS.length - 1 && (
-                <div className={cn("w-6 h-px", i < step ? "bg-[#FCE1DC]" : "bg-border")} />
+                <div className={cn("w-3 sm:w-6 h-px", i < step ? "bg-[#FCE1DC]" : "bg-border")} />
               )}
             </div>
           ))}
         </div>
-        <div className="w-24" />
+        <div className="w-16 sm:w-24" />
       </div>
 
-      <div className={cn("pt-24 pb-24 px-6 max-w-3xl mx-auto", loading && "hidden")}>
+      <div className={cn("pt-20 sm:pt-24 pb-24 px-4 sm:px-6 max-w-3xl mx-auto", loading && "hidden")}>
         {/* Step 0: Project Foundation */}
         {step === 0 && (
           <div className="animate-fade-up space-y-8">
@@ -159,7 +161,7 @@ export default function ClientOnboardingPage() {
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
                 required
               />
-              
+
               <div>
                 <label className="block text-sm font-medium text-text-primary mb-2">Domain</label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -328,7 +330,7 @@ export default function ClientOnboardingPage() {
                       {form.projectDescription} {form.projectProblem}
                     </p>
                     {((form.projectDescription + form.projectProblem).length > 150) && (
-                      <button 
+                      <button
                         onClick={() => setReadMore(!readMore)}
                         className="text-xs text-accent hover:underline mt-1 font-semibold"
                       >
@@ -339,7 +341,7 @@ export default function ClientOnboardingPage() {
                 </div>
               </div>
             </div>
-            
+
             {error && (
               <div className="p-3 bg-error-light border border-error/20 rounded text-xs text-error">
                 {error}
@@ -350,22 +352,22 @@ export default function ClientOnboardingPage() {
 
         {/* Navigation */}
         {!loading && (
-        <div className="fixed bottom-0 inset-x-0 bg-background/90 backdrop-blur-md border-t border-border p-4 px-8 z-40">
-          <div className="max-w-3xl mx-auto flex items-center justify-between">
-            <Button variant="ghost" onClick={() => step === 0 ? router.push('/client/dashboard') : setStep((s) => s - 1)}>
-              Back
-            </Button>
-            {step < 3 ? (
-              <Button variant="primary" onClick={() => setStep((s) => s + 1)} disabled={!canProceed}>
-                Continue
+          <div className="fixed bottom-0 inset-x-0 bg-background/90 backdrop-blur-md border-t border-border p-4 px-8 z-40">
+            <div className="max-w-3xl mx-auto flex items-center justify-between">
+              <Button variant="ghost" onClick={() => step === 0 ? router.push('/client/dashboard') : setStep((s) => s - 1)}>
+                Back
               </Button>
-            ) : (
-              <Button variant="primary" onClick={handleSubmit} loading={loading}>
-                {loading ? "Discovering Scope…" : "Generate scope"}
-              </Button>
-            )}
+              {step < 3 ? (
+                <Button variant="primary" onClick={() => setStep((s) => s + 1)} disabled={!canProceed}>
+                  Continue
+                </Button>
+              ) : (
+                <Button variant="primary" onClick={handleSubmit} loading={loading}>
+                  {loading ? "Generating Scope…" : "Analyse & Build Scope"}
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
         )}
 
       </div>
@@ -373,7 +375,7 @@ export default function ClientOnboardingPage() {
       {/* Loading Scope Animation Overlay */}
       {loading && (
         <div className="fixed inset-0 z-50 bg-background flex flex-col items-center justify-center pt-14">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             className="w-full max-w-md bg-white p-12 rounded-2xl border border-stone-100 shadow-sm flex flex-col items-center justify-center"
@@ -384,7 +386,7 @@ export default function ClientOnboardingPage() {
                 EXECUTA<span className="text-[#E85239]">.</span>
               </span>
             </div>
-            
+
             <h3 className="text-[22px] font-black text-stone-900 mb-6 text-center">
               Drafting Project Scope
             </h3>
@@ -406,12 +408,12 @@ export default function ClientOnboardingPage() {
               </div>
 
               <div className="w-full h-2 bg-stone-100 rounded-full overflow-hidden shadow-inner">
-                 <motion.div 
-                    className="h-full bg-gradient-to-r from-orange-300 to-[#E85239]"
-                    initial={{ width: "10%" }}
-                    animate={{ width: `${loadingProgress}%` }}
-                    transition={{ duration: 0.4, ease: "easeOut" }}
-                 />
+                <motion.div
+                  className="h-full bg-gradient-to-r from-orange-300 to-[#E85239]"
+                  initial={{ width: "10%" }}
+                  animate={{ width: `${loadingProgress}%` }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                />
               </div>
             </div>
           </motion.div>
