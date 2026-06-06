@@ -139,11 +139,17 @@ export async function PATCH(req: NextRequest, { params }: { params: { projectId:
       if (!scope) return NextResponse.json({ error: "Scope not found" }, { status: 404 });
 
       // Dynamically expand the custom functionality using the Gemini AI Engine
-      let expandedUnit = await askGeminiForCustomUnit(
-        customUnit.name,
-        customUnit.description,
-        project.field || "development"
-      );
+      let expandedUnit;
+      try {
+        expandedUnit = await askGeminiForCustomUnit(
+          customUnit.name,
+          customUnit.description,
+          project.field || "development"
+        );
+      } catch (e: any) {
+        console.warn(`[GEMINI CUSTOM UNIT API ERROR] ${e.message || e}. Falling back to baseline configuration.`);
+        expandedUnit = null;
+      }
 
       // If AI fails or returns null, gracefully fallback to a baseline configuration
       if (!expandedUnit) {

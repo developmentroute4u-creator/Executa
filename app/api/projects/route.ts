@@ -95,25 +95,43 @@ export async function POST(req: NextRequest) {
         successCriteria
       });
     } catch (e: any) {
-      if (e.message === "RATE_LIMIT_EXCEEDED") {
-        return NextResponse.json({ error: "The limit will be reached for all models" }, { status: 429 });
-      }
-      if (e.message === "API_KEY_LEAKED") {
-        return NextResponse.json({ error: "Google has disabled this API Key because it was leaked. Please generate a new key." }, { status: 403 });
-      }
-      if (e.message === "API_KEY_INVALID") {
-        return NextResponse.json({ error: "The Gemini API key provided is invalid or unauthorized." }, { status: 400 });
-      }
-      if (e.message === "MODEL_NOT_FOUND") {
-        return NextResponse.json({ error: "The requested Gemini models (like 3.5 Flash) were not found or are not available." }, { status: 400 });
-      }
+      console.warn(`[GEMINI RATE LIMIT/ERROR] ${e.message || e}. Falling back to offline generator.`);
       generatedScope = null;
     }
 
-    // If Gemini fails for other reasons, throw an error as the AI engine is mandatory
+    // If Gemini fails (e.g. rate limit, invalid key), use the offline scope generator
     if (!generatedScope) {
-      console.error("[POST /api/projects] Gemini failed to generate a scope.");
-      return NextResponse.json({ error: "AI Engine failed to discover scope." }, { status: 500 });
+      console.log("[POST /api/projects] Gemini failed. Generating offline fallback scope...");
+      const result = generateScope({
+        title,
+        goal: successCriteria,
+        businessModel: projectDescription,
+        field: domain
+      });
+      generatedScope = {
+        ...result,
+        projectSummary: {
+          overview: projectDescription || "A managed project.",
+          businessGoal: successCriteria || "Achieve project success criteria.",
+          primaryUsers: [targetUsers || "End Users"]
+        },
+        overallIncluded: [
+          "Core features described in project foundation",
+          "Functional units as defined in scope document",
+          "Clean responsive UI view matching domain requirement"
+        ],
+        overallExcluded: [
+          "Additional modules outside original request",
+          "Production server costs and hosting licenses",
+          "Continuous integration and continuous deployment pipelines"
+        ],
+        expectedDeliverables: [
+          domain === "Design" ? "Figma visual layout files" : "Production-ready git repository source code"
+        ],
+        requiredCapabilities: [
+          domain === "Design" ? "UI/UX Design" : "Fullstack Web Development"
+        ]
+      };
     }
 
     // Calibrate totalEffortScore and timeline from Gemini results

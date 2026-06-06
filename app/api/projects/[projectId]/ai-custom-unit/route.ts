@@ -29,10 +29,38 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     const scope = await Scope.findById(project.scopeId).lean() as any;
     if (!scope) return NextResponse.json({ error: "Scope not found" }, { status: 404 });
 
-    // Call Gemini using the same method as scope upgrades
-    const upgradeData = await askGeminiForScopeUpgrade(scope, { whatToAdd, howItWorks, whyNeeded }, project.field);
+    // Call Gemini with safe try-catch wrapper and fallback
+    let upgradeData = null;
+    try {
+      upgradeData = await askGeminiForScopeUpgrade(scope, { whatToAdd, howItWorks, whyNeeded }, project.field);
+    } catch (e: any) {
+      console.warn(`[GEMINI CUSTOM UNIT API ERROR] ${e.message || e}. Falling back to offline engine.`);
+    }
+
     if (!upgradeData) {
-      return NextResponse.json({ error: "Failed to generate custom unit proposal via AI" }, { status: 500 });
+      console.log("[POST /api/projects/:id/ai-custom-unit] Generating offline fallback custom unit...");
+      const score = 20;
+      upgradeData = {
+        proposedUnit: {
+          name: whatToAdd || "Custom Module",
+          description: howItWorks || "Custom functionality based on client description.",
+          included: ["Feature implementation matching user journey description"],
+          excluded: ["Advanced custom integrations (available as upgrade)"],
+          deliverables: ["Functional module matching client guidelines"],
+          unitScore: score,
+          effortDrivers: {
+            logicDepth: 5,
+            interactionDensity: 5,
+            dataHandling: 5,
+            dependencyLevel: 5,
+            variations: 5,
+            outputExpectation: 5,
+            totalScore: score
+          }
+        },
+        scopeImpactSummary: `Offline fallback custom unit generated for: ${whatToAdd}.`,
+        deliverableImpact: ["Custom features file", "Workspace component configuration"]
+      };
     }
 
     // Prepare the generated unit
