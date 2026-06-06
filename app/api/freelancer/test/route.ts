@@ -122,15 +122,40 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ test, tests });
 }
 
-// PATCH /api/freelancer/test — Start the assigned custom test
+// PATCH /api/freelancer/test — Start or Submit the assigned custom test
 export async function PATCH(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
+    const { action, submissionUrl, submissionNotes } = await req.json();
     await connectDB();
     const userId = (session.user as any).id;
 
+    if (action === "submit") {
+      if (!submissionUrl) {
+        return NextResponse.json({ error: "Submission URL required" }, { status: 400 });
+      }
+
+      // Find the active test that is currently in_progress
+      const test = await Test.findOne({ freelancerId: userId, status: "in_progress" }).sort({ createdAt: -1 });
+      if (!test) return NextResponse.json({ error: "No active test in-progress found to submit" }, { status: 404 });
+
+      test.submissionUrl = submissionUrl;
+      test.submissionNotes = submissionNotes || "";
+      test.submittedAt = new Date();
+      test.status = "under_review";
+      await test.save();
+
+      await FreelancerProfile.findOneAndUpdate(
+        { userId },
+        { testStatus: "under_review" }
+      );
+
+      return NextResponse.json({ success: true, test });
+    }
+
+    // Default action: start the test
     const test = await Test.findOne({ freelancerId: userId, status: "assigned" }).sort({ createdAt: -1 });
     if (!test) return NextResponse.json({ error: "No assigned test found" }, { status: 404 });
 
