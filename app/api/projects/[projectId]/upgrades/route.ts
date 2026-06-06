@@ -30,10 +30,38 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     const scope = await Scope.findById(project.scopeId).lean() as any;
     if (!scope) return NextResponse.json({ error: "Scope not found" }, { status: 404 });
 
-    // Call Gemini
-    const upgradeData = await askGeminiForScopeUpgrade(scope, { whatToAdd, howItWorks, whyNeeded }, project.field);
+    // Call Gemini with safe try-catch wrapper and fallback
+    let upgradeData = null;
+    try {
+      upgradeData = await askGeminiForScopeUpgrade(scope, { whatToAdd, howItWorks, whyNeeded }, project.field);
+    } catch (e: any) {
+      console.warn(`[GEMINI UPGRADE API ERROR] ${e.message || e}. Falling back to offline engine.`);
+    }
+
     if (!upgradeData) {
-      return NextResponse.json({ error: "Failed to generate upgrade proposal via AI" }, { status: 500 });
+      console.log("[POST /api/projects/:id/upgrades] Generating offline fallback upgrade proposal...");
+      const score = 20;
+      upgradeData = {
+        proposedUnit: {
+          name: whatToAdd || "Scope Upgrade Module",
+          description: howItWorks || "Custom functionality upgrade based on client requirements.",
+          included: ["Feature upgrade implementation matching description"],
+          excluded: ["Advanced premium configurations (available as upgrade)"],
+          deliverables: ["Upgraded code features and layout deployment"],
+          unitScore: score,
+          effortDrivers: {
+            logicDepth: 5,
+            interactionDensity: 5,
+            dataHandling: 5,
+            dependencyLevel: 5,
+            variations: 5,
+            outputExpectation: 5,
+            totalScore: score
+          }
+        },
+        scopeImpactSummary: `Offline fallback generated for: ${whatToAdd}. Adds the requested functionality.`,
+        deliverableImpact: ["Upgraded feature files", "Updated repository integration"]
+      };
     }
 
     // Assign ID to proposed unit

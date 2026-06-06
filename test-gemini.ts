@@ -1,7 +1,5 @@
 import { askGeminiForScope } from "./lib/gemini";
-// @ts-ignore
-import dotenv from "dotenv";
-dotenv.config({ path: ".env.local" });
+// No dotenv import needed, environment variables loaded externally
 
 const test = async () => {
   try {
