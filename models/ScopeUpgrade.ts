@@ -19,8 +19,17 @@ export interface IScopeUpgrade extends Document {
   
   // Internal Processing Impact
   costImpact: number;
+  expertCost: number;
+  platformFee: number;
   effortImpact: number;
   
+  // Payment gate for platform fee (5% of expertCost)
+  upgradePayment?: {
+    status: "initiated" | "paid" | "failed";
+    merchantTransactionId?: string;
+    transactionId?: string;
+    paidAt?: Date;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -42,12 +51,25 @@ const ScopeUpgradeSchema = new Schema<IScopeUpgrade>(
     deliverableImpact: [{ type: String }],
     
     costImpact: { type: Number, required: true },
+    expertCost: { type: Number, required: true },
+    platformFee: { type: Number, required: true },
     effortImpact: { type: Number, required: true },
+    upgradePayment: {
+      status: { type: String, enum: ["initiated", "paid", "failed"] },
+      merchantTransactionId: { type: String },
+      transactionId: { type: String },
+      paidAt: { type: Date },
+    },
   },
   { timestamps: true }
 );
 
 ScopeUpgradeSchema.index({ projectId: 1, status: 1 });
 
+if (mongoose.models.ScopeUpgrade) {
+  delete mongoose.models.ScopeUpgrade;
+}
+
 export const ScopeUpgrade: Model<IScopeUpgrade> =
-  mongoose.models.ScopeUpgrade || mongoose.model<IScopeUpgrade>("ScopeUpgrade", ScopeUpgradeSchema);
+  mongoose.model<IScopeUpgrade>("ScopeUpgrade", ScopeUpgradeSchema);
+

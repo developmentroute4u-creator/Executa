@@ -52,22 +52,38 @@ export async function PATCH(req: NextRequest, { params }: { params: { projectId:
       const project = await Project.findById(params.projectId);
       if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
-      const freelancerId = project.freelancerId;
-      if (freelancerId) {
-        const { FreelancerProfile } = require("@/models/FreelancerProfile");
-        await FreelancerProfile.updateOne(
-          { userId: freelancerId },
-          {
-            $pull: { activeProjectIds: project._id },
-            $set: { available: true }
-          }
+      const loggedInUserId = (session.user as any).id;
+
+      // Filter out of assignedFreelancers array
+      if (project.assignedFreelancers && project.assignedFreelancers.length > 0) {
+        project.assignedFreelancers = project.assignedFreelancers.filter(
+          (f: any) => f.userId.toString() !== loggedInUserId
         );
       }
 
-      project.freelancerId = undefined;
-      project.status = "matching";
-      project.freelancerAccepted = false;
+      // Handle legacy single freelancerId field
+      if (project.freelancerId && project.freelancerId.toString() === loggedInUserId) {
+        project.freelancerId = undefined;
+      }
+
+      // Reset project status back to matchmaking if no active assignments remain
+      const hasAssigned = project.freelancerId || (project.assignedFreelancers && project.assignedFreelancers.length > 0);
+      if (!hasAssigned) {
+        project.status = "matching";
+        project.freelancerAccepted = false;
+      }
+
       await project.save();
+
+      // Free up the freelancer profile availability
+      const { FreelancerProfile } = require("@/models/FreelancerProfile");
+      await FreelancerProfile.updateOne(
+        { userId: new mongoose.Types.ObjectId(loggedInUserId) },
+        {
+          $pull: { activeProjectIds: project._id },
+          $set: { available: true }
+        }
+      );
 
       return NextResponse.json({ success: true, project });
     }
@@ -103,6 +119,41 @@ export async function PATCH(req: NextRequest, { params }: { params: { projectId:
 
       if (allAccepted) {
         project.status = "active";
+        if (!project.milestones || project.milestones.length === 0) {
+          const freelancerPrice = project.pricing?.freelancerPrice || 0;
+          const m1 = Math.round(freelancerPrice * 0.20);
+          const m2 = Math.round(freelancerPrice * 0.30);
+          const m3 = freelancerPrice - m1 - m2;
+          project.milestones = [
+            {
+              title: "Milestone 1: Core Architecture & Setup (20%)",
+              dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+              status: "pending",
+              deliverables: ["Initial repository structure", "Database schemas", "Deployment configuration"],
+              percentage: 20,
+              amount: m1,
+              payment: { status: "pending" }
+            },
+            {
+              title: "Milestone 2: Logic & Integration (30%)",
+              dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+              status: "pending",
+              deliverables: ["Functional API endpoints", "Database logic integration", "Unit/Integration tests"],
+              percentage: 30,
+              amount: m2,
+              payment: { status: "pending" }
+            },
+            {
+              title: "Milestone 3: Final Handovers & Source Code (50%)",
+              dueDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000),
+              status: "pending",
+              deliverables: ["Polished UI design implementation", "Completed source code transfer", "Deployment build validation"],
+              percentage: 50,
+              amount: m3,
+              payment: { status: "pending" }
+            }
+          ];
+        }
       }
 
       await project.save();

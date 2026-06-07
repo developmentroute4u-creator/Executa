@@ -8,12 +8,12 @@ import ExecutaLogo from "@/components/layout/ExecutaLogo";
 
 // All possible nav items with their feature-flag keys
 const ALL_NAV_ITEMS = [
-  { path: "/client/workspace",     label: "Workspace",     icon: <LayoutDashboard size={18} strokeWidth={2} />, flagKey: "cl_workspace"      },
-  { path: "/client/projects",      label: "Projects",      icon: <Briefcase       size={18} strokeWidth={2} />, flagKey: "cl_projects"       },
-  { path: "/client/execution",     label: "Execution",     icon: <Zap             size={18} strokeWidth={2} />, flagKey: "cl_execution"      },
-  { path: "/client/billing",       label: "Billing",       icon: <CreditCard      size={18} strokeWidth={2} />, flagKey: "cl_billing"        },
-  { path: "/client/organization",  label: "Organization",  icon: <Building        size={18} strokeWidth={2} />, flagKey: "cl_organization"   },
-  { path: "/client/support",       label: "Support",       icon: <HelpCircle      size={18} strokeWidth={2} />, flagKey: "cl_support"        },
+  { path: "/client/workspace", label: "Workspace", icon: <LayoutDashboard size={18} strokeWidth={2} />, flagKey: "cl_workspace" },
+  { path: "/client/projects", label: "Projects", icon: <Briefcase size={18} strokeWidth={2} />, flagKey: "cl_projects" },
+  { path: "/client/execution", label: "Execution", icon: <Zap size={18} strokeWidth={2} />, flagKey: "cl_execution" },
+  { path: "/client/billing", label: "Billing", icon: <CreditCard size={18} strokeWidth={2} />, flagKey: "cl_billing" },
+  { path: "/client/organization", label: "Organization", icon: <Building size={18} strokeWidth={2} />, flagKey: "cl_organization" },
+  { path: "/client/support", label: "Support", icon: <HelpCircle size={18} strokeWidth={2} />, flagKey: "cl_support" },
 ];
 
 export default function ClientWorkspaceRail() {
@@ -30,7 +30,7 @@ export default function ClientWorkspaceRail() {
           setEnabledKeys(new Set(data.flags.filter((f: any) => f.enabled).map((f: any) => f.key)));
         }
       })
-      .catch(() => {/* Fail silently — show all items if API unreachable */});
+      .catch(() => {/* Fail silently — show all items if API unreachable */ });
   }, []);
 
   // Filter nav items by enabled feature flags
@@ -58,18 +58,17 @@ export default function ClientWorkspaceRail() {
           </div>
 
           {visibleItems.map((item) => {
-            const isActive = pathname === item.path || 
+            const isActive = pathname === item.path ||
               pathname.startsWith(`${item.path}/`) ||
               (item.path === "/client/support" && (pathname === "/client/articles" || pathname.startsWith("/client/articles/")));
             return (
               <Link
                 key={item.path}
                 href={item.path}
-                className={`h-12 w-full flex items-center justify-start rounded-xl px-0 transition-all duration-300 overflow-hidden ${
-                  isActive
+                className={`h-12 w-full flex items-center justify-start rounded-xl px-0 transition-all duration-300 overflow-hidden ${isActive
                     ? "bg-accent text-white shadow-[0_4px_12px_rgba(232,82,57,0.18)]"
                     : "text-text-tertiary hover:text-accent hover:bg-accent/5"
-                }`}
+                  }`}
               >
                 <div className="shrink-0 flex items-center justify-center w-[42px] h-full">
                   {item.icon}
@@ -120,18 +119,17 @@ export default function ClientWorkspaceRail() {
       <nav className="lg:hidden fixed bottom-0 inset-x-0 z-50 bg-white/90 backdrop-blur-xl border-t border-border/40 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
         <div className="flex items-center justify-around px-2 py-2 safe-area-pb">
           {visibleItems.slice(0, 5).map((item) => {
-            const isActive = pathname === item.path || 
+            const isActive = pathname === item.path ||
               pathname.startsWith(`${item.path}/`) ||
               (item.path === "/client/support" && (pathname === "/client/articles" || pathname.startsWith("/client/articles/")));
             return (
               <Link
                 key={item.path}
                 href={item.path}
-                className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl transition-all duration-200 min-w-[52px] ${
-                  isActive
+                className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl transition-all duration-200 min-w-[52px] ${isActive
                     ? "text-[#E85239]"
                     : "text-stone-400 hover:text-stone-600"
-                }`}
+                  }`}
               >
                 <div className={`p-1.5 rounded-xl transition-all duration-200 ${isActive ? "bg-[#FFF7F6]" : ""}`}>
                   {item.icon}

@@ -22,7 +22,7 @@ function PaymentSuccessContent() {
     }
 
     let tries = 0;
-    const MAX_TRIES = 8;
+    const MAX_TRIES = 20;  // 20 × 3s = 60s window
 
     async function verify() {
       tries++;
@@ -33,29 +33,36 @@ function PaymentSuccessContent() {
 
         if (data.paid) {
           setStatus("paid");
-          // Auto-redirect to full scope page after 3s
           setTimeout(() => {
-            router.push(`/client/projects/${params.projectId}/scope`);
+            if (data.isMilestone) {
+              router.push(`/client/execution/${params.projectId}`);
+            } else if (data.isUpgrade) {
+              router.push(`/client/execution/${params.projectId}`);
+            } else if (data.isCustomUnit) {
+              router.push(`/client/projects/${params.projectId}/scope`);
+            } else {
+              router.push(`/client/projects/${params.projectId}/scope`);
+            }
           }, 3000);
-        } else if (data.state === "FAILED" || data.state === "ERROR") {
+        } else if (data.state === "FAILED" || data.state === "ERROR" || data.state === "PAYMENT_ERROR") {
           setStatus("failed");
         } else if (tries < MAX_TRIES) {
-          // Retry in 2.5s (PhonePe may take a moment to process)
-          setTimeout(verify, 2500);
+          // Retry every 3s — PhonePe can take 30–60s to confirm
+          setTimeout(verify, 3000);
         } else {
           setStatus("failed");
         }
       } catch {
         if (tries < MAX_TRIES) {
-          setTimeout(verify, 2500);
+          setTimeout(verify, 3000);
         } else {
           setStatus("failed");
         }
       }
     }
 
-    // Start verifying after 1.5s to let PhonePe process
-    setTimeout(verify, 1500);
+    // Start verifying after 2.5s — give PhonePe time to process redirect
+    setTimeout(verify, 2500);
   }, [merchantTransactionId, params.projectId, router]);
 
   return (
@@ -120,7 +127,13 @@ function PaymentSuccessContent() {
             </motion.div>
             <h2 className="text-[24px] font-black text-stone-900">Payment Confirmed!</h2>
             <p className="text-[14px] text-stone-500 leading-relaxed">
-              Your platform fees have been paid. Your full project scope is now unlocked.
+              {merchantTransactionId?.startsWith("EXECUTA_MS_")
+                ? "Your milestone payment has been processed. Deliverables are now unlocked."
+                : merchantTransactionId?.startsWith("EXECUTA_UG_")
+                ? "Scope upgrade fee paid. The new functional unit has been unlocked and sent to your expert for approval."
+                : merchantTransactionId?.startsWith("EXECUTA_CU_")
+                ? "Scope upgrade fee paid. Your new functionality has been added to the project scope."
+                : "Your platform fees have been paid. Your full project scope is now unlocked."}
             </p>
             <div className="flex items-center gap-2 text-[12px] text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-2.5">
               <CheckCircle2 size={13} />

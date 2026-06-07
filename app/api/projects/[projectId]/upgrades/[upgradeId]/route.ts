@@ -83,11 +83,32 @@ export async function PATCH(req: NextRequest, { params }: { params: { projectId:
       // Update Project
       const currentRateRange = getRateRange(project.field || "development", newEffortLevel);
       const avgRate = Math.round((currentRateRange.min + currentRateRange.max) / 2);
-      const newPricing = calculatePrice(newTotalScore, avgRate);
+      
+      const ratePerPoint = project.pricing?.ratePerPoint || avgRate;
+      const newPricing = calculatePrice(newTotalScore, ratePerPoint);
 
       project.scopeId = newScope._id;
       project.requiredLevel = newEffortLevel;
-      project.pricing = { ...newPricing, ratePerPoint: avgRate, accountabilityMode: project.pricing?.accountabilityMode || "basic" };
+      project.pricing = { 
+        ...newPricing, 
+        ratePerPoint, 
+        accountabilityMode: project.pricing?.accountabilityMode || "basic" 
+      };
+
+      // Add a new milestone for this scope upgrade
+      const expertCost = upgrade.expertCost || Math.round(upgrade.costImpact / 1.05);
+      const upgradeMilestone = {
+        title: `Scope Upgrade: ${upgrade.proposedUnit.name}`,
+        dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // Default 14 days
+        status: "pending" as const,
+        deliverables: upgrade.proposedUnit.deliverables && upgrade.proposedUnit.deliverables.length > 0
+          ? upgrade.proposedUnit.deliverables
+          : ["Upgrade implementation"],
+        amount: expertCost,
+        payment: { status: "pending" as const }
+      };
+      
+      project.milestones.push(upgradeMilestone);
       await project.save();
 
       // Post Chat Message

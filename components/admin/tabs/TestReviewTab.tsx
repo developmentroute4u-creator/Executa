@@ -9,7 +9,12 @@ export function TestReviewTab({ tests, fetchOverview }: { tests: any[], fetchOve
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const total = Object.values(scores).reduce((a, b) => a + b, 0);
+  const total =
+    (scores.functionalCoverage || 0) +
+    (scores.logic || 0) +
+    (scores.usability || 0) +
+    (scores.edgeCases || 0) +
+    (scores.outputQuality || 0);
 
   const handleSubmitEvaluation = async () => {
     if (!selected) return;
@@ -19,8 +24,12 @@ export function TestReviewTab({ tests, fetchOverview }: { tests: any[], fetchOve
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          scores,
-          notes,
+          functionalCoverage: scores.functionalCoverage,
+          logic: scores.logic,
+          usability: scores.usability,
+          edgeCases: scores.edgeCases,
+          outputQuality: scores.outputQuality,
+          evaluatorNotes: notes,
           capabilityScores: []
         }),
       });
@@ -54,7 +63,18 @@ export function TestReviewTab({ tests, fetchOverview }: { tests: any[], fetchOve
         {tests.map((t) => (
           <button
             key={t._id}
-            onClick={() => { setSelected(t); setScores(t.evaluation || { functionalCoverage: 0, logic: 0, usability: 0, edgeCases: 0, outputQuality: 0 }); }}
+            onClick={() => {
+              setSelected(t);
+              const evalObj = t.evaluation || {};
+              setScores({
+                functionalCoverage: evalObj.functionalCoverage || 0,
+                logic: evalObj.logic || 0,
+                usability: evalObj.usability || 0,
+                edgeCases: evalObj.edgeCases || 0,
+                outputQuality: evalObj.outputQuality || 0,
+              });
+              setNotes(evalObj.evaluatorNotes || "");
+            }}
             className={`w-full text-left p-4 rounded-xl border transition-all ${selected?._id === t._id ? "border-accent bg-accent/5 ring-1 ring-accent" : "border-border bg-white hover:border-border-strong"}`}
           >
             <div className="flex items-center justify-between mb-1.5">

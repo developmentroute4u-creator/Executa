@@ -12,20 +12,24 @@ import {
   FileText, 
   Plus, 
   X, 
-  Loader2, 
+  Loader2,
   AlertCircle, 
   AlertTriangle,
-  Zap
+  Zap,
+  Calendar,
+  Clock
 } from "lucide-react";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency, getRemainingTimeDetails } from "@/lib/utils";
 
 export default function ExecutionRoom({ params }: { params: { id: string } }) {
   const router = useRouter();
-  const chatBottomRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   
   const [project, setProject] = useState<any>(null);
   const [scope, setScope] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(false);
+  const [hasInitialScrolled, setHasInitialScrolled] = useState(false);
   
   // Tabs
   const [view, setView] = useState<"canvas" | "submissions">("canvas");
@@ -45,6 +49,91 @@ export default function ExecutionRoom({ params }: { params: { id: string } }) {
   const [selectedConflictReason, setSelectedConflictReason] = useState("");
   const [conflictDetails, setConflictDetails] = useState("");
   const [flaggingConflict, setFlaggingConflict] = useState(false);
+
+  // Milestone Submission States
+  const [submissionUrl, setSubmissionUrl] = useState("");
+  const [submissionNotes, setSubmissionNotes] = useState("");
+  const [submittingMilestone, setSubmittingMilestone] = useState(false);
+
+  const handleAcceptScope = async () => {
+    setProcessing(true);
+    try {
+      const res = await fetch(`/api/projects/${params.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "accept_scope" }),
+      });
+      if (res.ok) {
+        fetchData();
+      } else {
+        const d = await res.json();
+        alert(d.error || "Failed to accept scope.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error accepting scope.");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleDeclineScope = async () => {
+    if (!confirm("Are you sure you want to decline this project assignment? This will return the project to matchmaking.")) {
+      return;
+    }
+    setProcessing(true);
+    try {
+      const res = await fetch(`/api/projects/${params.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reject: true }),
+      });
+      if (res.ok) {
+        router.push("/freelancer/projects");
+      } else {
+        const d = await res.json();
+        alert(d.error || "Failed to decline scope.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error declining scope.");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleSubmitMilestone = async (milestoneIndex: number) => {
+    if (!submissionUrl.trim()) {
+      alert("Please enter a deliverable link.");
+      return;
+    }
+    setSubmittingMilestone(true);
+    try {
+      const res = await fetch(`/api/projects/${params.id}/milestones`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "submit",
+          milestoneIndex,
+          submissionUrl: submissionUrl.trim(),
+          submissionNotes: submissionNotes.trim()
+        })
+      });
+      if (res.ok) {
+        setSubmissionUrl("");
+        setSubmissionNotes("");
+        fetchData();
+      } else {
+        const d = await res.json();
+        alert(d.error || "Failed to submit deliverables.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error submitting deliverables.");
+    } finally {
+      setSubmittingMilestone(false);
+    }
+  };
 
   // Load project data
   const fetchData = async () => {
@@ -95,10 +184,19 @@ export default function ExecutionRoom({ params }: { params: { id: string } }) {
     return () => clearInterval(interval);
   }, [params.id]);
 
-  // Scroll to bottom of chat on message updates
+  // Scroll to bottom of chat internally on message updates (prevent page viewport jumping)
   useEffect(() => {
-    chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (messages.length > 0 && messagesContainerRef.current) {
+      const container = messagesContainerRef.current;
+      const isNearBottom = container.scrollHeight - container.clientHeight - container.scrollTop < 150;
+      if (!hasInitialScrolled || isNearBottom) {
+        container.scrollTop = container.scrollHeight;
+        if (!hasInitialScrolled) {
+          setHasInitialScrolled(true);
+        }
+      }
+    }
+  }, [messages, hasInitialScrolled]);
 
   // Chat message submission
   const sendMessage = async () => {
@@ -173,18 +271,21 @@ export default function ExecutionRoom({ params }: { params: { id: string } }) {
       // Formulate secure system alert message warning the client and activating contributing mode
       const conflictMsg = `⚠️ [Executa Support Alert]\n\nThe expert team has officially flagged a scope boundary conflict.\n\nReason: "${reasonText}"\n${conflictDetails ? `Details: "${conflictDetails}"\n` : ""}\nLIVE AUDIT ENGAGED: Executa's senior audit panel has been alerted and will inspect this secure chat thread and scope functional definitions. Expert contributions are fully protected under Executa's secure Contributing Mode. All billing limits and functional deliverables are frozen under audit.`;
 
-      const res = await fetch(`/api/projects/${params.id}/chat`, {
+      const res = await fetch(`/api/projects/${params.id}/disputes`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: conflictMsg })
+        body: JSON.stringify({ reason: reasonText, details: conflictDetails })
       });
 
       if (res.ok) {
         const data = await res.json();
-        setMessages(prev => [...prev, data.message]);
+        if (data.message) {
+          setMessages(prev => [...prev, data.message]);
+        }
         setSelectedConflictReason("");
         setConflictDetails("");
         setShowConflictModal(false);
+        setProject(prev => prev ? { ...prev, status: "disputed" } : null);
       } else {
         alert("Could not register scope conflict. Please try again.");
       }
@@ -226,7 +327,7 @@ export default function ExecutionRoom({ params }: { params: { id: string } }) {
   const pendingUpgrade = upgrades.find(u => u.status === "pending_freelancer_approval");
 
   return (
-    <main className="flex-1 h-screen overflow-hidden flex flex-col bg-background font-sans pl-24 select-none">
+    <main className="w-full h-screen max-h-screen overflow-hidden flex flex-col bg-background font-sans select-none">
       
       {/* ── Editorial Top Navigation Header ── */}
       <header className="shrink-0 border-b border-border/40 px-10 md:px-12 py-6 flex flex-col md:flex-row md:items-center justify-between gap-6 z-10 bg-white/80 backdrop-blur-xl">
@@ -253,12 +354,14 @@ export default function ExecutionRoom({ params }: { params: { id: string } }) {
             >
               Operational Canvas
             </button>
-            <button 
-              onClick={() => setView("submissions")}
-              className={cn("transition-colors pb-1.5 border-b-2 font-bold", view === "submissions" ? "text-text-primary border-[#E85239]" : "text-text-tertiary border-transparent hover:text-text-secondary")}
-            >
-              Submissions
-            </button>
+            {project.status !== "pending" && (
+              <button 
+                onClick={() => setView("submissions")}
+                className={cn("transition-colors pb-1.5 border-b-2 font-bold", view === "submissions" ? "text-text-primary border-[#E85239]" : "text-text-tertiary border-transparent hover:text-text-secondary")}
+              >
+                Submissions
+              </button>
+            )}
           </div>
 
           <button 
@@ -364,6 +467,35 @@ export default function ExecutionRoom({ params }: { params: { id: string } }) {
                     <p className="text-sm text-text-secondary">No active functional deliverables configured yet.</p>
                   </div>
                 )}
+
+                {/* Accept/Decline action banner if pending approval */}
+                {project.status === "pending" && (
+                  <div className="mt-12 p-8 bg-white border border-border/60 rounded-3xl shadow-[0_8px_30px_rgba(232,82,57,0.01)] flex flex-col items-center text-center space-y-6 relative overflow-hidden">
+                    <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-accent to-[#FF5B3A]" />
+                    <div className="space-y-2">
+                      <h3 className="font-display text-base font-bold text-text-primary tracking-tight">Review & Decide on Project Scope</h3>
+                      <p className="text-xs text-text-secondary max-w-xl leading-relaxed">
+                        Please review the approved functional units, requirements, and exclusions above. Declining this project will return it to matchmaking for other experts.
+                      </p>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-4 w-full justify-center max-w-md">
+                      <button
+                        onClick={handleDeclineScope}
+                        disabled={processing}
+                        className="flex-1 px-6 py-3 border border-red-200 hover:border-red-300 bg-red-50/20 hover:bg-red-50 text-red-600 hover:text-red-700 text-xs uppercase tracking-wider font-bold rounded-xl transition-all shadow-sm active:scale-[0.98] disabled:opacity-50"
+                      >
+                        Decline Scope
+                      </button>
+                      <button
+                        onClick={handleAcceptScope}
+                        disabled={processing}
+                        className="flex-1 px-6 py-3 bg-accent text-white hover:bg-accent-hover text-xs uppercase tracking-wider font-bold rounded-xl transition-all shadow-md active:scale-[0.98] disabled:opacity-50"
+                      >
+                        {processing ? "Accepting..." : "Accept Scope"}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -372,40 +504,207 @@ export default function ExecutionRoom({ params }: { params: { id: string } }) {
             <div className="max-w-4xl space-y-8 animate-fade-up">
               <div className="flex items-center gap-2 border-b border-border/40 pb-4">
                 <FileText className="text-[#E85239]" size={18} strokeWidth={2.5} />
-                <h2 className="font-display text-lg font-bold text-text-primary tracking-tight">Submission Protocol Canvas</h2>
+                <h2 className="font-display text-lg font-bold text-text-primary tracking-tight">Milestone Objectives & Deliveries</h2>
               </div>
 
-              <div className="bg-white border border-border/60 rounded-2xl p-10 text-center max-w-xl mx-auto shadow-sm">
-                <div className="w-12 h-12 rounded-full bg-[#E85239]/5 text-[#E85239]/60 flex items-center justify-center mx-auto mb-4">
-                  <Plus size={24} />
-                </div>
-                <h3 className="text-sm font-bold text-text-primary mb-2">Upload Deliverable Build</h3>
-                <p className="text-xs text-text-secondary leading-relaxed mb-6">
-                  Paste project repository links, Figma file links, or upload build archives to officially deliver this milestone to your client partner.
-                </p>
-                <div className="py-12 border border-dashed border-border/80 hover:border-[#E85239]/40 transition-colors bg-stone-50/50 rounded-xl cursor-pointer">
-                  <p className="text-xs text-text-secondary">Drag files here or paste repository links</p>
-                  <button className="text-[10px] font-bold uppercase tracking-wider text-[#E85239] hover:underline mt-4">
-                    Initialize upload process →
-                  </button>
-                </div>
+              <div className="space-y-6">
+                {(project.milestones || []).map((m: any, idx: number) => {
+                  const isActive = (project.milestones || []).slice(0, idx).every((prev: any) => prev.status === "approved") && m.status !== "approved";
+                  return (
+                    <div key={idx} className={cn(
+                      "bg-white border rounded-2xl p-6 transition-all relative overflow-hidden",
+                      isActive ? "border-accent bg-accent/[0.01] ring-1 ring-accent" : "border-border/60"
+                    )}>
+                      <div className="flex items-center justify-between border-b border-stone-50 pb-3 mb-4">
+                        <div className="flex items-center gap-2">
+                          <span className={cn(
+                            "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
+                            m.status === "approved" ? "bg-emerald-100 text-emerald-700" :
+                            m.status === "submitted" ? "bg-amber-100 text-amber-700" : "bg-stone-100 text-stone-600"
+                          )}>
+                            {idx + 1}
+                          </span>
+                          <div>
+                            <h3 className="font-bold text-text-primary leading-tight">{m.title}</h3>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs font-bold text-text-secondary">Value: {formatCurrency(m.amount || 0)}</span>
+                          <span className={cn(
+                            "text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border",
+                            m.status === "approved" ? "bg-emerald-50 border-emerald-200 text-emerald-700" :
+                            m.status === "submitted" ? "bg-amber-50 border-amber-200 text-amber-700" : "bg-stone-50 border-stone-200 text-stone-500"
+                          )}>
+                            {m.status === "approved" ? "Paid & Unlocked" :
+                             m.status === "submitted" ? "Awaiting Release" : "In Progress"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Scope objectives list */}
+                      {m.deliverables && m.deliverables.length > 0 && (
+                        <div className="mb-4">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary mb-2">Scope Objectives</p>
+                          <ul className="space-y-1.5 text-xs text-text-secondary">
+                            {m.deliverables.map((d: string, i: number) => (
+                              <li key={i} className="flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                                <span>{d}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Submission details or submission form */}
+                      {m.status === "pending" && isActive && (
+                        <div className="mt-4 pt-4 border-t border-dashed border-border/60 space-y-4">
+                          <h4 className="text-xs font-bold text-text-primary uppercase tracking-wider">Submit Objectives Work</h4>
+                          <div className="grid grid-cols-1 gap-4 text-xs">
+                            <div className="space-y-1.5">
+                              <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Deliverable URL (GitHub / Figma / Drive / Build Link)</label>
+                              <input
+                                type="text"
+                                placeholder="e.g. https://github.com/... or https://figma.com/... or https://drive.google.com/..."
+                                value={submissionUrl}
+                                onChange={(e) => setSubmissionUrl(e.target.value)}
+                                className="w-full px-4 py-2.5 bg-stone-50 border border-border focus:border-[#E85239] focus:ring-1 focus:ring-[#E85239] rounded-xl outline-none font-sans text-xs text-text-primary"
+                              />
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Operational Handover Notes (Credentials, Details)</label>
+                              <textarea
+                                rows={3}
+                                placeholder="Provide access details, notes, or instructions for this build..."
+                                value={submissionNotes}
+                                onChange={(e) => setSubmissionNotes(e.target.value)}
+                                className="w-full px-4 py-2.5 bg-stone-50 border border-border focus:border-[#E85239] focus:ring-1 focus:ring-[#E85239] rounded-xl outline-none font-sans text-xs text-text-primary resize-none"
+                              />
+                            </div>
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full mt-2">
+                              <button
+                                type="button"
+                                disabled={submittingMilestone || !submissionUrl.trim()}
+                                onClick={() => handleSubmitMilestone(idx)}
+                                className="px-6 py-3 bg-[#E85239] hover:bg-[#d44127] disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md justify-self-start flex items-center gap-2 active:scale-[0.98]"
+                              >
+                                {submittingMilestone && <Loader2 size={12} className="animate-spin" />}
+                                Submit Milestone Deliverables
+                              </button>
+
+                              {m.dueDate && (() => {
+                                const { formattedDate, isOverdue, remainingText } = getRemainingTimeDetails(m.dueDate);
+                                return (
+                                  <div className={cn(
+                                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border select-none bg-accent/5 text-accent border-accent/20 shrink-0 self-end sm:self-auto",
+                                    isOverdue && "animate-pulse"
+                                  )}>
+                                    {remainingText === "Due today" ? (
+                                      <Clock size={13} className="text-accent shrink-0 animate-bounce" />
+                                    ) : (
+                                      <Calendar size={13} className="text-accent shrink-0" />
+                                    )}
+                                    <span>
+                                      Target: {formattedDate} ({remainingText})
+                                    </span>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {m.status === "submitted" && (
+                        <div className="mt-4 pt-4 border-t border-dashed border-border/60 bg-amber-50/20 p-4 rounded-xl border border-amber-100/60 font-sans flex flex-col md:flex-row md:items-center justify-between gap-4">
+                          <div className="space-y-1">
+                            <p className="text-xs font-bold text-amber-800">Submitted Deliverables (Awaiting Review & Release):</p>
+                            <div className="mt-2 text-xs text-text-secondary space-y-1 leading-normal">
+                              <p><strong>Deliverable Link:</strong> <a href={m.submissionUrl} target="_blank" rel="noopener noreferrer" className="text-accent underline hover:text-accent-hover font-semibold">{m.submissionUrl}</a></p>
+                              {m.submissionNotes && <p><strong>Notes:</strong> {m.submissionNotes}</p>}
+                            </div>
+                            <p className="text-[10px] text-amber-700 font-semibold mt-3">🔒 ESCROW SECURED: The client has been notified. Payment release of ₹{(m.amount || 0).toLocaleString()} via PhonePe is required to unlock full access on their side.</p>
+                          </div>
+                          {m.dueDate && (() => {
+                            const { formattedDate, isOverdue, remainingText } = getRemainingTimeDetails(m.dueDate);
+                            return (
+                              <div className={cn(
+                                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border select-none bg-accent/5 text-accent border-accent/20 shrink-0 self-end md:self-center",
+                                isOverdue && "animate-pulse"
+                              )}>
+                                {remainingText === "Due today" ? (
+                                  <Clock size={13} className="text-accent shrink-0 animate-bounce" />
+                                ) : (
+                                  <Calendar size={13} className="text-accent shrink-0" />
+                                )}
+                                <span>
+                                  Target: {formattedDate} ({remainingText})
+                                </span>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      )}
+
+                      {m.status === "approved" && (
+                        <div className="mt-4 pt-4 border-t border-dashed border-border/60 bg-emerald-50/20 p-4 rounded-xl border border-emerald-100/60 font-sans flex flex-col md:flex-row md:items-center justify-between gap-4">
+                          <div className="space-y-1">
+                            <p className="text-xs font-bold text-emerald-800">Released Deliverables & Paid Info:</p>
+                            <div className="mt-2 text-xs text-text-secondary space-y-1 leading-normal">
+                              <p><strong>Deliverable Link:</strong> <a href={m.submissionUrl} target="_blank" rel="noopener noreferrer" className="text-accent underline hover:text-accent-hover font-semibold">{m.submissionUrl}</a></p>
+                              {m.submissionNotes && <p><strong>Notes:</strong> {m.submissionNotes}</p>}
+                              {m.payment?.paidAt && <p className="text-[10px] text-text-tertiary">Released at: {new Date(m.payment.paidAt).toLocaleString("en-IN")}</p>}
+                            </div>
+                          </div>
+                          <div className="inline-flex items-center gap-1.5 text-xs font-bold text-text-tertiary select-none shrink-0 self-end md:self-center">
+                            <CheckCircle2 size={13} className="text-emerald-500 shrink-0" />
+                            <span>Completed & Released</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {m.status === "pending" && !isActive && (
+                        <div className="mt-2 pt-2 flex items-center justify-between gap-4 border-t border-dashed border-border/60">
+                          <div className="text-[11px] text-text-tertiary font-sans italic">
+                            This objective is locked until the previous milestones are finished and approved.
+                          </div>
+                          {m.dueDate && (() => {
+                            const { formattedDate, isOverdue, remainingText } = getRemainingTimeDetails(m.dueDate);
+                            return (
+                              <div className={cn(
+                                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border select-none bg-accent/5 text-accent border-accent/20 shrink-0",
+                                isOverdue && "animate-pulse"
+                              )}>
+                                {remainingText === "Due today" ? (
+                                  <Clock size={13} className="text-accent shrink-0 animate-bounce" />
+                                ) : (
+                                  <Calendar size={13} className="text-accent shrink-0" />
+                                )}
+                                <span>
+                                  Target: {formattedDate} ({remainingText})
+                                </span>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
         </div>
 
         {/* Right column: Dynamic synchronized communications stream */}
-        <div className="w-96 shrink-0 bg-white border-l border-border/40 flex flex-col relative z-20">
-          <div className="p-5 border-b border-border/40 flex items-center justify-between bg-stone-50/50">
-            <div className="flex items-center gap-2">
-              <MessageSquare size={16} className="text-[#E85239]" strokeWidth={2.5} />
-              <h3 className="text-xs font-bold uppercase tracking-wider text-text-primary">Execution Thread</h3>
-            </div>
-            <span className="text-[10px] font-bold bg-stone-100 text-stone-500 px-2 py-0.5 rounded">Secure</span>
+        <div className="w-[400px] shrink-0 bg-stone-50/50 border-l border-border/40 flex flex-col relative z-20">
+          <div className="p-6 border-b border-stone-200/50 flex items-center gap-3 bg-white">
+            <MessageSquare size={18} className="text-stone-400" />
+            <h2 className="text-[14px] font-bold text-stone-900">Execution Thread</h2>
           </div>
 
           {/* Messages list */}
-          <div className="flex-1 overflow-y-auto p-5 space-y-6">
+          <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
             <div className="text-center py-2">
               <span className="text-[9px] font-bold uppercase tracking-widest text-text-tertiary bg-stone-100 px-3 py-1 rounded-full border border-border/10">
                 Secure Comms Rails Active
@@ -413,46 +712,51 @@ export default function ExecutionRoom({ params }: { params: { id: string } }) {
             </div>
 
             {messages.map((m) => {
-              const isSystem = m.content.startsWith("⚠️");
+              const isSystem = m.content.startsWith("⚠️") || m.content.startsWith("🚀") || m.content.startsWith("💳") || m.content.startsWith("⚡") || m.senderRole === "admin";
               return (
                 <div key={m._id} className={cn("flex flex-col", m.isMe ? "items-end" : "items-start")}>
                   <div className={cn(
-                    "p-4 rounded-2xl shadow-sm border max-w-[90%] text-xs leading-relaxed font-sans whitespace-pre-wrap",
+                    "p-4 rounded-2xl shadow-sm border max-w-[90%] text-[13px] leading-relaxed font-sans whitespace-pre-wrap",
                     isSystem
-                      ? "bg-red-50 border-red-200 text-red-700 font-medium rounded-2xl"
+                      ? "bg-amber-50 border-amber-200 text-amber-900 font-medium rounded-2xl"
                       : m.isMe
                       ? "bg-[#E85239] text-white border-[#E85239] rounded-tr-sm"
                       : "bg-white text-text-secondary border-stone-100 rounded-tl-sm"
                   )}>
                     <p>{m.content}</p>
                   </div>
-                  <span className="text-[9px] font-bold text-text-tertiary mt-1.5 mx-1 uppercase tracking-wider">
+                  <span className="text-[11px] font-medium text-stone-400 mt-2 mx-1">
                     {isSystem ? "Executa System Alert" : m.senderDisplayName} • {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
               );
             })}
-            <div ref={chatBottomRef} />
           </div>
 
           {/* Typing Area */}
-          <div className="p-4 bg-white border-t border-border/40">
-            <div className="relative">
-              <textarea 
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onKeyDown={handleKeyPress}
-                placeholder="Discuss implementation details..."
-                className="w-full bg-stone-50 border border-border rounded-xl px-4 py-3 pr-10 text-xs outline-none focus:border-[#E85239] focus:ring-1 focus:ring-[#E85239] resize-none h-20 text-text-primary placeholder:text-text-tertiary"
-              />
-              <button 
-                onClick={sendMessage}
-                disabled={sending || !newMessage.trim()}
-                className="absolute bottom-2.5 right-2.5 w-8 h-8 rounded-lg bg-[#E85239] text-white flex items-center justify-center shadow-md hover:bg-[#d44127] transition-all active:scale-95 disabled:opacity-50 shrink-0"
-              >
-                <Send size={12} strokeWidth={2.5} />
-              </button>
-            </div>
+          <div className="p-6 bg-white border-t border-border/40">
+            {project.status === "pending" ? (
+              <div className="text-center py-4 px-2 text-xs text-text-tertiary italic bg-stone-50 border border-dashed border-stone-200 rounded-xl">
+                Accept project scope to unlock team chat thread.
+              </div>
+            ) : (
+              <div className="relative">
+                <textarea 
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyDown={handleKeyPress}
+                  placeholder="Discuss implementation details..."
+                  className="w-full bg-stone-50 border border-border rounded-xl px-4 py-3 pr-10 text-[13px] outline-none focus:border-[#E85239] focus:ring-1 focus:ring-[#E85239] resize-none h-20 text-text-primary placeholder:text-text-tertiary"
+                />
+                <button 
+                  onClick={sendMessage}
+                  disabled={sending || !newMessage.trim()}
+                  className="absolute bottom-2.5 right-2.5 w-8 h-8 rounded-lg bg-[#E85239] text-white flex items-center justify-center shadow-md hover:bg-[#d44127] transition-all active:scale-95 disabled:opacity-50 shrink-0"
+                >
+                  <Send size={12} strokeWidth={2.5} />
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -512,7 +816,7 @@ export default function ExecutionRoom({ params }: { params: { id: string } }) {
                 </div>
                 <div className="bg-stone-50 border border-border rounded-xl p-4">
                   <p className="text-[10px] text-text-tertiary font-bold uppercase tracking-wider">Pricing Impact</p>
-                  <p className="text-lg font-bold text-[#E85239] mt-1">+{formatCurrency(pendingUpgrade.costImpact)}</p>
+                  <p className="text-lg font-bold text-[#E85239] mt-1">+{formatCurrency(pendingUpgrade.expertCost || Math.round(pendingUpgrade.costImpact / 1.05))}</p>
                 </div>
               </div>
             </div>

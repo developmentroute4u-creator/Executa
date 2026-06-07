@@ -33,6 +33,7 @@ export default function AdminDashboardPage() {
   
   const [authenticated, setAuthenticated] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [preSelectedProjectId, setPreSelectedProjectId] = useState<string | null>(null);
 
   const [tests, setTests] = useState<any[]>([]);
   const [overview, setOverview] = useState<any>({ freelancers: [], clients: [], projects: [], stats: {} });
@@ -89,7 +90,7 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} stats={overview.stats} />
 
       <main className="flex-1 pl-[100px] transition-all duration-300 overflow-y-auto">
         <div className="max-w-6xl mx-auto px-10 py-12">
@@ -104,8 +105,8 @@ export default function AdminDashboardPage() {
               {activeTab === "tests" && <TestReviewTab tests={tests} fetchOverview={fetchOverview} />}
               {activeTab === "freelancers" && <FreelancersTab freelancers={overview.freelancers || []} fetchOverview={fetchOverview} />}
               {activeTab === "clients" && <ClientsTab clients={overview.clients || []} projects={overview.projects || []} setActiveTab={setActiveTab} fetchOverview={fetchOverview} />}
-              {activeTab === "projects" && <ProjectsTab projects={overview.projects || []} freelancers={overview.freelancers || []} fetchOverview={fetchOverview} />}
-              {activeTab === "disputes" && <DisputesTab projects={overview.projects || []} setActiveTab={setActiveTab} fetchOverview={fetchOverview} />}
+              {activeTab === "projects" && <ProjectsTab projects={overview.projects || []} freelancers={overview.freelancers || []} fetchOverview={fetchOverview} preSelectedProjectId={preSelectedProjectId} setPreSelectedProjectId={setPreSelectedProjectId} />}
+              {activeTab === "disputes" && <DisputesTab projects={overview.projects || []} setActiveTab={setActiveTab} fetchOverview={fetchOverview} setPreSelectedProjectId={setPreSelectedProjectId} />}
               {activeTab === "support" && <SupportTab />}
               {activeTab === "features" && <FeatureControlsTab />}
               {activeTab === "settings" && <SettingsTab />}

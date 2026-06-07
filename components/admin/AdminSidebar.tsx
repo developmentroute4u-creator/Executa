@@ -5,7 +5,18 @@ import { motion } from "framer-motion";
 import { Home, ClipboardList, Users, UserCheck, Briefcase, AlertTriangle, ToggleLeft, Settings, LogOut, MessageSquare } from "lucide-react";
 import ExecutaLogo from "@/components/layout/ExecutaLogo";
 
-export function AdminSidebar({ activeTab, setActiveTab }: { activeTab: string, setActiveTab: (tab: string) => void }) {
+export function AdminSidebar({ 
+  activeTab, 
+  setActiveTab,
+  stats
+}: { 
+  activeTab: string, 
+  setActiveTab: (tab: string) => void,
+  stats?: {
+    pendingCalibration?: number;
+    disputedProjects?: number;
+  }
+}) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const sidebarItems = [
@@ -60,8 +71,16 @@ export function AdminSidebar({ activeTab, setActiveTab }: { activeTab: string, s
                     : "text-text-tertiary hover:text-accent hover:bg-accent/5"
                 }`}
               >
-                <div className="shrink-0 flex items-center justify-center w-[42px] h-full">
+                <div className="shrink-0 flex items-center justify-center w-[42px] h-full relative">
                   {item.icon}
+                  {item.id === "disputes" && stats?.disputedProjects && stats.disputedProjects > 0 ? (
+                    <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse" />
+                  ) : null}
+                  {item.id === "tests" && stats?.pendingCalibration && stats.pendingCalibration > 0 ? (
+                    <span className="absolute -top-1.5 -right-1 px-1.5 py-0.5 bg-red-500 text-white text-[8px] font-black rounded-full flex items-center justify-center scale-75 border border-white">
+                      {stats.pendingCalibration}
+                    </span>
+                  ) : null}
                 </div>
 
                 {isExpanded && (

@@ -37,20 +37,26 @@ export default function FreelancerSupport() {
   const [chatOpen, setChatOpen] = useState(false);
 
   return (
-    <div className="flex-1 w-full max-w-7xl mx-auto p-12">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-        className="mb-16"
-      >
-        <h1 className="text-[40px] font-black tracking-tight text-stone-900 leading-[1.1] mb-4">
-          Freelancer Support
-        </h1>
-        <p className="text-[18px] font-medium text-stone-500 max-w-2xl leading-relaxed">
-          We're here to help you succeed. Reach out or find answers in our help center.
-        </p>
-      </motion.div>
+    <main className="flex-1 overflow-y-auto bg-background min-h-screen font-sans selection:bg-accent/10 selection:text-accent flex flex-col justify-center py-16 md:py-24">
+      <div className="max-w-[1200px] mx-auto px-8 md:px-16 w-full">
+        <header className="mb-10 border-b border-border/40 pb-6">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <MessageSquare className="text-accent w-4 h-4" strokeWidth={2.5} />
+              <span className="text-xs font-semibold uppercase tracking-wider text-accent">Support & Help Center</span>
+            </div>
+            <h1 className="font-display text-4xl md:text-5xl font-semibold tracking-tight text-text-primary leading-tight">
+              Freelancer Support
+            </h1>
+            <p className="text-text-secondary font-sans text-sm mt-2">
+              We're here to help you succeed. Reach out or find answers in our help center.
+            </p>
+          </motion.div>
+        </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
         {/* LEFT: FAQ */}
@@ -173,6 +179,7 @@ export default function FreelancerSupport() {
         </div>
       </div>
       <SupportChatWidget userRole="freelancer" triggerOpen={chatOpen} onClose={() => setChatOpen(false)} />
-    </div>
+      </div>
+    </main>
   );
 }
