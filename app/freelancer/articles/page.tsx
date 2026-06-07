@@ -332,34 +332,32 @@ export default function FreelancerArticles() {
   const displayCategory = activeCategory ? CATEGORIES.find(c => c.id === activeCategory) : null;
 
   return (
-    <div className="flex-1 w-full max-w-7xl mx-auto p-8 lg:p-12">
-      <AnimatePresence mode="wait">
-        {activeArticle ? (
-          <ArticleView key="article" article={activeArticle} onBack={() => setActiveArticle(null)} />
-        ) : (
-          <motion.div key="home" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.3 }}>
+    <main className="flex-1 overflow-y-auto bg-background min-h-screen font-sans selection:bg-accent/10 selection:text-accent flex flex-col justify-center py-16 md:py-24">
+      <div className="max-w-[1200px] mx-auto px-8 md:px-16 w-full">
+        <AnimatePresence mode="wait">
+          {activeArticle ? (
+            <ArticleView key="article" article={activeArticle} onBack={() => setActiveArticle(null)} />
+          ) : (
+            <motion.div key="home" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.3 }}>
 
-            {/* Header */}
-            <div className="mb-10">
-              {activeCategory && (
-                <button onClick={() => setActiveCategory(null)} className="flex items-center gap-2 text-[12px] font-bold text-stone-400 hover:text-[#E85239] transition-colors mb-5 group">
-                  <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform" /> All Categories
-                </button>
-              )}
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-2xl bg-[#E85239]/10 flex items-center justify-center">
-                  <BookOpen size={19} className="text-[#E85239]" />
+              {/* Header */}
+              <header className="mb-10 border-b border-border/40 pb-6">
+                {activeCategory && (
+                  <button onClick={() => setActiveCategory(null)} className="flex items-center gap-2 text-xs font-bold text-text-tertiary hover:text-accent transition-colors mb-5 group">
+                    <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform" /> All Categories
+                  </button>
+                )}
+                <div className="flex items-center gap-2 mb-2">
+                  <BookOpen className="text-accent w-4 h-4" strokeWidth={2.5} />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-accent">Help Center & Documentation</span>
                 </div>
-                <div>
-                  <h1 className="text-[26px] font-black text-stone-900 tracking-tight">
-                    {displayCategory ? displayCategory.label : "Freelancer Help Center"}
-                  </h1>
-                  <p className="text-[13px] text-stone-400 font-medium">
-                    {displayCategory ? `${displayCategory.articles.length} articles` : "Complete documentation for experts"}
-                  </p>
-                </div>
-              </div>
-            </div>
+                <h1 className="font-display text-4xl md:text-5xl font-semibold tracking-tight text-text-primary leading-tight">
+                  {displayCategory ? displayCategory.label : "Freelancer Help Center"}
+                </h1>
+                <p className="text-text-secondary font-sans text-sm mt-2">
+                  {displayCategory ? `Browse articles related to ${displayCategory.label.toLowerCase()}` : "Complete documentation, policies, and guidelines for experts."}
+                </p>
+              </header>
 
             {/* Search */}
             {!activeCategory && (
@@ -472,9 +470,10 @@ export default function FreelancerArticles() {
               </div>
             )}
 
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </motion.div>
+      )}
+    </AnimatePresence>
     </div>
-  );
+  </main>
+);
 }

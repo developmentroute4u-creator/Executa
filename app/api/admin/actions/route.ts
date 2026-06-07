@@ -45,6 +45,41 @@ export async function POST(req: NextRequest) {
       project.freelancerId = freelancerId;
       project.freelancerAccepted = true;
       project.status = "active";
+      if (!project.milestones || project.milestones.length === 0) {
+        const freelancerPrice = project.pricing?.freelancerPrice || 0;
+        const m1 = Math.round(freelancerPrice * 0.20);
+        const m2 = Math.round(freelancerPrice * 0.30);
+        const m3 = freelancerPrice - m1 - m2;
+        project.milestones = [
+          {
+            title: "Milestone 1: Core Architecture & Setup (20%)",
+            dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            status: "pending",
+            deliverables: ["Initial repository structure", "Database schemas", "Deployment configuration"],
+            percentage: 20,
+            amount: m1,
+            payment: { status: "pending" }
+          },
+          {
+            title: "Milestone 2: Logic & Integration (30%)",
+            dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+            status: "pending",
+            deliverables: ["Functional API endpoints", "Database logic integration", "Unit/Integration tests"],
+            percentage: 30,
+            amount: m2,
+            payment: { status: "pending" }
+          },
+          {
+            title: "Milestone 3: Final Handovers & Source Code (50%)",
+            dueDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000),
+            status: "pending",
+            deliverables: ["Polished UI design implementation", "Completed source code transfer", "Deployment build validation"],
+            percentage: 50,
+            amount: m3,
+            payment: { status: "pending" }
+          }
+        ];
+      }
       await project.save();
 
       // Create system chat message
@@ -65,8 +100,81 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
       }
 
-      const project = await Project.findByIdAndUpdate(projectId, { status }, { new: true });
+      const project = await Project.findById(projectId);
       if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
+
+      project.status = status;
+      if (status === "disputed") {
+        const { Dispute } = require("@/models/Dispute");
+        const activeDispute = await Dispute.findOne({ projectId: project._id, status: "active" });
+        if (!activeDispute) {
+          await Dispute.create({
+            projectId: project._id,
+            proposerId: project.clientId,
+            proposerRole: "client",
+            reason: "Manually flagged by Platform Administrator.",
+            details: "Administrative status override.",
+            status: "active",
+            platformAudit: {
+              milestonesTotal: project.milestones?.length || 0,
+              milestonesOverdue: project.milestones?.filter((m: any) => m.status === "pending" && m.dueDate && new Date(m.dueDate) < new Date()).length || 0,
+              overdueDaysMax: 0,
+              freelancerInactivityHours: 0,
+              clientInactivityHours: 0,
+              auditVerdict: "Manually overridden by administrator."
+            }
+          });
+        }
+      } else {
+        const { Dispute } = require("@/models/Dispute");
+        await Dispute.updateMany(
+          { projectId: project._id, status: "active" },
+          {
+            $set: {
+              status: "resolved",
+              resolutionNotes: `Dispute resolved by administrator manually overriding status to ${status.toUpperCase()}.`,
+              resolvedAt: new Date(),
+            }
+          }
+        );
+      }
+
+      if (status === "active" && (!project.milestones || project.milestones.length === 0)) {
+        const freelancerPrice = project.pricing?.freelancerPrice || 0;
+        const m1 = Math.round(freelancerPrice * 0.20);
+        const m2 = Math.round(freelancerPrice * 0.30);
+        const m3 = freelancerPrice - m1 - m2;
+        project.milestones = [
+          {
+            title: "Milestone 1: Core Architecture & Setup (20%)",
+            dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            status: "pending",
+            deliverables: ["Initial repository structure", "Database schemas", "Deployment configuration"],
+            percentage: 20,
+            amount: m1,
+            payment: { status: "pending" }
+          },
+          {
+            title: "Milestone 2: Logic & Integration (30%)",
+            dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+            status: "pending",
+            deliverables: ["Functional API endpoints", "Database logic integration", "Unit/Integration tests"],
+            percentage: 30,
+            amount: m2,
+            payment: { status: "pending" }
+          },
+          {
+            title: "Milestone 3: Final Handovers & Source Code (50%)",
+            dueDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000),
+            status: "pending",
+            deliverables: ["Polished UI design implementation", "Completed source code transfer", "Deployment build validation"],
+            percentage: 50,
+            amount: m3,
+            payment: { status: "pending" }
+          }
+        ];
+      }
+      await project.save();
 
       // Post chat alert
       await Message.create({
@@ -256,16 +364,29 @@ export async function POST(req: NextRequest) {
 
     // ─── ACTION 8: RESOLVE SYSTEM DISPUTE ───
     if (action === "resolve_dispute") {
-      const { projectId } = body;
+      const { projectId, notes } = body;
       if (!projectId) return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
 
       const project = await Project.findByIdAndUpdate(projectId, { status: "active" }, { new: true });
       if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
+      // Mark all active disputes for this project as resolved
+      const { Dispute } = require("@/models/Dispute");
+      await Dispute.updateMany(
+        { projectId: project._id, status: "active" },
+        {
+          $set: {
+            status: "resolved",
+            resolutionNotes: notes || "Resolved by administrator after review.",
+            resolvedAt: new Date(),
+          }
+        }
+      );
+
       await Message.create({
         projectId: project._id,
         senderRole: "admin",
-        content: `⚙️ [Executa Support Override]: Platform Audit successfully complete. Active dispute has been RESOLVED. Canvas billing has resumed under active state and Executa's contributing rails are certified.`
+        content: `⚙️ [Executa Support Override]: Platform Audit successfully complete. Active dispute has been RESOLVED.\n\nResolution Notes: "${notes || 'Resolved by administrator.'}"\n\nCanvas billing has resumed under active state and Executa's contributing rails are certified.`
       });
 
       return NextResponse.json({ success: true, project });

@@ -74,15 +74,16 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     const currentScore = scope.totalEffortScore;
     const currentRateRange = getRateRange(project.field || "development", scope.effortLevel);
     const currentAvgRate = Math.round((currentRateRange.min + currentRateRange.max) / 2);
-    const currentPrice = calculatePrice(currentScore, currentAvgRate).total;
+    
+    const ratePerPoint = project.pricing?.ratePerPoint || currentAvgRate;
 
+    const currentPriceObj = calculatePrice(currentScore, ratePerPoint);
     const newScore = currentScore + score;
-    // Assuming effortLevel might stay the same or jump (simplified for now to use current level rate)
-    const newRateRange = getRateRange(project.field || "development", scope.effortLevel);
-    const newAvgRate = Math.round((newRateRange.min + newRateRange.max) / 2);
-    const newPrice = calculatePrice(newScore, newAvgRate).total;
+    const newPriceObj = calculatePrice(newScore, ratePerPoint);
 
-    const costImpact = newPrice - currentPrice;
+    const expertCost = newPriceObj.freelancerPrice - currentPriceObj.freelancerPrice;
+    const platformFee = Math.round(expertCost * 0.05);
+    const costImpact = expertCost + platformFee;
 
     const upgrade = await ScopeUpgrade.create({
       projectId: project._id,
@@ -93,6 +94,8 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
       scopeImpactSummary: upgradeData.scopeImpactSummary,
       deliverableImpact: upgradeData.deliverableImpact,
       costImpact,
+      expertCost,
+      platformFee,
       effortImpact: score
     });
 

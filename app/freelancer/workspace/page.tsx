@@ -38,6 +38,14 @@ export default function WorkspaceEnvironment() {
 
   const router = useRouter();
   const user = session?.user as any;
+  const isPaymentConfigured = !!( 
+    // New multi-method system
+    (profile?.payoutMethods && profile.payoutMethods.length > 0) ||
+    // Legacy single-method fallback
+    profile?.bankDetails?.upiId || 
+    profile?.bankDetails?.accountNumber || 
+    profile?.bankDetails?.upiMobile
+  );
 
   useEffect(() => {
     fetch("/api/freelancer/profile")
@@ -99,7 +107,7 @@ export default function WorkspaceEnvironment() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-8 pl-24">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-8">
         <div className="h-64 max-w-4xl w-full bg-white/50 animate-pulse rounded-2xl border border-[#EADCDA]/60" />
       </div>
     );
@@ -129,8 +137,8 @@ export default function WorkspaceEnvironment() {
   );
 
   return (
-    <main className="flex-1 overflow-y-auto pb-32 bg-background min-h-screen font-sans selection:bg-accent/10 selection:text-accent pl-24">
-      <div className="max-w-[1200px] mx-auto px-8 md:px-16 pt-24 md:pt-32">
+    <main className="flex-1 overflow-y-auto bg-background min-h-screen font-sans selection:bg-accent/10 selection:text-accent flex flex-col justify-center py-16 md:py-24">
+      <div className="max-w-[1200px] mx-auto px-8 md:px-16 w-full">
 
         {/* ── Unified Welcome Header ── */}
         <header className="mb-10 border-b border-border/40 pb-6">
@@ -161,6 +169,28 @@ export default function WorkspaceEnvironment() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.2 }}
           >
+            {/* Action Required: Payment Coordinates Warning Banner */}
+            {!loading && !isPaymentConfigured && (
+              <div className="bg-amber-50/60 border border-amber-200/60 rounded-xl p-4 shadow-[0_2px_12px_-3px_rgba(232,82,57,0.04)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
+                    <AlertTriangle size={16} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-text-primary">Action Required: Payment Details Missing</h3>
+                    <p className="text-xs text-text-secondary mt-0.5">
+                      Configure your Bank or UPI coordinates to receive milestone escrow payouts properly.
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  href="/freelancer/profile"
+                  className="shrink-0 text-xs font-bold text-amber-700 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-4 py-2 rounded-xl transition-all h-[36px] flex items-center justify-center"
+                >
+                  Configure Payments
+                </Link>
+              </div>
+            )}
 
             {/* Compact Active Assessment Alert Banner */}
             {showTestBanner && test && test.status === "in_progress" && (
@@ -394,7 +424,7 @@ export default function WorkspaceEnvironment() {
                 </div>
                 <div className="bg-stone-50 border border-border rounded-xl p-5">
                   <p className="text-[12px] text-text-tertiary font-bold uppercase mb-1">Price Increase</p>
-                  <p className="text-[20px] font-bold text-[#E85239]">{formatCurrency(reviewUpgrade.upgrade.costImpact)}</p>
+                  <p className="text-[20px] font-bold text-[#E85239]">{formatCurrency(reviewUpgrade.upgrade.expertCost || Math.round(reviewUpgrade.upgrade.costImpact / 1.05))}</p>
                 </div>
               </div>
             </div>

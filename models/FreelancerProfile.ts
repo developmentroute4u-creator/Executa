@@ -31,6 +31,25 @@ export interface IFreelancerProfile extends Document {
   activeProjectIds: mongoose.Types.ObjectId[];
   completedProjectIds: mongoose.Types.ObjectId[];
   onboardingStep: number;
+  bankDetails?: {
+    payoutMethod?: "upi_id" | "upi_mobile" | "bank_transfer";
+    accountHolderName: string;
+    accountNumber: string;
+    ifscCode: string;
+    upiId: string;
+    upiMobile?: string;
+  };
+  payoutMethods?: Array<{
+    id: string;
+    type: "upi_id" | "upi_mobile" | "bank_transfer";
+    accountHolderName: string;
+    upiId?: string;
+    upiMobile?: string;
+    accountNumber?: string;
+    ifscCode?: string;
+    isDefault: boolean;
+    addedAt?: string;
+  }>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -69,6 +88,27 @@ const FreelancerProfileSchema = new Schema<IFreelancerProfile>(
     activeProjectIds: [{ type: Schema.Types.ObjectId, ref: "Project" }],
     completedProjectIds: [{ type: Schema.Types.ObjectId, ref: "Project" }],
     onboardingStep: { type: Number, default: 1 },
+    bankDetails: {
+      payoutMethod: { type: String, default: "bank_transfer" },
+      accountHolderName: { type: String, default: "" },
+      accountNumber: { type: String, default: "" },
+      ifscCode: { type: String, default: "" },
+      upiId: { type: String, default: "" },
+      upiMobile: { type: String, default: "" },
+    },
+    payoutMethods: [
+      {
+        id: { type: String },
+        type: { type: String, enum: ["upi_id", "upi_mobile", "bank_transfer"] },
+        accountHolderName: { type: String, default: "" },
+        upiId: { type: String, default: "" },
+        upiMobile: { type: String, default: "" },
+        accountNumber: { type: String, default: "" },
+        ifscCode: { type: String, default: "" },
+        isDefault: { type: Boolean, default: false },
+        addedAt: { type: String },
+      },
+    ],
   },
   { timestamps: true }
 );
@@ -76,6 +116,9 @@ const FreelancerProfileSchema = new Schema<IFreelancerProfile>(
 FreelancerProfileSchema.index({ userId: 1 });
 FreelancerProfileSchema.index({ field: 1, domain: 1, level: 1, available: 1 });
 
+if (mongoose.models.FreelancerProfile) {
+  delete mongoose.models.FreelancerProfile;
+}
+
 export const FreelancerProfile: Model<IFreelancerProfile> =
-  mongoose.models.FreelancerProfile ||
   mongoose.model<IFreelancerProfile>("FreelancerProfile", FreelancerProfileSchema);

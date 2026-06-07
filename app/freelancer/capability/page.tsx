@@ -27,8 +27,8 @@ export default function CapabilityEnvironment() {
   }, []);
 
   return (
-    <main className="flex-1 overflow-y-auto pb-32 bg-background min-h-screen pl-24 font-sans">
-      <div className="max-w-[1000px] mx-auto px-8 md:px-16 pt-24 md:pt-32">
+    <main className="flex-1 overflow-y-auto bg-background min-h-screen font-sans flex flex-col justify-center py-16 md:py-24">
+      <div className="max-w-[1200px] mx-auto px-8 md:px-16 w-full">
         
         {/* Sleek, Header block matching other pages in a center-right flex layout */}
         <header className="mb-10 pb-2 flex flex-col md:flex-row md:items-center md:justify-between gap-6">

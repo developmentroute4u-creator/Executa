@@ -57,10 +57,38 @@ export interface IProject extends Document {
   accountabilityMode: "basic" | "accountability";
   milestones: {
     title: string;
-    dueDate: Date;
+    dueDate?: Date;
     status: "pending" | "submitted" | "approved";
-    deliverables: string[];
+    deliverables?: string[];
+    percentage?: number;
+    amount?: number;
+    submissionUrl?: string;
+    submissionNotes?: string;
+    submittedAt?: Date;
+    payment?: {
+      status: "pending" | "initiated" | "paid" | "failed";
+      transactionId?: string;
+      merchantTransactionId?: string;
+      paidAt?: Date;
+    };
   }[];
+  pendingCustomUnit?: {
+    id?: string;
+    name: string;
+    description?: string;
+    included?: string[];
+    excluded?: string[];
+    deliverables?: string[];
+    unitScore?: number;
+    effortDrivers?: Record<string, number>;
+    addedByClient?: boolean;
+    platformFee?: number;
+    unitPrice?: number;
+    merchantTransactionId?: string;
+    paymentStatus?: "initiated" | "paid" | "failed";
+    transactionId?: string;
+    paidAt?: Date;
+  };
   createdAt: Date;
   updatedAt: Date;
   freelancerAccepted?: boolean;
@@ -121,9 +149,37 @@ const ProjectSchema = new Schema<IProject>(
         dueDate: Date,
         status: { type: String, enum: ["pending", "submitted", "approved"], default: "pending" },
         deliverables: [String],
+        percentage: Number,
+        amount: Number,
+        submissionUrl: String,
+        submissionNotes: String,
+        submittedAt: Date,
+        payment: {
+          status: { type: String, enum: ["pending", "initiated", "paid", "failed"], default: "pending" },
+          transactionId: String,
+          merchantTransactionId: String,
+          paidAt: Date,
+        }
       },
     ],
     freelancerAccepted: { type: Boolean, default: false },
+    pendingCustomUnit: {
+      id: { type: String },
+      name: { type: String },
+      description: { type: String },
+      included: [{ type: String }],
+      excluded: [{ type: String }],
+      deliverables: [{ type: String }],
+      unitScore: { type: Number },
+      effortDrivers: { type: Schema.Types.Mixed },
+      addedByClient: { type: Boolean },
+      platformFee: { type: Number },
+      unitPrice: { type: Number },
+      merchantTransactionId: { type: String },
+      paymentStatus: { type: String, enum: ["initiated", "paid", "failed"] },
+      transactionId: { type: String },
+      paidAt: { type: Date },
+    },
   },
   { timestamps: true }
 );
@@ -132,5 +188,9 @@ ProjectSchema.index({ clientId: 1, status: 1 });
 ProjectSchema.index({ freelancerId: 1, status: 1 });
 ProjectSchema.index({ status: 1, field: 1, requiredLevel: 1 });
 
+if (mongoose.models.Project) {
+  delete mongoose.models.Project;
+}
+
 export const Project: Model<IProject> =
-  mongoose.models.Project || mongoose.model<IProject>("Project", ProjectSchema);
+  mongoose.model<IProject>("Project", ProjectSchema);

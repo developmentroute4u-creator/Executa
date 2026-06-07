@@ -57,8 +57,8 @@ export default function ProjectsEnvironment() {
   };
 
   return (
-    <main className="flex-1 overflow-y-auto pb-32 bg-background min-h-screen pl-24">
-      <div className="max-w-[1000px] mx-auto px-8 md:px-16 pt-24 md:pt-32">
+    <main className="flex-1 overflow-y-auto bg-background min-h-screen flex flex-col justify-center py-16 md:py-24">
+      <div className="max-w-[1200px] mx-auto px-8 md:px-16 w-full">
         <header className="mb-16 border-b border-border/40 pb-10">
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
             <div className="flex items-center gap-2 mb-2.5">
@@ -125,13 +125,12 @@ export default function ProjectsEnvironment() {
                         </div>
                         
                         {isPending ? (
-                          <button
-                            onClick={() => handleAcceptScope(p._id)}
-                            disabled={accepting}
+                          <Link
+                            href={`/freelancer/execution/${p._id}`}
                             className="flex items-center gap-2 px-6 py-3 rounded-xl text-xs uppercase tracking-wider font-semibold bg-accent text-white hover:bg-accent-hover transition-colors shadow-[0_4px_16px_rgba(232,82,57,0.2)]"
                           >
-                            {accepting ? "Authorizing..." : "Accept Scope"} <ArrowRight size={14} strokeWidth={3} />
-                          </button>
+                            View Complete Scope <ArrowRight size={14} strokeWidth={3} />
+                          </Link>
                         ) : (
                           <Link
                             href={`/freelancer/execution/${p._id}`}

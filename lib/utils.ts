@@ -116,3 +116,77 @@ export function assignLevel(totalScore: number): 1 | 2 | 3 {
   if (totalScore <= 40) return 2;
   return 3;
 }
+
+export function getRemainingTimeDetails(dueDateStr: string | Date): {
+  formattedDate: string;
+  isOverdue: boolean;
+  diffDays: number;
+  remainingText: string;
+} {
+  const dDate = new Date(dueDateStr);
+  const dueDate = new Date(dDate.getFullYear(), dDate.getMonth(), dDate.getDate());
+  
+  const formattedDate = new Intl.DateTimeFormat("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(dueDate);
+
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+
+  const diffTime = dueDate.getTime() - now.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) {
+    return {
+      formattedDate,
+      isOverdue: false,
+      diffDays,
+      remainingText: "Due today"
+    };
+  }
+
+  const isOverdue = diffDays < 0;
+  
+  // Calculate breakdown of years, months, and days
+  let start = isOverdue ? dueDate : now;
+  let end = isOverdue ? now : dueDate;
+
+  let years = end.getFullYear() - start.getFullYear();
+  let months = end.getMonth() - start.getMonth();
+  let days = end.getDate() - start.getDate();
+
+  if (days < 0) {
+    months -= 1;
+    // Get number of days in the start month
+    const previousMonth = new Date(end.getFullYear(), end.getMonth(), 0);
+    days += previousMonth.getDate();
+  }
+  if (months < 0) {
+    years -= 1;
+    months += 12;
+  }
+
+  const parts = [];
+  if (years > 0) {
+    parts.push(`${years} year${years > 1 ? "s" : ""}`);
+  }
+  if (months > 0) {
+    parts.push(`${months} month${months > 1 ? "s" : ""}`);
+  }
+  if (days > 0 || parts.length === 0) {
+    parts.push(`${days} day${days > 1 ? "s" : ""}`);
+  }
+
+  const breakdown = parts.join(", ");
+  const remainingText = `${breakdown} ${isOverdue ? "overdue" : "remaining"}`;
+
+  return {
+    formattedDate,
+    isOverdue,
+    diffDays,
+    remainingText
+  };
+}
+

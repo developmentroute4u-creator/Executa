@@ -8,12 +8,12 @@ import ExecutaLogo from "@/components/layout/ExecutaLogo";
 
 // All possible nav items with their feature-flag keys
 const ALL_NAV_ITEMS = [
-  { path: "/freelancer/workspace",  label: "Workspace",  icon: <LayoutDashboard size={18} strokeWidth={2} />, flagKey: "fl_workspace"       },
-  { path: "/freelancer/projects",   label: "Projects",   icon: <Briefcase       size={18} strokeWidth={2} />, flagKey: "fl_projects"        },
-  { path: "/freelancer/capability", label: "Skills",     icon: <Award           size={18} strokeWidth={2} />, flagKey: "fl_capability"      },
-  { path: "/freelancer/earnings",   label: "Earnings",   icon: <IndianRupee     size={18} strokeWidth={2} />, flagKey: "fl_earnings"        },
-  { path: "/freelancer/profile",    label: "Profile",    icon: <User            size={18} strokeWidth={2} />, flagKey: "fl_profile"         },
-  { path: "/freelancer/support",    label: "Support",    icon: <HelpCircle      size={18} strokeWidth={2} />, flagKey: "fl_support"         },
+  { path: "/freelancer/workspace", label: "Workspace", icon: <LayoutDashboard size={18} strokeWidth={2} />, flagKey: "fl_workspace" },
+  { path: "/freelancer/projects", label: "Projects", icon: <Briefcase size={18} strokeWidth={2} />, flagKey: "fl_projects" },
+  { path: "/freelancer/capability", label: "Skills", icon: <Award size={18} strokeWidth={2} />, flagKey: "fl_capability" },
+  { path: "/freelancer/earnings", label: "Earnings", icon: <IndianRupee size={18} strokeWidth={2} />, flagKey: "fl_earnings" },
+  { path: "/freelancer/profile", label: "Profile", icon: <User size={18} strokeWidth={2} />, flagKey: "fl_profile" },
+  { path: "/freelancer/support", label: "Support", icon: <HelpCircle size={18} strokeWidth={2} />, flagKey: "fl_support" },
 ];
 
 export default function FloatingWorkspaceRail() {
@@ -30,7 +30,7 @@ export default function FloatingWorkspaceRail() {
           setEnabledKeys(new Set(data.flags.filter((f: any) => f.enabled).map((f: any) => f.key)));
         }
       })
-      .catch(() => {/* Fail silently — show all items if API unreachable */});
+      .catch(() => {/* Fail silently — show all items if API unreachable */ });
   }, []);
 
   // Hide rail in deep execution rooms, onboarding, or testing pages
@@ -67,18 +67,17 @@ export default function FloatingWorkspaceRail() {
           </div>
 
           {visibleItems.map((item) => {
-            const isActive = pathname === item.path || 
+            const isActive = pathname === item.path ||
               pathname.startsWith(`${item.path}/`) ||
               (item.path === "/freelancer/support" && (pathname === "/freelancer/articles" || pathname.startsWith("/freelancer/articles/")));
             return (
               <Link
                 key={item.path}
                 href={item.path}
-                className={`h-12 w-full flex items-center rounded-xl transition-all duration-300 overflow-hidden justify-start px-0 ${
-                  isActive
+                className={`h-12 w-full flex items-center rounded-xl transition-all duration-300 overflow-hidden justify-start px-0 ${isActive
                     ? "bg-accent text-white shadow-[0_4px_12px_rgba(232,82,57,0.18)]"
                     : "text-text-tertiary hover:text-accent hover:bg-accent/5"
-                }`}
+                  }`}
               >
                 <div className="shrink-0 flex items-center justify-center w-[42px] h-full">
                   {item.icon}
@@ -129,18 +128,17 @@ export default function FloatingWorkspaceRail() {
       <nav className="lg:hidden fixed bottom-0 inset-x-0 z-50 bg-white/90 backdrop-blur-xl border-t border-border/40 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
         <div className="flex items-center justify-around px-2 py-2 safe-area-pb">
           {visibleItems.slice(0, 5).map((item) => {
-            const isActive = pathname === item.path || 
+            const isActive = pathname === item.path ||
               pathname.startsWith(`${item.path}/`) ||
               (item.path === "/freelancer/support" && (pathname === "/freelancer/articles" || pathname.startsWith("/freelancer/articles/")));
             return (
               <Link
                 key={item.path}
                 href={item.path}
-                className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl transition-all duration-200 min-w-[52px] ${
-                  isActive
+                className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl transition-all duration-200 min-w-[52px] ${isActive
                     ? "text-[#E85239]"
                     : "text-stone-400 hover:text-stone-600"
-                }`}
+                  }`}
               >
                 <div className={`p-1.5 rounded-xl transition-all duration-200 ${isActive ? "bg-[#FFF7F6]" : ""}`}>
                   {item.icon}

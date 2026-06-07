@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button, Badge, ScoreBar, Card, Input, Textarea } from "@/components/ui";
 import { formatCurrency, getLevelLabel } from "@/lib/utils";
-import { CheckCircle2, X, Loader2, Check } from "lucide-react";
+import { CheckCircle2, X, Loader2, Check, CreditCard, AlertTriangle, ArrowRight, Zap } from "lucide-react";
 
 export default function ScopeReviewPage() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -13,10 +13,12 @@ export default function ScopeReviewPage() {
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [upgradeStep, setUpgradeStep] = useState<"intake" | "loading" | "review">("intake");
+  const [upgradeStep, setUpgradeStep] = useState<"intake" | "loading" | "review" | "payment">("intake");
   const [upgradeForm, setUpgradeForm] = useState({ whatToAdd: "", howItWorks: "", whyNeeded: "" });
   const [proposedUpgrade, setProposedUpgrade] = useState<any>(null);
-  const [adding, setAdding] = useState(false);
+  const [unitPrice, setUnitPrice] = useState(0);
+  const [platformFee, setPlatformFee] = useState(0);
+  const [initiatingPayment, setInitiatingPayment] = useState(false);
   const [showPlatformFees, setShowPlatformFees] = useState(false);
 
   async function handleGenerateCustomUnit() {
@@ -29,8 +31,15 @@ export default function ScopeReviewPage() {
         body: JSON.stringify(upgradeForm)
       });
       if (res.ok) {
-        const data = await res.json();
-        setProposedUpgrade(data);
+        const result = await res.json();
+        setProposedUpgrade(result);
+        // Calculate pricing for the new unit
+        const ratePerPoint = data?.project?.pricing?.ratePerPoint || 400;
+        const score = result.proposedUnit?.unitScore || 0;
+        const up = score * ratePerPoint;
+        const pf = Math.round(up * 0.05);
+        setUnitPrice(up);
+        setPlatformFee(pf);
         setUpgradeStep("review");
       } else {
         setUpgradeStep("intake");
@@ -42,25 +51,61 @@ export default function ScopeReviewPage() {
     }
   }
 
-  async function handleAddCustomUnit() {
+  async function handleInitiatePayment() {
     if (!proposedUpgrade?.proposedUnit) return;
-    setAdding(true);
+    setInitiatingPayment(true);
     try {
-      const res = await fetch(`/api/projects/${projectId}`, {
-        method: "PATCH",
+      const res = await fetch("/api/payment/initiate", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customUnit: proposedUpgrade.proposedUnit })
+        body: JSON.stringify({
+          projectId,
+          customUnit: proposedUpgrade.proposedUnit,
+        }),
       });
-      const updated = await res.json();
-      if (res.ok && updated.project && updated.scope) {
-        setData(updated);
-        setShowAddModal(false);
+      const result = await res.json();
+
+      if (!res.ok) {
+        alert(result.error || "Payment initiation failed. Please try again.");
+        return;
+      }
+
+      if (result.skipPayment) {
+        // Fee too small — add directly without payment
+        const addRes = await fetch(`/api/projects/${projectId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ customUnit: proposedUpgrade.proposedUnit }),
+        });
+        if (addRes.ok) {
+          const updated = await addRes.json();
+          setData(updated);
+          setShowAddModal(false);
+          resetModal();
+        }
+        return;
+      }
+
+      // Redirect to PhonePe payment page
+      if (result.redirectUrl) {
+        window.location.href = result.redirectUrl;
+      } else {
+        alert("Could not obtain payment URL. Please try again.");
       }
     } catch (err) {
-      console.error("Failed to add custom unit:", err);
+      console.error(err);
+      alert("An error occurred. Please try again.");
     } finally {
-      setAdding(false);
+      setInitiatingPayment(false);
     }
+  }
+
+  function resetModal() {
+    setUpgradeForm({ whatToAdd: "", howItWorks: "", whyNeeded: "" });
+    setProposedUpgrade(null);
+    setUpgradeStep("intake");
+    setUnitPrice(0);
+    setPlatformFee(0);
   }
 
   useEffect(() => {
@@ -160,9 +205,7 @@ export default function ScopeReviewPage() {
           <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
             <h2 className="text-lg font-semibold tracking-tight">Functional Units</h2>
             <Button variant="outline" size="sm" onClick={() => {
-              setUpgradeForm({ whatToAdd: "", howItWorks: "", whyNeeded: "" });
-              setProposedUpgrade(null);
-              setUpgradeStep("intake");
+              resetModal();
               setShowAddModal(true);
             }}>
               + Add custom
@@ -176,6 +219,11 @@ export default function ScopeReviewPage() {
                     <h3 className="text-base sm:text-lg font-semibold text-stone-900">{unit.name}</h3>
                     <p className="text-sm text-stone-500 mt-2 leading-relaxed">{unit.description}</p>
                   </div>
+                  {unit.addedByClient && (
+                    <span className="shrink-0 ml-4 text-[10px] font-bold uppercase tracking-wider bg-[#FFF7F5] text-[#E85239] border border-[#FCE1DC] px-2 py-1 rounded-md">
+                      Custom Add-on
+                    </span>
+                  )}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 pt-4 sm:pt-6 mt-4 sm:mt-6 border-t border-stone-100">
                   <div>
@@ -305,17 +353,42 @@ export default function ScopeReviewPage() {
         </div>
       </div>
 
+      {/* ══════════════════════════════════════════════════════════
+          ADD CUSTOM FUNCTIONALITY MODAL
+          Steps: intake → loading → review → payment → (PhonePe redirect)
+          ══════════════════════════════════════════════════════════ */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-surface border border-border w-full max-w-2xl rounded-2xl shadow-2xl relative flex flex-col max-h-[90vh] animate-fade-up">
+            
+            {/* Modal Header */}
             <div className="p-6 border-b border-border flex justify-between items-center bg-stone-50/50 rounded-t-2xl">
-              <h2 className="text-[18px] font-bold text-stone-900">Add Custom Functionality</h2>
-              <button onClick={() => setShowAddModal(false)} className="w-8 h-8 rounded-full bg-white border border-border flex items-center justify-center text-text-tertiary hover:text-text-primary">
+              <div className="flex items-center gap-3">
+                {upgradeStep === "payment" && (
+                  <button
+                    type="button"
+                    onClick={() => setUpgradeStep("review")}
+                    className="w-7 h-7 rounded-full bg-white border border-stone-200 flex items-center justify-center text-stone-500 hover:text-stone-900 transition-colors"
+                  >
+                    <ArrowRight size={12} className="rotate-180" />
+                  </button>
+                )}
+                <h2 className="text-[18px] font-bold text-stone-900">
+                  {upgradeStep === "payment" ? "Pay Scope Upgrade Fee" : "Add Custom Functionality"}
+                </h2>
+              </div>
+              <button
+                onClick={() => { setShowAddModal(false); resetModal(); }}
+                className="w-8 h-8 rounded-full bg-white border border-border flex items-center justify-center text-text-tertiary hover:text-text-primary"
+              >
                 <X size={16} />
               </button>
             </div>
 
+            {/* Modal Body */}
             <div className="p-8 overflow-y-auto flex-1">
+
+              {/* ── STEP 1: INTAKE QUESTIONS ── */}
               {upgradeStep === "intake" && (
                 <div className="flex flex-col gap-6">
                   <div>
@@ -350,6 +423,7 @@ export default function ScopeReviewPage() {
                 </div>
               )}
 
+              {/* ── STEP 2: AI LOADING ── */}
               {upgradeStep === "loading" && (
                 <div className="flex flex-col items-center justify-center py-12">
                   <Loader2 className="animate-spin text-[#E85239] mb-4" size={32} />
@@ -358,6 +432,7 @@ export default function ScopeReviewPage() {
                 </div>
               )}
 
+              {/* ── STEP 3: REVIEW AI PROPOSAL ── */}
               {upgradeStep === "review" && proposedUpgrade?.proposedUnit && (
                 <div className="flex flex-col gap-6">
                   <div className="bg-[#FFF7F6] border border-orange-100 rounded-2xl p-6">
@@ -368,7 +443,7 @@ export default function ScopeReviewPage() {
                   <div>
                     <h4 className="text-[14px] font-bold text-stone-900 mb-3 flex items-center gap-2"><CheckCircle2 size={16} className="text-emerald-500" /> Included Capabilities</h4>
                     <ul className="space-y-2">
-                      {proposedUpgrade.proposedUnit.included.map((item: string, i: number) => (
+                      {proposedUpgrade.proposedUnit.included?.map((item: string, i: number) => (
                         <li key={i} className="text-[13px] text-text-secondary flex items-start gap-2">
                           <span className="w-1.5 h-1.5 rounded-full bg-stone-300 mt-1.5 shrink-0" /> {item}
                         </li>
@@ -378,31 +453,117 @@ export default function ScopeReviewPage() {
 
                   <div className="bg-stone-50 border border-border rounded-2xl p-6">
                     <h4 className="text-[14px] font-bold text-stone-900 mb-2">Scope Impact Summary</h4>
-                    <p className="text-[13px] text-text-secondary leading-relaxed mb-0">{proposedUpgrade.impact}</p>
+                    <p className="text-[13px] text-text-secondary leading-relaxed">{proposedUpgrade.impact}</p>
+                  </div>
+
+                  {/* Price preview notice */}
+                  <div className="rounded-xl border border-[#FCE1DC] bg-[#FFF7F5] p-4 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-[#E85239]/10 flex items-center justify-center shrink-0">
+                      <CreditCard size={15} className="text-[#E85239]" />
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-bold text-stone-900">
+                        Functionality cost: <span className="text-[#E85239]">{formatCurrency(unitPrice)}</span>
+                        {" · "}Platform upgrade fee: <span className="text-[#E85239]">{formatCurrency(platformFee)}</span> <span className="font-normal text-stone-500">(5%)</span>
+                      </p>
+                      <p className="text-[11px] text-stone-500 mt-0.5">Pay the 5% scope upgrade fee to unlock this functionality and add it to your project.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ── STEP 4: PAYMENT BREAKDOWN ── */}
+              {upgradeStep === "payment" && proposedUpgrade?.proposedUnit && (
+                <div className="flex flex-col gap-6">
+                  {/* Unit summary */}
+                  <div className="bg-[#FFF7F6] border border-orange-100 rounded-2xl p-5">
+                    <div className="flex items-start gap-3">
+                      <Zap size={16} className="text-[#E85239] shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-[13px] font-bold text-stone-900">{proposedUpgrade.proposedUnit.name}</p>
+                        <p className="text-[12px] text-stone-500 mt-0.5 leading-relaxed line-clamp-2">{proposedUpgrade.proposedUnit.description}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Fee breakdown */}
+                  <div className="rounded-2xl border border-stone-200 overflow-hidden">
+                    <div className="bg-stone-50 px-5 py-3 border-b border-stone-200">
+                      <p className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">Scope Upgrade Fee Breakdown</p>
+                    </div>
+                    <div className="p-5 space-y-3 text-[13px]">
+                      <div className="flex justify-between items-center">
+                        <span className="text-stone-600">Functionality cost (for freelancer)</span>
+                        <span className="font-semibold text-stone-800 tabular-nums">{formatCurrency(unitPrice)}</span>
+                      </div>
+                      <div className="flex justify-between items-center pb-3 border-b border-stone-100">
+                        <span className="text-stone-600">Platform scope upgrade rate</span>
+                        <span className="font-semibold text-stone-800">5%</span>
+                      </div>
+                      <div className="flex justify-between items-center pt-1">
+                        <span className="font-bold text-stone-900">Platform upgrade fee (due now)</span>
+                        <span className="font-black text-[18px] text-[#E85239] tabular-nums">{formatCurrency(platformFee)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Info note */}
+                  <div className="flex items-start gap-3 p-4 rounded-xl bg-blue-50 border border-blue-100">
+                    <AlertTriangle size={14} className="text-blue-500 shrink-0 mt-0.5" />
+                    <div className="text-[12px] text-blue-700 leading-relaxed">
+                      <strong>What happens after payment?</strong>
+                      <ul className="mt-1 space-y-0.5 list-disc list-inside">
+                        <li>You will be redirected to PhonePe to complete the payment.</li>
+                        <li>Once confirmed, the new functionality is automatically added to your project scope.</li>
+                        <li>The freelancer execution cost (<strong>{formatCurrency(unitPrice)}</strong>) is paid separately on milestone completion.</li>
+                      </ul>
+                    </div>
                   </div>
                 </div>
               )}
             </div>
 
-            <div className="p-6 border-t border-border bg-stone-50/50 rounded-b-2xl flex justify-end">
-              {upgradeStep === "intake" && (
-                <Button
-                  variant="primary"
-                  onClick={handleGenerateCustomUnit}
-                  disabled={!upgradeForm.whatToAdd || !upgradeForm.howItWorks}
-                >
-                  Generate Proposal
-                </Button>
-              )}
-              {upgradeStep === "review" && (
-                <Button
-                  variant="primary"
-                  onClick={handleAddCustomUnit}
-                  loading={adding}
-                >
-                  Confirm & Add to Scope
-                </Button>
-              )}
+            {/* Modal Footer */}
+            <div className="p-6 border-t border-border bg-stone-50/50 rounded-b-2xl flex justify-between items-center gap-3">
+              <button
+                type="button"
+                onClick={() => { setShowAddModal(false); resetModal(); }}
+                className="px-4 py-2 text-[12px] font-bold text-stone-500 hover:text-stone-800 transition-colors"
+              >
+                Cancel
+              </button>
+
+              <div className="flex items-center gap-3">
+                {upgradeStep === "intake" && (
+                  <Button
+                    variant="primary"
+                    onClick={handleGenerateCustomUnit}
+                    disabled={!upgradeForm.whatToAdd || !upgradeForm.howItWorks}
+                  >
+                    Generate Proposal
+                  </Button>
+                )}
+
+                {upgradeStep === "review" && (
+                  <Button
+                    variant="primary"
+                    onClick={() => setUpgradeStep("payment")}
+                  >
+                    Review Upgrade Fee →
+                  </Button>
+                )}
+
+                {upgradeStep === "payment" && (
+                  <Button
+                    variant="primary"
+                    onClick={handleInitiatePayment}
+                    loading={initiatingPayment}
+                  >
+                    <CreditCard size={14} className="mr-1.5" />
+                    Pay {formatCurrency(platformFee)} via PhonePe
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </div>

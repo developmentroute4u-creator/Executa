@@ -100,8 +100,8 @@ export default function FreelancerProjectPreviewPage() {
   const projectSummary = project.goal ? project.goal.trim() : "No goals specified.";
 
   return (
-    <main className="flex-1 overflow-y-auto pb-24">
-      <div className="max-w-4xl mx-auto px-6 pt-12">
+    <main className="flex-1 overflow-y-auto bg-background min-h-screen font-sans selection:bg-accent/10 selection:text-accent flex flex-col justify-center py-16 md:py-24">
+      <div className="max-w-[1200px] mx-auto px-8 md:px-16 w-full">
 
         {/* Back Navigation */}
         <div className="flex items-center gap-2 mb-8">

@@ -6,32 +6,42 @@ import { Project } from "@/models/Project";
 import { Message } from "@/models/Message";
 
 export async function GET(req: NextRequest, { params }: { params: { projectId: string } }) {
+  const adminCookie = req.cookies.get("admin_session")?.value;
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  
+  const isAdmin = adminCookie === "authenticated" || (session && (session.user as any).role === "admin");
+
+  if (!session && !isAdmin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   await connectDB();
-  const userId = (session.user as any).id;
-  const role = (session.user as any).role;
+  const userId = session ? (session.user as any).id : null;
+  const role = session ? (session.user as any).role : "admin";
 
   const project = await Project.findById(params.projectId).lean();
   if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
-  // Ensure only the project owner (client) or assigned freelancer can access
-  const isClient = project.clientId.toString() === userId;
-  const isFreelancer = project.freelancerId && project.freelancerId.toString() === userId;
+  // Ensure only the project owner (client), assigned freelancer, or admin can access
+  if (!isAdmin) {
+    const isClient = project.clientId.toString() === userId;
+    const isFreelancer = project.freelancerId && project.freelancerId.toString() === userId;
 
-  if (!isClient && !isFreelancer) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (!isClient && !isFreelancer) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
   }
 
   const messages = await (Message as any).find({ projectId: params.projectId }).sort({ createdAt: 1 }).lean();
 
   // Anonymize names and roles as per requirements
   const sanitizedMessages = messages.map((m: any) => {
-    const isMe = m.senderId.toString() === userId;
+    const isMe = isAdmin ? (m.senderRole === "admin") : (m.senderId && m.senderId.toString() === userId);
 
     let senderDisplayName = "";
-    if (role === "client") {
+    if (m.senderRole === "admin") {
+      senderDisplayName = "Executa System Alert";
+    } else if (isAdmin) {
+      senderDisplayName = m.senderRole === "client" ? "Client" : "Expert";
+    } else if (role === "client") {
       // Client views freelancer anonymized
       senderDisplayName = isMe ? "You (Client)" : "Matched Expert";
     } else {
@@ -44,7 +54,8 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
       senderDisplayName,
       content: m.content,
       createdAt: m.createdAt,
-      isMe
+      isMe,
+      senderRole: m.senderRole
     };
   });
 
