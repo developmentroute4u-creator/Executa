@@ -5,6 +5,47 @@ import { connectDB } from "@/lib/db";
 import { Project } from "@/models/Project";
 import { FreelancerProfile } from "@/models/FreelancerProfile";
 import crypto from "crypto";
+import fs from "fs";
+import path from "path";
+
+function loadEnvFallback() {
+  if (
+    process.env.PHONEPE_CLIENT_ID && 
+    process.env.PHONEPE_CLIENT_ID !== "undefined" &&
+    process.env.PHONEPE_CLIENT_SECRET &&
+    process.env.PHONEPE_CLIENT_SECRET !== "undefined"
+  ) {
+    return;
+  }
+  const envFiles = [".env.local", ".env"];
+  for (const file of envFiles) {
+    try {
+      const filePath = path.resolve(process.cwd(), file);
+      if (fs.existsSync(filePath)) {
+        const content = fs.readFileSync(filePath, "utf-8");
+        content.split(/\r?\n/).forEach((line) => {
+          const trimmed = line.trim();
+          if (trimmed && !trimmed.startsWith("#") && trimmed.includes("=")) {
+            const index = trimmed.indexOf("=");
+            const key = trimmed.substring(0, index).trim();
+            let value = trimmed.substring(index + 1).trim();
+            if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+              value = value.substring(1, value.length - 1);
+            }
+            if (!process.env[key] || process.env[key] === "undefined") {
+              process.env[key] = value;
+            }
+          }
+        });
+      }
+    } catch (err) {
+      console.warn(`Failed to read fallback env file ${file}:`, err);
+    }
+  }
+}
+
+// Ensure env variables are loaded before evaluating top-level constants
+loadEnvFallback();
 
 // PhonePe PG base URL (for checkout/v2/pay)
 const PHONEPE_BASE = process.env.PHONEPE_ENV === "UAT"
