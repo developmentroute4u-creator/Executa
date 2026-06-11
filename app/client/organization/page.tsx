@@ -26,6 +26,11 @@ export default function ClientOrganization() {
   const [inviteRole, setInviteRole] = useState("Member");
   const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
 
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const isEditEmailValid = emailRegex.test(editEmail);
+  const isEditNameValid = editName.trim().length >= 2;
+  const isInviteEmailValid = emailRegex.test(inviteEmail);
+
   const closeModal = () => {
     setActiveModal(null);
     setInviteEmail("");
@@ -35,13 +40,14 @@ export default function ClientOrganization() {
   };
 
   const handleSaveSettings = () => {
+    if (!isEditEmailValid || !isEditNameValid) return;
     setUserNameState(editName);
     setUserEmailState(editEmail);
     closeModal();
   };
 
   const handleSendInvite = () => {
-    if (!inviteEmail) return;
+    if (!isInviteEmailValid) return;
     alert(`Invite sent to ${inviteEmail} as ${inviteRole}`);
     closeModal();
   };
@@ -184,8 +190,13 @@ export default function ClientOrganization() {
                         type="text"
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
-                        className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-[14px] font-medium text-stone-900 focus:outline-none focus:border-stone-900 focus:bg-white transition-colors"
+                        className={`w-full bg-stone-50 border rounded-xl px-4 py-3 text-[14px] font-medium text-stone-900 focus:outline-none focus:bg-white transition-colors ${
+                          editName && !isEditNameValid ? "border-red-500 focus:border-red-500" : "border-stone-200 focus:border-stone-900"
+                        }`}
                       />
+                      {editName && !isEditNameValid && (
+                        <p className="text-xs text-red-500 font-bold mt-1 ml-1">Name must be at least 2 characters</p>
+                      )}
                     </div>
                     <div>
                       <label className="text-[12px] font-bold uppercase tracking-wider text-stone-500 mb-2 block">Email Address</label>
@@ -193,13 +204,19 @@ export default function ClientOrganization() {
                         type="email"
                         value={editEmail}
                         onChange={(e) => setEditEmail(e.target.value)}
-                        className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-[14px] font-medium text-stone-900 focus:outline-none focus:border-stone-900 focus:bg-white transition-colors"
+                        className={`w-full bg-stone-50 border rounded-xl px-4 py-3 text-[14px] font-medium text-stone-900 focus:outline-none focus:bg-white transition-colors ${
+                          editEmail && !isEditEmailValid ? "border-red-500 focus:border-red-500" : "border-stone-200 focus:border-stone-900"
+                        }`}
                       />
+                      {editEmail && !isEditEmailValid && (
+                        <p className="text-xs text-red-500 font-bold mt-1 ml-1">Please enter a valid email address</p>
+                      )}
                     </div>
                   </div>
                   <button
                     onClick={handleSaveSettings}
-                    className="w-full mt-8 py-3 bg-[#E85239] text-white text-[14px] font-bold rounded-xl hover:bg-[#d44127] transition-colors"
+                    disabled={!isEditEmailValid || !isEditNameValid}
+                    className="w-full mt-8 py-3 bg-[#E85239] disabled:bg-stone-200 disabled:text-stone-400 text-white text-[14px] font-bold rounded-xl hover:bg-[#d44127] disabled:hover:bg-stone-200 transition-colors"
                   >
                     Save Changes
                   </button>
@@ -218,8 +235,13 @@ export default function ClientOrganization() {
                         placeholder="colleague@company.com"
                         value={inviteEmail}
                         onChange={(e) => setInviteEmail(e.target.value)}
-                        className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-[14px] font-medium text-stone-900 focus:outline-none focus:border-stone-900 focus:bg-white transition-colors"
+                        className={`w-full bg-stone-50 border rounded-xl px-4 py-3 text-[14px] font-medium text-stone-900 focus:outline-none focus:bg-white transition-colors ${
+                          inviteEmail && !isInviteEmailValid ? "border-red-500 focus:border-red-500" : "border-stone-200 focus:border-stone-900"
+                        }`}
                       />
+                      {inviteEmail && !isInviteEmailValid && (
+                        <p className="text-xs text-red-500 font-bold mt-1 ml-1">Please enter a valid email address</p>
+                      )}
                     </div>
                     <div>
                       <label className="text-[12px] font-bold uppercase tracking-wider text-stone-500 mb-2 block">Role</label>
@@ -270,7 +292,7 @@ export default function ClientOrganization() {
                   </div>
                   <button
                     onClick={handleSendInvite}
-                    disabled={!inviteEmail}
+                    disabled={!isInviteEmailValid}
                     className="w-full mt-8 py-3 bg-[#E85239] disabled:bg-stone-200 disabled:text-stone-400 text-white text-[14px] font-bold rounded-xl hover:bg-[#d44127] disabled:hover:bg-stone-200 transition-colors"
                   >
                     Send Invite

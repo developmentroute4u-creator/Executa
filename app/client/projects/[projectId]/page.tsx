@@ -57,6 +57,17 @@ export default function ProjectDetailView({ params }: { params: { projectId: str
   const [appointing, setAppointing] = useState(false);
   const [appointSuccess, setAppointSuccess] = useState(false);
   const [matchLoadingText, setMatchLoadingText] = useState("Initiating AI match engine...");
+  const [displayCount, setDisplayCount] = useState(5);
+  const [refreshing, setRefreshing] = useState(false);
+
+  function handleGenerateMore() {
+    if (refreshing) return;
+    setRefreshing(true);
+    setTimeout(() => {
+      setDisplayCount(prev => prev + 5);
+      setRefreshing(false);
+    }, 1200);
+  }
 
   const triggerMatchLoad = () => {
     setMatchStatus("loading");
@@ -73,11 +84,11 @@ export default function ProjectDetailView({ params }: { params: { projectId: str
           setSelectedFreelancerId(d.bestMatchId || d.freelancers[0].id);
           setTimeout(() => {
             setMatchStatus("loaded");
-          }, 2500);
+          }, 1200);
         } else {
           setTimeout(() => {
             setMatchStatus("empty");
-          }, 2000);
+          }, 1000);
         }
       })
       .catch(err => {
@@ -101,7 +112,7 @@ export default function ProjectDetailView({ params }: { params: { projectId: str
           i++;
           setMatchLoadingText(texts[i]);
         }
-      }, 500);
+      }, 900);
       return () => clearInterval(interval);
     }
   }, [matchStatus]);
@@ -250,7 +261,7 @@ export default function ProjectDetailView({ params }: { params: { projectId: str
             </button>
           )
         )}
-        {(status === "matching") && matchStatus === "loaded" && (
+        {(status === "matching") && matchStatus === "loaded" && (matchData?.freelancers?.length ?? 0) > 5 && (
           <button
             onClick={triggerMatchLoad}
             className="h-12 px-6 bg-[#E85239] text-white text-[14px] font-bold rounded-xl flex items-center gap-2 hover:shadow-[0_8px_20px_rgba(232,82,57,0.3)] hover:-translate-y-0.5 transition-all font-bold"
@@ -748,14 +759,32 @@ export default function ProjectDetailView({ params }: { params: { projectId: str
                     <h2 className="text-[16px] font-black text-stone-900">AI‑Matched Specialists</h2>
                     <p className="text-[12px] text-stone-400 mt-0.5">Click a specialist to review their profile and appoint them.</p>
                   </div>
-                  <span className="px-3 py-1 bg-[#FFF7F6] text-[#E85239] text-[11px] font-bold rounded-full border border-orange-100 uppercase tracking-wider">
-                    {matchData.freelancers?.length} Found
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="px-3 py-1 bg-[#FFF7F6] text-[#E85239] text-[11px] font-bold rounded-full border border-orange-100 uppercase tracking-wider">
+                      {matchData.freelancers?.length} Found
+                    </span>
+                    {matchData.freelancers?.length > displayCount && (
+                      <button
+                        onClick={handleGenerateMore}
+                        disabled={refreshing}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-stone-50 text-stone-600 hover:text-stone-900 text-[12px] font-bold rounded-lg border border-stone-200 transition-all focus:outline-none disabled:opacity-50"
+                      >
+                        <svg
+                          width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                          className={refreshing ? "animate-spin text-[#E85239]" : ""}
+                        >
+                          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                          <path d="M3 3v5h5" />
+                        </svg>
+                        Generate More
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Specialist rows */}
-                <div className="p-4 space-y-3 bg-stone-50/50">
-                  {matchData.freelancers?.map((f: any, idx: number) => (
+                <div className={`p-4 space-y-3 bg-stone-50/50 transition-all duration-500 ${refreshing ? "opacity-40 blur-[1px] pointer-events-none" : "opacity-100 blur-0 pointer-events-auto"}`}>
+                  {matchData.freelancers?.slice(0, displayCount).map((f: any, idx: number) => (
                     <div
                       key={f.id}
                       onClick={() => setModalFreelancer(f)}
@@ -797,6 +826,14 @@ export default function ProjectDetailView({ params }: { params: { projectId: str
                       </div>
                     </div>
                   ))}
+                  {/* Exhausted list note */}
+                  {matchData.freelancers?.length > 0 && matchData.freelancers.length <= displayCount && (
+                    <div className="text-center py-5 border-t border-stone-100 mt-2">
+                      <p className="text-[12px] text-stone-500 max-w-xl mx-auto">
+                        <span className="font-bold text-stone-700">Note:</span> These are the top specialists available right now. If you are not completely satisfied, please check back later as new experts are vetted daily.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             </>
@@ -842,25 +879,27 @@ export default function ProjectDetailView({ params }: { params: { projectId: str
               </div>
             </div>
           ) : (
-            <div className="flex items-center gap-3 p-5 rounded-2xl bg-emerald-50 border border-emerald-100">
-              <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
-                <CheckCircle2 className="text-emerald-600" size={20} />
+            !project.clientAcknowledgedAcceptance && (
+              <div className="flex items-center gap-3 p-5 rounded-2xl bg-emerald-50 border border-emerald-100">
+                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                  <CheckCircle2 className="text-emerald-600" size={20} />
+                </div>
+                <div className="flex-1">
+                  <p className="text-[14px] font-bold text-emerald-700">Project is activated in execution room</p>
+                  <p className="text-[12px] text-emerald-600 mt-0.5">
+                    {project.freelancerName
+                      ? `${project.freelancerName} is working on your project`
+                      : "A verified expert is executing your scope"}
+                  </p>
+                </div>
+                <Link
+                  href={`/client/execution/${params.projectId}`}
+                  className="h-10 px-5 bg-emerald-600 text-white text-[13px] font-bold rounded-xl flex items-center gap-2 hover:bg-emerald-700 transition-all font-bold"
+                >
+                  <Zap size={14} /> Enter Execution Room
+                </Link>
               </div>
-              <div className="flex-1">
-                <p className="text-[14px] font-bold text-emerald-700">Project is actively in execution</p>
-                <p className="text-[12px] text-emerald-600 mt-0.5">
-                  {project.freelancerName
-                    ? `${project.freelancerName} is working on your project`
-                    : "A verified expert is executing your scope"}
-                </p>
-              </div>
-              <Link
-                href={`/client/execution/${params.projectId}`}
-                className="h-10 px-5 bg-emerald-600 text-white text-[13px] font-bold rounded-xl flex items-center gap-2 hover:bg-emerald-700 transition-all"
-              >
-                <Zap size={14} /> Open Workspace
-              </Link>
-            </div>
+            )
           )}
 
           {/* Cards */}

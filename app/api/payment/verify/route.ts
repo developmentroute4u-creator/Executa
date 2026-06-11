@@ -6,14 +6,18 @@ import mongoose from "mongoose";
 
 const PHONEPE_BASE = process.env.PHONEPE_ENV === "UAT"
   ? "https://api-preprod.phonepe.com/apis/pg-sandbox"
-  : "https://api.phonepe.com/apis/hermes";
+  : "https://api.phonepe.com/apis/pg";
+
+const PHONEPE_TOKEN_BASE = process.env.PHONEPE_ENV === "UAT"
+  ? "https://api-preprod.phonepe.com/apis/pg-sandbox"
+  : "https://api.phonepe.com/apis/identity-manager";
 
 const CLIENT_ID = process.env.PHONEPE_CLIENT_ID!;
 const CLIENT_SECRET = process.env.PHONEPE_CLIENT_SECRET!;
 const CLIENT_VERSION = process.env.PHONEPE_CLIENT_VERSION || "1";
 
 async function getPhonePeToken(): Promise<string> {
-  const res = await fetch(`${PHONEPE_BASE}/v1/oauth/token`, {
+  const res = await fetch(`${PHONEPE_TOKEN_BASE}/v1/oauth/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
@@ -23,6 +27,10 @@ async function getPhonePeToken(): Promise<string> {
       grant_type: "client_credentials",
     }),
   });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`PhonePe token error: ${err}`);
+  }
   const data = await res.json();
   return data.access_token;
 }

@@ -2,7 +2,8 @@
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ButtonHTMLAttributes, forwardRef } from "react";
+import { ButtonHTMLAttributes, forwardRef, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "ghost" | "outline" | "danger";
@@ -97,8 +98,12 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, label, error, hint, id, ...props }, ref) => {
+  ({ className, label, error, hint, id, type, ...props }, ref) => {
     const inputId = id || label?.toLowerCase().replace(/\s/g, "-");
+    const [showPassword, setShowPassword] = useState(false);
+    const isPasswordType = type === "password";
+    const resolvedType = isPasswordType ? (showPassword ? "text" : "password") : type;
+
     return (
       <div className="w-full">
         {label && (
@@ -106,16 +111,29 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             {label}
           </label>
         )}
-        <input
-          ref={ref}
-          id={inputId}
-          className={cn(
-            "w-full rounded border bg-white px-4 py-2.5 text-sm text-text-primary placeholder:text-text-tertiary transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent hover:border-border-strong",
-            error ? "border-error focus:ring-error/20 focus:border-error" : "border-border",
-            className
+        <div className="relative">
+          <input
+            ref={ref}
+            id={inputId}
+            type={resolvedType}
+            className={cn(
+              "w-full rounded border bg-white px-4 py-2.5 text-sm text-text-primary placeholder:text-text-tertiary transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent hover:border-border-strong",
+              error ? "border-error focus:ring-error/20 focus:border-error" : "border-border",
+              isPasswordType && "pr-10",
+              className
+            )}
+            {...props}
+          />
+          {isPasswordType && (
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 focus:outline-none"
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
           )}
-          {...props}
-        />
+        </div>
         {error && <p className="text-xs text-error mt-1">{error}</p>}
         {hint && !error && <p className="text-xs text-text-secondary mt-1">{hint}</p>}
       </div>

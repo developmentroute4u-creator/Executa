@@ -7,9 +7,10 @@ import {
   CreditCard, Lock, CheckCircle2, Loader2,
   Shield, FileText, Zap, ChevronDown, Star,
   BadgeCheck, Headphones, BarChart3, Users, ArrowRight,
-  ChevronLeft
+  ChevronLeft, Mail, MessageSquare, Phone, X
 } from "lucide-react";
 import Link from "next/link";
+import { SupportChatWidget } from "@/components/SupportChatWidget";
 
 function formatCurrency(val: number) {
   if (!val) return "₹0";
@@ -73,6 +74,8 @@ export default function PaymentGatePage() {
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [error, setError] = useState("");
   const [expandedFee, setExpandedFee] = useState<string | null>("accountabilityFee");
+  const [supportOpen, setSupportOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
 
   useEffect(() => {
     fetch(`/api/projects/${params.projectId}`)
@@ -457,9 +460,12 @@ export default function PaymentGatePage() {
                 <Headphones size={13} className="text-[#E85239] shrink-0 mt-0.5" />
                 <p className="text-[11px] text-stone-500 leading-relaxed">
                   Have questions before paying?{" "}
-                  <Link href="/client/support" className="text-[#E85239] font-bold hover:underline">
+                  <button 
+                    onClick={() => setSupportOpen(true)}
+                    className="text-[#E85239] font-bold hover:underline cursor-pointer align-baseline"
+                  >
                     Contact our team
-                  </Link>
+                  </button>
                   {" "}— we respond in under 2 hours.
                 </p>
               </motion.div>
@@ -475,6 +481,102 @@ export default function PaymentGatePage() {
           </div>
         </motion.div>
       </div>
+
+      {/* ── Support Popup Modal ── */}
+      <AnimatePresence>
+        {supportOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setSupportOpen(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 16 }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
+              className="bg-white rounded-3xl shadow-2xl border border-stone-200/50 w-full max-w-lg overflow-hidden relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setSupportOpen(false)}
+                className="absolute right-5 top-5 w-8 h-8 rounded-full bg-stone-50 border border-stone-200/60 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors"
+              >
+                <X size={16} />
+              </button>
+
+              <div className="p-8">
+                <div className="flex items-center gap-2.5 mb-2">
+                  <div className="w-6 h-6 rounded-full bg-[#FFF0ED] flex items-center justify-center">
+                    <Headphones size={12} className="text-[#E85239]" />
+                  </div>
+                  <span className="text-[10px] font-black text-[#E85239] uppercase tracking-widest">Executa Vetting Support</span>
+                </div>
+                
+                <h3 className="text-2xl font-black text-stone-900 tracking-tight mb-2">Contact Our Team</h3>
+                <p className="text-sm text-stone-500 mb-6">
+                  Have questions before making payment? Choose your preferred contact method below. We respond in under 2 hours.
+                </p>
+
+                <div className="space-y-4">
+                  {/* Option 1: Live Chat */}
+                  <div className="flex gap-4 p-5 bg-[#FFF7F6] border border-orange-100 rounded-2xl items-start">
+                    <div className="w-10 h-10 rounded-xl bg-[#E85239]/10 flex items-center justify-center shrink-0">
+                      <MessageSquare size={18} className="text-[#E85239]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-[14px] font-black text-stone-900 mb-0.5">Live Chat</h4>
+                      <p className="text-xs text-stone-500 leading-normal mb-3">Mon–Fri, 10am–7pm IST. Instant response.</p>
+                      <button
+                        onClick={() => {
+                          setChatOpen(true);
+                          setSupportOpen(false);
+                        }}
+                        className="px-4 py-2 bg-[#E85239] text-white text-[12px] font-bold rounded-lg hover:bg-[#d44127] transition-all active:scale-[0.98]"
+                      >
+                        Start Live Chat
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Option 2: Email */}
+                  <div className="flex gap-4 p-5 bg-stone-50 border border-stone-100 rounded-2xl items-start">
+                    <div className="w-10 h-10 rounded-xl bg-[#E85239]/5 flex items-center justify-center shrink-0">
+                      <Mail size={18} className="text-[#E85239]" />
+                    </div>
+                    <div>
+                      <h4 className="text-[14px] font-black text-stone-900 mb-0.5">Email Support</h4>
+                      <p className="text-xs text-stone-500 leading-normal mb-2">Replied in 4–8 hours.</p>
+                      <a href="mailto:support@executa.in" className="text-sm font-bold text-[#E85239] hover:underline">
+                        support@executa.in
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* Option 3: Phone */}
+                  <div className="flex gap-4 p-5 bg-stone-50 border border-stone-100 rounded-2xl items-start">
+                    <div className="w-10 h-10 rounded-xl bg-[#E85239]/5 flex items-center justify-center shrink-0">
+                      <Phone size={18} className="text-[#E85239]" />
+                    </div>
+                    <div>
+                      <h4 className="text-[14px] font-black text-stone-900 mb-0.5">Call Us Direct</h4>
+                      <p className="text-xs text-stone-500 leading-normal mb-2">Mon–Fri, 10am–6pm IST.</p>
+                      <a href="tel:+918000000000" className="text-sm font-bold text-[#E85239] hover:underline">
+                        +91 80000 00000
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <SupportChatWidget userRole="client" triggerOpen={chatOpen} onClose={() => setChatOpen(false)} />
     </div>
   );
 }

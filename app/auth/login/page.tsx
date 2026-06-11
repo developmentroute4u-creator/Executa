@@ -4,8 +4,9 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Mail, Lock, ArrowRight, AlertCircle } from "lucide-react";
+import { ArrowLeft, Mail, Lock, ArrowRight, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { signIn } from "next-auth/react";
+import { cn } from "@/lib/utils";
 
 function LoginContent() {
   const searchParams = useSearchParams();
@@ -22,10 +23,19 @@ function LoginContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   
   const [isSignUp, setIsSignUp] = useState(initialMode);
   const [isFormLoading, setIsFormLoading] = useState(false);
   const [authError, setAuthError] = useState("");
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const isEmailValid = emailRegex.test(email);
+  const isPasswordLengthValid = password.length >= 8;
+  const isPasswordUppercaseValid = /[A-Z]/.test(password);
+  const isPasswordLowercaseValid = /[a-z]/.test(password);
+  const isPasswordStrengthValid = isPasswordLengthValid && isPasswordUppercaseValid && isPasswordLowercaseValid;
+
 
   // Typewriter Effect State
   const words = ["clear goals.", "expert talent.", "safe payments.", "fast delivery."];
@@ -58,8 +68,39 @@ function LoginContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
     setAuthError("");
+
+    // Validate email format
+    if (!isEmailValid) {
+      setAuthError("Please enter a valid email address");
+      return;
+    }
+
+    if (isSignUp) {
+      // Sign Up Validation
+      if (!firstName.trim() || !lastName.trim()) {
+        setAuthError("Please enter both your first and last name");
+        return;
+      }
+
+      // Password Complexity Validation
+      if (!isPasswordLengthValid) {
+        setAuthError("Password must be at least 8 characters long");
+        return;
+      }
+      if (!isPasswordUppercaseValid || !isPasswordLowercaseValid) {
+        setAuthError("Password must contain both uppercase and lowercase letters");
+        return;
+      }
+    } else {
+      // Sign In Validation
+      if (!password) {
+        setAuthError("Please enter your password");
+        return;
+      }
+    }
+
+    setIsSubmitting(true);
 
     try {
       if (isSignUp) {
@@ -282,9 +323,19 @@ function LoginContent() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="name@company.com" 
-                        className="w-full bg-stone-50 border border-stone-200 rounded-[1.25rem] pl-14 pr-5 py-4 text-[15px] outline-none focus:bg-white focus:border-[#E85239] focus:ring-4 focus:ring-[#E85239]/10 transition-all placeholder:text-stone-300 font-medium text-stone-800" 
+                        className={cn(
+                          "w-full bg-stone-50 border rounded-[1.25rem] pl-14 pr-5 py-4 text-[15px] outline-none focus:bg-white focus:ring-4 transition-all placeholder:text-stone-300 font-medium text-stone-800",
+                          email && !isEmailValid 
+                            ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" 
+                            : "border-stone-200 focus:border-[#E85239] focus:ring-[#E85239]/10"
+                        )}
                       />
                     </div>
+                    {email && !isEmailValid && (
+                      <p className="text-xs text-red-500 font-bold mt-1 ml-1 animate-fade-up">
+                        Please enter a valid email address
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2.5 relative group">
@@ -295,14 +346,31 @@ function LoginContent() {
                     <div className="relative">
                       <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-stone-300 group-focus-within:text-[#E85239] transition-colors" size={20} />
                       <input 
-                        type="password" 
+                        type={showPassword ? "text" : "password"} 
                         required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••" 
-                        className="w-full bg-stone-50 border border-stone-200 rounded-[1.25rem] pl-14 pr-5 py-4 text-[15px] outline-none focus:bg-white focus:border-[#E85239] focus:ring-4 focus:ring-[#E85239]/10 transition-all placeholder:text-stone-300 font-medium text-stone-800" 
+                        className={cn(
+                          "w-full bg-stone-50 border rounded-[1.25rem] pl-14 pr-12 py-4 text-[15px] outline-none focus:bg-white focus:ring-4 transition-all placeholder:text-stone-300 font-medium text-stone-800",
+                          isSignUp && password && !isPasswordStrengthValid
+                            ? "border-red-500 focus:border-red-500 focus:ring-red-500/10"
+                            : "border-stone-200 focus:border-[#E85239] focus:ring-[#E85239]/10"
+                        )}
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-5 top-1/2 -translate-y-1/2 text-stone-300 hover:text-stone-500 focus:outline-none"
+                      >
+                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                      </button>
                     </div>
+                    {isSignUp && password && !isPasswordStrengthValid && (
+                      <p className="text-xs text-red-500 font-bold mt-1 ml-1 animate-fade-up">
+                        Must be at least 8 characters with uppercase and lowercase letters
+                      </p>
+                    )}
                   </div>
 
                   <div className="pt-4">

@@ -148,6 +148,7 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
 
   try {
     await connectDB();
+    await seedMockFreelancers();
     const project = await Project.findById(params.projectId);
     if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
@@ -208,21 +209,22 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
       functionalUnits: scope.functionalUnits || []
     }, freelancers);
 
-    const matches = aiResponse?.matches || freelancers.map(f => ({
-      freelancerId: f.id,
-      fitScore: 80,
-      fitReason: `${f.name} is a highly qualified ${f.domain} specialist with matching skills.`
-    }));
+    if (!aiResponse || !aiResponse.matches || !aiResponse.bestMatches) {
+      return NextResponse.json({ 
+        error: "AI matching engine was unable to evaluate candidate alignments. Please check your Gemini API key and model availability." 
+      }, { status: 500 });
+    }
 
-    const bestMatches = aiResponse?.bestMatches || [{ freelancerId: freelancers[0].id, role: "fullstack" }];
+    const matches = aiResponse.matches;
+    const bestMatches = aiResponse.bestMatches;
 
     // Zip matches info with actual profiles to send to frontend and slice to return top 5 matches
     const matchedFreelancers = freelancers.map(f => {
       const matchDetails = matches.find((m: any) => m.freelancerId === f.id);
       return {
         ...f,
-        fitScore: matchDetails ? matchDetails.fitScore : 75,
-        fitReason: matchDetails ? matchDetails.fitReason : "Solid overall technical candidate."
+        fitScore: matchDetails ? matchDetails.fitScore : 0,
+        fitReason: matchDetails ? matchDetails.fitReason : "No matching capabilities identified by AI evaluation."
       };
     }).sort((a, b) => b.fitScore - a.fitScore);
 

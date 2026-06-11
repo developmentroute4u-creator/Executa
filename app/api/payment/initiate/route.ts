@@ -6,10 +6,15 @@ import { Project } from "@/models/Project";
 import { FreelancerProfile } from "@/models/FreelancerProfile";
 import crypto from "crypto";
 
-// PhonePe UAT base URL
+// PhonePe PG base URL (for checkout/v2/pay)
 const PHONEPE_BASE = process.env.PHONEPE_ENV === "UAT"
   ? "https://api-preprod.phonepe.com/apis/pg-sandbox"
-  : "https://api.phonepe.com/apis/hermes";
+  : "https://api.phonepe.com/apis/pg";
+
+// PhonePe identity manager base URL (for oauth/token)
+const PHONEPE_TOKEN_BASE = process.env.PHONEPE_ENV === "UAT"
+  ? "https://api-preprod.phonepe.com/apis/pg-sandbox"
+  : "https://api.phonepe.com/apis/identity-manager";
 
 const CLIENT_ID = process.env.PHONEPE_CLIENT_ID!;
 const CLIENT_SECRET = process.env.PHONEPE_CLIENT_SECRET!;
@@ -18,7 +23,7 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
 // Get OAuth token from PhonePe
 async function getPhonePeToken(): Promise<string> {
-  const res = await fetch(`${PHONEPE_BASE}/v1/oauth/token`, {
+  const res = await fetch(`${PHONEPE_TOKEN_BASE}/v1/oauth/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({

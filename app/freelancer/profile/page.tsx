@@ -6,6 +6,19 @@ import Link from "next/link";
 import { User, LogOut, Sparkles, Camera, Edit3, Save, X, ArrowRight, CreditCard, AlertTriangle, Plus, CheckCircle2, Trash2 } from "lucide-react";
 
 // ─── Validation helpers ────────────────────────────────────────────────────────
+function validateEmail(val: string): string {
+  if (!val.trim()) return "Email address is required.";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim()))
+    return "Please enter a valid email address format.";
+  return "";
+}
+function validateName(val: string): string {
+  if (!val.trim()) return "Full name is required.";
+  if (val.trim().length < 2) return "Must be at least 2 characters.";
+  if (!/^[a-zA-Z\s.]+$/.test(val.trim())) return "Only letters, spaces, and dots are allowed.";
+  return "";
+}
+
 function validateUpiId(val: string): string {
   if (!val.trim()) return "UPI ID is required.";
   if (!/^[a-zA-Z0-9._\-]+@[a-zA-Z]{2,}$/.test(val.trim()))
@@ -108,6 +121,12 @@ export default function ProfileEnvironment() {
   };
 
   const handleSaveChanges = async () => {
+    const nameErr = validateName(nameInput);
+    const emailErr = validateEmail(emailInput);
+    if (nameErr || emailErr) {
+      setErrorMsg(nameErr || emailErr);
+      return;
+    }
     setSaving(true);
     setErrorMsg("");
     try {
@@ -303,13 +322,31 @@ export default function ProfileEnvironment() {
                   <div className="space-y-3 w-full sm:max-w-xs relative z-10 pt-2 sm:pt-0">
                     <div>
                       <label className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Full Name</label>
-                      <input type="text" value={nameInput} onChange={(e) => setNameInput(e.target.value)}
-                        className="w-full mt-1 px-4 py-2 bg-stone-50/50 border border-border focus:border-[#E85239] focus:ring-1 focus:ring-[#E85239] rounded-xl font-sans text-sm text-text-primary outline-none transition-colors" />
+                      <input 
+                        type="text" 
+                        value={nameInput} 
+                        onChange={(e) => setNameInput(e.target.value)}
+                        className={`w-full mt-1 px-4 py-2 bg-stone-50/50 border rounded-xl font-sans text-sm text-text-primary outline-none transition-colors focus:ring-1 focus:ring-[#E85239] ${
+                          nameInput && validateName(nameInput) ? "border-red-500 focus:border-red-500" : "border-border focus:border-[#E85239]"
+                        }`} 
+                      />
+                      {nameInput && validateName(nameInput) && (
+                        <p className="text-[10px] text-red-500 font-bold mt-1 ml-1">{validateName(nameInput)}</p>
+                      )}
                     </div>
                     <div>
                       <label className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Email Address</label>
-                      <input type="email" value={emailInput} onChange={(e) => setEmailInput(e.target.value)}
-                        className="w-full mt-1 px-4 py-2 bg-stone-50/50 border border-border focus:border-[#E85239] focus:ring-1 focus:ring-[#E85239] rounded-xl font-sans text-sm text-text-primary outline-none transition-colors" />
+                      <input 
+                        type="email" 
+                        value={emailInput} 
+                        onChange={(e) => setEmailInput(e.target.value)}
+                        className={`w-full mt-1 px-4 py-2 bg-stone-50/50 border rounded-xl font-sans text-sm text-text-primary outline-none transition-colors focus:ring-1 focus:ring-[#E85239] ${
+                          emailInput && validateEmail(emailInput) ? "border-red-500 focus:border-red-500" : "border-border focus:border-[#E85239]"
+                        }`} 
+                      />
+                      {emailInput && validateEmail(emailInput) && (
+                        <p className="text-[10px] text-red-500 font-bold mt-1 ml-1">{validateEmail(emailInput)}</p>
+                      )}
                     </div>
                   </div>
                 ) : (

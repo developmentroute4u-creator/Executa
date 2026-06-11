@@ -18,9 +18,33 @@ function SignupForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const isEmailValid = emailRegex.test(form.email);
+  const isPasswordLengthValid = form.password.length >= 8;
+  const isPasswordUppercaseValid = /[A-Z]/.test(form.password);
+  const isPasswordLowercaseValid = /[a-z]/.test(form.password);
+  const isPasswordStrengthValid = isPasswordLengthValid && isPasswordUppercaseValid && isPasswordLowercaseValid;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
+    // Validate email format
+    if (!isEmailValid) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
+    // Validate password complexity
+    if (!isPasswordLengthValid) {
+      setError("Password must be at least 8 characters long");
+      return;
+    }
+    if (!isPasswordUppercaseValid || !isPasswordLowercaseValid) {
+      setError("Password must contain both uppercase and lowercase letters");
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch("/api/auth/register", {
@@ -35,6 +59,7 @@ function SignupForm() {
       else router.push("/freelancer/onboarding");
     } catch { setError("Something went wrong."); setLoading(false); }
   }
+
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -114,8 +139,26 @@ function SignupForm() {
               </div>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <Input label="Full name" type="text" placeholder="Arjun Sharma" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-                <Input label="Email address" type="email" placeholder="you@company.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
-                <Input label="Password" type="password" placeholder="Min. 8 characters" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={8} hint="At least 8 characters" />
+                <Input 
+                  label="Email address" 
+                  type="email" 
+                  placeholder="you@company.com" 
+                  value={form.email} 
+                  onChange={(e) => setForm({ ...form, email: e.target.value })} 
+                  required 
+                  error={form.email && !isEmailValid ? "Please enter a valid email address" : undefined}
+                />
+                <div className="space-y-1">
+                  <Input 
+                    label="Password" 
+                    type="password" 
+                    placeholder="Min. 8 characters" 
+                    value={form.password} 
+                    onChange={(e) => setForm({ ...form, password: e.target.value })} 
+                    required 
+                    error={form.password && !isPasswordStrengthValid ? "Must be at least 8 characters with uppercase and lowercase letters" : undefined}
+                  />
+                </div>
                 {error && <div className="p-3 bg-error-light border border-error/20 rounded text-xs text-error">{error}</div>}
                 <Button type="submit" variant="primary" className="w-full" loading={loading}>
                   {loading ? "Creating account…" : "Create account"}

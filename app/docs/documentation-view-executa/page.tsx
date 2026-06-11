@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 const ACCESS_KEY = "Executa@Docs#2026";
 const SESSION_KEY = "executa_docs_auth";
@@ -7,6 +8,7 @@ const SESSION_KEY = "executa_docs_auth";
 export default function PlatformDocsPage() {
   const [unlocked, setUnlocked] = useState(false);
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [checking, setChecking] = useState(true);
 
@@ -58,19 +60,32 @@ export default function PlatformDocsPage() {
               <label style={{ display: "block", fontSize: "11px", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase", color: "#6B6B6B", marginBottom: "8px" }}>
                 Access Password
               </label>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="Enter access password"
-                autoFocus
-                style={{
-                  width: "100%", padding: "12px 16px", borderRadius: "10px",
-                  border: error ? "1.5px solid #E85239" : "1.5px solid #E8E4E0",
-                  fontSize: "14px", color: "#1A1A1A", background: "#FAFAF9",
-                  outline: "none", boxSizing: "border-box", fontFamily: "inherit"
-                }}
-              />
+              <div style={{ position: "relative" }}>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="Enter access password"
+                  autoFocus
+                  style={{
+                    width: "100%", padding: "12px 40px 12px 16px", borderRadius: "10px",
+                    border: error ? "1.5px solid #E85239" : "1.5px solid #E8E4E0",
+                    fontSize: "14px", color: "#1A1A1A", background: "#FAFAF9",
+                    outline: "none", boxSizing: "border-box", fontFamily: "inherit"
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)",
+                    background: "none", border: "none", cursor: "pointer", color: "#9A9A9A",
+                    display: "flex", alignItems: "center", justifyContent: "center", padding: 0
+                  }}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
               {error && (
                 <div style={{ marginTop: "8px", fontSize: "12px", color: "#E85239", fontWeight: 500 }}>
                   {error}
