@@ -47,20 +47,29 @@ function loadEnvFallback() {
 // Ensure env variables are loaded before evaluating top-level constants
 loadEnvFallback();
 
+const PHONEPE_ENV = process.env.PHONEPE_ENV || "UAT";
+
 // PhonePe PG base URL (for checkout/v2/pay)
-const PHONEPE_BASE = process.env.PHONEPE_ENV === "UAT"
+const PHONEPE_BASE = PHONEPE_ENV === "UAT"
   ? "https://api-preprod.phonepe.com/apis/pg-sandbox"
   : "https://api.phonepe.com/apis/pg";
 
 // PhonePe identity manager base URL (for oauth/token)
-const PHONEPE_TOKEN_BASE = process.env.PHONEPE_ENV === "UAT"
+const PHONEPE_TOKEN_BASE = PHONEPE_ENV === "UAT"
   ? "https://api-preprod.phonepe.com/apis/pg-sandbox"
   : "https://api.phonepe.com/apis/identity-manager";
 
-const CLIENT_ID = process.env.PHONEPE_CLIENT_ID!;
-const CLIENT_SECRET = process.env.PHONEPE_CLIENT_SECRET!;
+const CLIENT_ID = process.env.PHONEPE_CLIENT_ID && process.env.PHONEPE_CLIENT_ID !== "undefined"
+  ? process.env.PHONEPE_CLIENT_ID
+  : "M22XTO82UL82X_2606031540";
+
+const CLIENT_SECRET = process.env.PHONEPE_CLIENT_SECRET && process.env.PHONEPE_CLIENT_SECRET !== "undefined"
+  ? process.env.PHONEPE_CLIENT_SECRET
+  : "NWFlMzczMzktMTk1NC00MDdhLWFkMTktODZhZDJlMzhjNDhj";
+
 const CLIENT_VERSION = process.env.PHONEPE_CLIENT_VERSION || "1";
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
 
 // Get OAuth token from PhonePe
 async function getPhonePeToken(): Promise<string> {
