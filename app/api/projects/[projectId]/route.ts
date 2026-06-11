@@ -14,8 +14,19 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   await connectDB();
+  
+  const loggedInUserId = (session.user as any).id;
   const project = await Project.findById(params.projectId).lean() as any;
   if (!project) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  if (
+    project.clientId.toString() === loggedInUserId &&
+    project.freelancerAccepted &&
+    !project.clientAcknowledgedAcceptance
+  ) {
+    await Project.updateOne({ _id: params.projectId }, { clientAcknowledgedAcceptance: true });
+    project.clientAcknowledgedAcceptance = false;
+  }
 
   if (project.freelancerId) {
     const { User } = await import("@/models/User");

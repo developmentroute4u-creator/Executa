@@ -1,10 +1,12 @@
 "use client";
 import { useState } from "react";
 import { Button, Card } from "@/components/ui";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function AdminLoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -61,14 +63,23 @@ export default function AdminLoginPage() {
             <label className="text-[10px] text-text-tertiary uppercase font-bold tracking-wider block mb-1">
               Secret Password
             </label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded border border-border bg-white px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-accent/30 font-sans"
-              placeholder="••••••••"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded border border-border bg-white pl-3 pr-9 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-accent/30 font-sans"
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 focus:outline-none"
+              >
+                {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+              </button>
+            </div>
           </div>
 
           {error && (

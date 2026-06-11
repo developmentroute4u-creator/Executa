@@ -36,8 +36,9 @@ export default function ClientWorkspace() {
       });
   }, []);
 
-  const activeProjects = projects.filter(p => p.status === "execution");
-  const requiresAttention = projects.filter(p => p.status === "scope_review").length;
+  const activeProjects = projects.filter(p => ["execution", "active"].includes(p.status));
+  const requiresAttentionProjects = projects.filter(p => p.status === "scope_review" || (p.status === "active" && p.freelancerAccepted && !p.clientAcknowledgedAcceptance));
+  const requiresAttention = requiresAttentionProjects.length;
 
   return (
     <div className="flex-1 w-full max-w-7xl mx-auto p-6 sm:p-8 lg:p-12">
@@ -65,32 +66,64 @@ export default function ClientWorkspace() {
               <h2 className="text-[12px] font-bold tracking-[0.1em] text-stone-400 uppercase">Attention Required</h2>
             </div>
             <div className="flex flex-col gap-4">
-              {projects.filter(p => p.status === "scope_review").map(project => (
-                <Link key={`attn-${project._id}`} href={`/client/projects/${project._id}`} className="block">
-                  <motion.div 
-                    whileHover={{ scale: 1.01 }}
-                    className="group relative bg-white rounded-2xl p-6 shadow-[0_8px_30px_-10px_rgba(232,82,57,0.15)] border border-[#E85239]/20 transition-all cursor-pointer overflow-hidden"
-                  >
-                    <div className="absolute top-0 left-0 w-1 h-full bg-[#E85239]" />
-                    <div className="flex items-start justify-between">
-                      <div className="flex gap-4">
-                        <div className="w-10 h-10 rounded-full bg-[#E85239]/10 flex items-center justify-center shrink-0 mt-1">
-                          <CheckCircle2 size={20} className="text-[#E85239]" />
+              {requiresAttentionProjects.map(project => {
+                const isAccepted = project.status === "active" && project.freelancerAccepted && !project.clientAcknowledgedAcceptance;
+                if (isAccepted) {
+                  return (
+                    <Link key={`attn-${project._id}`} href={`/client/projects/${project._id}`} className="block">
+                      <motion.div 
+                        whileHover={{ scale: 1.01 }}
+                        className="group relative bg-white rounded-2xl p-6 shadow-[0_8px_30px_-10px_rgba(16,185,129,0.15)] border border-emerald-500/20 transition-all cursor-pointer overflow-hidden"
+                      >
+                        <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500" />
+                        <div className="flex items-start justify-between">
+                          <div className="flex gap-4">
+                            <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0 mt-1">
+                              <CheckCircle2 size={20} className="text-emerald-500 animate-pulse" />
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-bold text-stone-900 mb-1">Project Accepted!</h3>
+                              <p className="text-sm font-medium text-stone-500 mb-4">{project.title} — Freelancer has officially accepted the scope and initiated execution.</p>
+                              <div className="flex items-center gap-3">
+                                <button className="px-4 py-2 bg-stone-900 text-white text-[13px] font-bold rounded-lg hover:bg-emerald-500 transition-colors">
+                                  Enter Execution Room
+                                </button>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="text-lg font-bold text-stone-900 mb-1">Scope Review Required</h3>
-                          <p className="text-sm font-medium text-stone-500 mb-4">{project.title} — AI scoping complete.</p>
-                          <div className="flex items-center gap-3">
-                            <button className="px-4 py-2 bg-stone-900 text-white text-[13px] font-bold rounded-lg hover:bg-[#E85239] transition-colors">
-                              Review Scope
-                            </button>
+                      </motion.div>
+                    </Link>
+                  );
+                }
+
+                return (
+                  <Link key={`attn-${project._id}`} href={`/client/projects/${project._id}`} className="block">
+                    <motion.div 
+                      whileHover={{ scale: 1.01 }}
+                      className="group relative bg-white rounded-2xl p-6 shadow-[0_8px_30px_-10px_rgba(232,82,57,0.15)] border border-[#E85239]/20 transition-all cursor-pointer overflow-hidden"
+                    >
+                      <div className="absolute top-0 left-0 w-1 h-full bg-[#E85239]" />
+                      <div className="flex items-start justify-between">
+                        <div className="flex gap-4">
+                          <div className="w-10 h-10 rounded-full bg-[#E85239]/10 flex items-center justify-center shrink-0 mt-1">
+                            <CheckCircle2 size={20} className="text-[#E85239]" />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-bold text-stone-900 mb-1">Scope Review Required</h3>
+                            <p className="text-sm font-medium text-stone-500 mb-4">{project.title} — AI scoping complete.</p>
+                            <div className="flex items-center gap-3">
+                              <button className="px-4 py-2 bg-stone-900 text-white text-[13px] font-bold rounded-lg hover:bg-[#E85239] transition-colors">
+                                Review Scope
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </motion.div>
-                </Link>
-              ))}
+                    </motion.div>
+                  </Link>
+                );
+              })}
 
               {requiresAttention === 0 && (
                 <div className="py-8 text-center bg-stone-50/50 rounded-2xl border border-stone-100">

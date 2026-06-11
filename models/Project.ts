@@ -92,6 +92,7 @@ export interface IProject extends Document {
   createdAt: Date;
   updatedAt: Date;
   freelancerAccepted?: boolean;
+  clientAcknowledgedAcceptance?: boolean;
 }
 
 const ProjectSchema = new Schema<IProject>(
@@ -163,6 +164,7 @@ const ProjectSchema = new Schema<IProject>(
       },
     ],
     freelancerAccepted: { type: Boolean, default: false },
+    clientAcknowledgedAcceptance: { type: Boolean, default: false },
     pendingCustomUnit: {
       id: { type: String },
       name: { type: String },

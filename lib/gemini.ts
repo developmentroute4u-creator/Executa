@@ -76,12 +76,14 @@ const STANDARD_UNITS: Record<string, any> = {
   }
 };
 
+// Model priority order based on API key availability and capability:
+// 1. gemini-3.5-flash  — Primary (top model, 5 RPM / 20 RPD)
+// 2. gemini-2.5-flash  — Fallback (same limits, slightly lower tier)
+// 3. gemini-3.1-flash-lite — Last resort (15 RPM / 500 RPD, high volume)
 const MODELS = [
   "gemini-3.5-flash",
-  "gemini-3.1-flash-lite",
   "gemini-2.5-flash",
-  "gemini-2.5-pro",
-  "gemini-2.5-flash-lite"
+  "gemini-3.1-flash-lite"
 ];
 
 // Centralized premium helper with researched daily limit tracking and auto-failover/switch logic
@@ -109,10 +111,9 @@ async function callGeminiApi(model: string, prompt: string): Promise<any> {
   if (!response.ok) {
     if (response.status === 429) {
       const limitsInfo: Record<string, string> = {
-        "gemini-3.5-flash": "Gemini 3.5 Flash has a daily limit of 20 requests.",
-        "gemini-3.1-flash": "Gemini 3.1 Flash has a daily limit of 20 requests.",
-        "gemini-2.5-flash": "Gemini 2.5 Flash has a daily limit of 20 requests.",
-        "gemini-2.2-flash": "Gemini 2.2 Flash has a daily limit of 20 requests."
+        "gemini-3.5-flash": "Gemini 3.5 Flash: 5 RPM / 250K TPM / 20 RPD limit reached.",
+        "gemini-2.5-flash": "Gemini 2.5 Flash: 5 RPM / 250K TPM / 20 RPD limit reached.",
+        "gemini-3.1-flash-lite": "Gemini 3.1 Flash Lite: 15 RPM / 250K TPM / 500 RPD limit reached.",
       };
       const limitMessage = limitsInfo[model] || `Daily rate limit reached for model ${model}.`;
       console.error(`[DAILY LIMIT EXCEEDED] ${limitMessage} Automatically switching to the next available model...`);
@@ -178,10 +179,11 @@ CRITICAL RULES FOR MAXIMAL COMPREHENSIVENESS:
 
 INSTRUCTIONS:
 1. Generate OUTPUT 1: Project Summary.
-2. Generate OUTPUT 2: Functional Units. Break the project down extensively.
-   - If Domain is 'Design', include ONLY UI/UX, wireframing, and design-focused units.
-   - If Domain is 'Development', include ONLY technical implementation units (Frontend, Backend, DB).
-   - If Domain is 'Design & Development', you MUST explicitly generate separate, comprehensive units for the Design phase AND the Development phase, doubling the expected scope size.
+2. CRITICAL MANDATORY DOMAIN RULE — YOU MUST FOLLOW THIS EXACTLY:
+   - If Domain is 'Design' → Generate ONLY UI/UX, wireframing, visual design, and design-system-focused functional units. Do NOT include any backend, API, database, or development units.
+   - If Domain is 'Development' → Generate ONLY technical implementation units (Frontend code, Backend, Database, API, Infrastructure). Do NOT include any design-specific units like wireframing or mockups.
+   - If Domain is 'Design & Development' → Generate DISTINCT, comprehensive units for BOTH the Design phase AND the Development phase with equal weight to both.
+   VIOLATION OF THIS RULE IS UNACCEPTABLE. The domain is non-negotiable.
 3. For each Functional Unit, assign a unitScore between 12 and 28 points based on logic depth and implementation complexity for India market rates, and build an effortDrivers object.
 4. Generate OUTPUT 3: Expected Deliverables (derived strictly from the client's domain. E.g. Figma files for Design, Source Code for Development).
 5. Generate OUTPUT 4: Included Scope (explicit, measurable, execution-focused items that the client mentioned or clearly needs).
@@ -477,7 +479,10 @@ Overview: ${currentScopeContext.projectSummary?.overview || ""}
 Existing Total Functional Units: ${currentScopeContext.functionalUnits?.length || 0}
 Existing Score: ${currentScopeContext.totalEffortScore || 0}
 Project Domain Field: ${projectField}
-(CRITICAL: If Project Domain Field is 'design_development' or 'both', you MUST incorporate BOTH UI/UX design deliverables (e.g. wireframing, high-fidelity mockups, prototypes) AND technical development implementation seamlessly into this new functional unit. The 'included' array MUST explicitly list the design aspects alongside the development aspects. Do not skew entirely to just development!)
+CRITICAL DOMAIN RULE:
+- If Project Domain Field is 'design' → The new unit MUST be design-only (UI/UX, wireframes, visual design, prototypes). Do NOT include backend, API, or development deliverables.
+- If Project Domain Field is 'development' → The new unit MUST be development-only (code, APIs, database, infrastructure). Do NOT include wireframes or mockup deliverables.
+- If Project Domain Field is 'design_development' or 'both' → You MUST incorporate BOTH UI/UX design deliverables AND technical development implementation. The 'included' array MUST explicitly list design aspects alongside development aspects.
 
 CLIENT UPGRADE REQUEST:
 What to Add: "${requestDetails.whatToAdd}"

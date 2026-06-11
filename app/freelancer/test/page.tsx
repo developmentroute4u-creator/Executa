@@ -53,12 +53,9 @@ function TestContent() {
       if (!res.ok) {
         throw new Error("Failed to start assignment");
       }
-      const data = await res.json();
-      setTest(data.test);
-      router.push("/freelancer/capability");
+      router.push("/freelancer/workspace");
     } catch (e: any) {
       setError(e.message || "Something went wrong.");
-    } finally {
       setStarting(false);
     }
   }

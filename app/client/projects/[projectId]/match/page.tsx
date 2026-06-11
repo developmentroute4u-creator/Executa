@@ -32,6 +32,7 @@ export default function MatchFreelancerPage() {
   const [success, setSuccess] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [displayCount, setDisplayCount] = useState(5);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleRefresh() {
     if (refreshing) return;
@@ -77,8 +78,15 @@ export default function MatchFreelancerPage() {
   }, [matchStatus]);
 
   useEffect(() => {
+    setError(null);
     fetch(`/api/projects/${projectId}/match`)
-      .then((r) => r.json())
+      .then(async (r) => {
+        const d = await r.json();
+        if (!r.ok || d.error) {
+          throw new Error(d.error || `HTTP error ${r.status}`);
+        }
+        return d;
+      })
       .then((d) => {
         setData(d);
         setTimeout(() => {
@@ -86,17 +94,18 @@ export default function MatchFreelancerPage() {
             setProgress(100);
             setTimeout(() => {
               setMatchStatus("loaded");
-            }, 700);
+            }, 500);
           } else {
             setProgress(100);
             setTimeout(() => {
               setMatchStatus("empty");
-            }, 700);
+            }, 500);
           }
-        }, 4000); // Artificial hold to show animation tension
+        }, 1500); // Balanced hold — feels intentional without excessive wait
       })
       .catch((err) => {
         console.error("Match fetch failed:", err);
+        setError(err.message || "Failed to load matches");
         setMatchStatus("empty");
       });
   }, [projectId]);
@@ -207,9 +216,11 @@ export default function MatchFreelancerPage() {
             <div className="w-10 h-10 bg-error/10 text-error rounded-full flex items-center justify-center mx-auto mb-2">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="8" y1="12" x2="16" y2="12" /></svg>
             </div>
-            <h2 className="text-base font-semibold text-text-primary">Freelancer not found.</h2>
+            <h2 className="text-base font-semibold text-text-primary">
+              {error ? "AI Match Engine Error" : "Freelancer not found."}
+            </h2>
             <p className="text-xs text-text-secondary max-w-sm mx-auto">
-              Our database does not currently have available specialists matching this exact scope.
+              {error ? error : "Our database does not currently have available specialists matching this exact scope."}
             </p>
           </Card>
         )}

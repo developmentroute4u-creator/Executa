@@ -14,8 +14,18 @@ export async function POST(req: NextRequest) {
     if (!["client", "freelancer"].includes(role)) {
       return NextResponse.json({ error: "Invalid role" }, { status: 400 });
     }
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json({ error: "Invalid email format" }, { status: 400 });
+    }
+
+    // Validate password complexity: min 8 chars, uppercase and lowercase required
     if (password.length < 8) {
-      return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
+      return NextResponse.json({ error: "Password must be at least 8 characters long" }, { status: 400 });
+    }
+    if (!/[A-Z]/.test(password) || !/[a-z]/.test(password)) {
+      return NextResponse.json({ error: "Password must contain both uppercase and lowercase letters" }, { status: 400 });
     }
 
     await connectDB();
