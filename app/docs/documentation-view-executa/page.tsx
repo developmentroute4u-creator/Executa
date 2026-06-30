@@ -711,22 +711,42 @@ export default function PlatformDocsPage() {
         {/* ── S9: AI ── */}
         <div id="s9" className="section">
           <div className="chapter-eyebrow">Section 09</div>
-          <h1 className="chapter">AI Capabilities</h1>
-          <div className="chapter-desc">Executa uses Google Gemini AI for two core functions that power the platform's core value proposition.</div>
+          <h1 className="chapter">AI Capabilities &amp; Architecture</h1>
+          <div className="chapter-desc">Executa uses the OpenRouter AI Stack (Qwen 3 and DeepSeek R1 Distill, with Llama 3.3 70B fallbacks) across 5 core features to power intelligent, governed execution.</div>
 
-          <h2 className="sec">9.1 AI Scope Generation</h2>
-          <p>Converts a client's plain-language project description into a structured, professional scope document — in seconds.</p>
-          <div className="tbl-wrap"><table><thead><tr><th>Input</th><th>Output</th></tr></thead><tbody>
+          <h2 className="sec">9.1 AI Scope Generation (Qwen 3)</h2>
+          <p>Converts a client's plain-language project description into a structured, professional scope document in seconds.</p>
+          <div className="tbl-wrap"><table><thead><tr><th>Input</th><th>Output (Qwen 3)</th></tr></thead><tbody>
             <tr><td>7 discovery questions from onboarding</td><td>Written project summary + all features as functional units + effort scores + timeline + revision rules + upgrade rules + deliverables list + required freelancer capabilities</td></tr>
           </tbody></table></div>
           <div className="callout"><strong>Why it matters:</strong> This eliminates the most common failure point in freelance projects — unclear, ambiguous requirements. Every Executa project starts with a professional scope regardless of client's technical knowledge.</div>
 
-          <h2 id="s9-2" className="sec">9.2 AI Vetting Test Generation</h2>
-          <p>Creates a custom skills assessment task for each freelancer, tailored to their specific chosen specialisations.</p>
-          <div className="tbl-wrap"><table><thead><tr><th>Input</th><th>Output</th></tr></thead><tbody>
-            <tr><td>Freelancer's field, domain(s), and chosen specialisations</td><td>A detailed task brief specific to declared skills, with clear requirements and objective evaluation criteria</td></tr>
+          <h2 className="sec">9.2 Freelancer Match Justification (DeepSeek R1 Distill)</h2>
+          <p>Generates natural-language fit explanations justifying the alignment between project scope and freelancer capabilities.</p>
+          <div className="tbl-wrap"><table><thead><tr><th>Input</th><th>Output (DeepSeek R1)</th></tr></thead><tbody>
+            <tr><td>Project requirements + Freelancer profile and test score</td><td>A detailed qualitative paragraph (fitReason) explaining why the candidate is qualified for the project.</td></tr>
           </tbody></table></div>
-          <div className="callout"><strong>Why it matters:</strong> A frontend developer specialising in "State Management" receives a completely different test than one specialising in "Accessibility" — even though both are frontend developers. This precision makes the vetting system far more meaningful than any generic assessment.</div>
+          <div className="note">⚠️ <strong>Deterministic Scores:</strong> The match percentage (fitScore) is computed entirely on the platform using standard rules-based weights (Skills 35%, Experience 35%, Vetting 20%, Availability 10%). AI is only used to generate the explanation text.</div>
+
+          <h2 id="s9-3" className="sec">9.3 AI Vetting Test Generation (Qwen 3)</h2>
+          <p>Creates a custom skills assessment task for each freelancer, tailored to their specific chosen specialisations.</p>
+          <div className="tbl-wrap"><table><thead><tr><th>Input</th><th>Output (Qwen 3)</th></tr></thead><tbody>
+            <tr><td>Freelancer's field, domain(s), and chosen specialisations</td><td>A detailed task brief specific to declared skills, with clear requirements, constraints, and deliverables.</td></tr>
+          </tbody></table></div>
+          <div className="callout"><strong>Why it matters:</strong> A developer specialising in "State Management" receives a completely different test than one specialising in "DevOps" — even though both are developers. This precision makes the vetting system far more meaningful.</div>
+
+          <h2 className="sec">9.4 Custom Feature Expansion (Qwen 3)</h2>
+          <p>Expands any client-supplied custom feature request into a fully specified functional unit.</p>
+          <div className="tbl-wrap"><table><thead><tr><th>Input</th><th>Output (Qwen 3)</th></tr></thead><tbody>
+            <tr><td>Feature name + Plain-language description</td><td>A complete Functional Unit with detailed inclusions, exclusions, deliverables, and effort score.</td></tr>
+          </tbody></table></div>
+
+          <h2 className="sec">9.5 Scope Upgrade Generation (Qwen 3)</h2>
+          <p>Handles mid-project feature additions by generating proposed functional upgrades and analyzing impact.</p>
+          <div className="tbl-wrap"><table><thead><tr><th>Input</th><th>Output (Qwen 3)</th></tr></thead><tbody>
+            <tr><td>Current scope + client upgrade request details</td><td>Proposed upgrade Functional Unit + business-friendly scope impact summary + deliverable impact details.</td></tr>
+          </tbody></table></div>
+          <div className="callout"><strong>Cascading Fallbacks:</strong> If the primary model (Qwen 3) or reasoning model (DeepSeek R1 Distill) encounters API limits, OpenRouter automatically cascades to Llama 3.3 70B, failing back to platform-level templates if all API endpoints are unavailable.</div>
         </div>
 
         {/* FOOTER */}
