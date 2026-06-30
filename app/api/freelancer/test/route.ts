@@ -4,9 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { Test } from "@/models/Test";
 import { FreelancerProfile } from "@/models/FreelancerProfile";
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+import { callOpenRouterApi, PRIMARY_MODELS } from "@/lib/gemini";
 
 // POST /api/freelancer/test/start
 export async function POST(req: NextRequest) {
@@ -26,10 +24,6 @@ export async function POST(req: NextRequest) {
 
     let taskData;
     try {
-      const model = genAI.getGenerativeModel({ 
-        model: "gemini-2.5-flash", 
-        generationConfig: { responseMimeType: "application/json" } 
-      });
       const prompt = `You are an expert technical recruiter and Senior Principal Engineer at a top-tier tech company.
 You are generating a "Level 2 Skills Assessment" for a freelancer applying to work on your platform.
 Field: ${field}
@@ -56,10 +50,7 @@ Return ONLY valid JSON with this exact schema:
   "constraints": ["String", "String", ...],
   "deliverables": ["String", "String", ...]
 }`;
-
-      const result = await model.generateContent(prompt);
-      const text = result.response.text();
-      taskData = JSON.parse(text);
+      taskData = await callOpenRouterApi(PRIMARY_MODELS, prompt);
     } catch (aiError) {
       console.error("Gemini failed:", aiError);
       // Fallback

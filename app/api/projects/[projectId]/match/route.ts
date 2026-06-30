@@ -184,7 +184,8 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
             level: f.level,
             specializations: f.specializations || [],
             bio: f.bio || "",
-            testScore: f.testScore || 40
+            testScore: f.testScore || 40,
+            available: f.available
           });
         }
       }
