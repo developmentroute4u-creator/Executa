@@ -76,67 +76,97 @@ const STANDARD_UNITS: Record<string, any> = {
   }
 };
 
-// Model priority order based on API key availability and capability:
-// 1. gemini-3.5-flash  — Primary (top model, 5 RPM / 20 RPD)
-// 2. gemini-2.5-flash  — Fallback (same limits, slightly lower tier)
-// 3. gemini-3.1-flash-lite — Last resort (15 RPM / 500 RPD, high volume)
-const MODELS = [
-  "gemini-3.5-flash",
-  "gemini-2.5-flash",
-  "gemini-3.1-flash-lite"
+// OpenRouter model configurations
+export const PRIMARY_MODELS = [
+  "qwen/qwen3-next-80b-a3b-instruct",
+  "meta-llama/llama-3.3-70b-instruct"
 ];
 
-// Centralized premium helper with researched daily limit tracking and auto-failover/switch logic
-async function callGeminiApi(model: string, prompt: string): Promise<any> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    console.warn("[GEMINI] No GEMINI_API_KEY env variable found.");
-    throw new Error("Missing GEMINI_API_KEY");
+export const MATCHING_MODELS = [
+  "deepseek/deepseek-r1-distill-llama-70b",
+  "meta-llama/llama-3.3-70b-instruct"
+];
+
+// Centralized OpenRouter API wrapper with fallback logic
+export async function callOpenRouterApi(models: string[], prompt: string, responseFormatJson: boolean = true): Promise<any> {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  const keyToUse = apiKey || process.env.GEMINI_API_KEY;
+
+  if (!keyToUse) {
+    console.warn("[OPENROUTER] No API key found in env variables.");
+    throw new Error("Missing OPENROUTER_API_KEY or GEMINI_API_KEY");
   }
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          responseMimeType: "application/json"
-        }
-      })
-    }
-  );
-
-  if (!response.ok) {
-    if (response.status === 429) {
-      const limitsInfo: Record<string, string> = {
-        "gemini-3.5-flash": "Gemini 3.5 Flash: 5 RPM / 250K TPM / 20 RPD limit reached.",
-        "gemini-2.5-flash": "Gemini 2.5 Flash: 5 RPM / 250K TPM / 20 RPD limit reached.",
-        "gemini-3.1-flash-lite": "Gemini 3.1 Flash Lite: 15 RPM / 250K TPM / 500 RPD limit reached.",
+  const errors: string[] = [];
+  for (const model of models) {
+    try {
+      console.log(`[OPENROUTER] Trying model: ${model}`);
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${keyToUse}`,
+        "HTTP-Referer": "https://executa.io",
+        "X-Title": "Executa"
       };
-      const limitMessage = limitsInfo[model] || `Daily rate limit reached for model ${model}.`;
-      console.error(`[DAILY LIMIT EXCEEDED] ${limitMessage} Automatically switching to the next available model...`);
+
+      const body: any = {
+        model: model,
+        messages: [
+          { role: "user", content: prompt }
+        ]
+      };
+
+      if (responseFormatJson) {
+        body.response_format = { type: "json_object" };
+      }
+
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body)
+      });
+
+      if (!response.ok) {
+        const resText = await response.text();
+        if (response.status === 429) {
+          throw new Error("RATE_LIMIT_EXCEEDED");
+        }
+        if (response.status === 401 || response.status === 403) {
+          throw new Error("API_KEY_INVALID");
+        }
+        throw new Error(`Status ${response.status}: ${resText}`);
+      }
+
+      const resJson = await response.json();
+      let text = resJson.choices?.[0]?.message?.content;
+      if (!text) {
+        throw new Error("Empty response from OpenRouter.");
+      }
+
+      text = text.trim();
+      if (responseFormatJson) {
+        if (text.startsWith("```json")) text = text.substring(7);
+        else if (text.startsWith("```")) text = text.substring(3);
+        if (text.endsWith("```")) text = text.substring(0, text.length - 3);
+        return JSON.parse(text.trim());
+      }
+
+      return text;
+    } catch (e: any) {
+      console.warn(`[OPENROUTER] Model ${model} failed:`, e.message || e);
+      errors.push(e.message || "");
     }
-    const resText = await response.text();
-    console.error(`[GEMINI API ERROR] Model ${model} returned ${response.status}: ${resText}`);
-    throw new Error(`HTTP ${response.status} from ${model}`);
   }
 
-  const resJson = await response.json();
-  let text = resJson.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) {
-    throw new Error("Empty response from Gemini.");
+  console.error("[OPENROUTER] All models in the chain failed. Errors:", errors);
+  if (errors.some(e => e.includes("RATE_LIMIT_EXCEEDED"))) {
+    throw new Error("RATE_LIMIT_EXCEEDED");
   }
-
-  // Remove potential markdown wrappers
-  text = text.trim();
-  if (text.startsWith("```json")) text = text.substring(7);
-  else if (text.startsWith("```")) text = text.substring(3);
-  if (text.endsWith("```")) text = text.substring(0, text.length - 3);
-  
-  return JSON.parse(text.trim());
+  if (errors.some(e => e.includes("API_KEY_INVALID"))) {
+    throw new Error("API_KEY_INVALID");
+  }
+  throw new Error("RATE_LIMIT_EXCEEDED");
 }
+
 
 export interface DiscoveryPayload {
   title: string;
@@ -216,34 +246,16 @@ Return your response strictly in the following JSON format. Do not wrap in markd
   "requiredCapabilities": ["Backend Development", "Mobile App Development"]
 }`;
 
-  const errors: string[] = [];
-  for (const model of MODELS) {
-    try {
-      console.log(`[GEMINI] Trying model: ${model}`);
-      const parsed = await callGeminiApi(model, prompt);
-      if (parsed.functionalUnits && Array.isArray(parsed.functionalUnits)) {
-        console.log(`[GEMINI] Successfully generated scope with model ${model}`);
-        return parsed;
-      }
-    } catch (e: any) {
-      console.warn(`[GEMINI] Model ${model} failed:`, e.message || e);
-      errors.push(e.message || "");
+  try {
+    const parsed = await callOpenRouterApi(PRIMARY_MODELS, prompt);
+    if (parsed.functionalUnits && Array.isArray(parsed.functionalUnits)) {
+      console.log("[OPENROUTER] Successfully generated scope");
+      return parsed;
     }
+  } catch (e: any) {
+    console.error("[OPENROUTER] Scope generation failed:", e);
+    throw e;
   }
-
-  console.warn("[GEMINI] All models failed or rate limited. Errors: ", errors);
-  if (errors.some(e => e.includes("429"))) {
-    throw new Error("RATE_LIMIT_EXCEEDED");
-  } else if (errors.some(e => e.includes("403") && e.includes("leaked"))) {
-    throw new Error("API_KEY_LEAKED");
-  } else if (errors.some(e => e.includes("400") && e.includes("API key not valid"))) {
-    throw new Error("API_KEY_INVALID");
-  } else if (errors.some(e => e.includes("403") || e.includes("401") || e.includes("400"))) {
-    throw new Error("API_KEY_INVALID");
-  } else if (errors.some(e => e.includes("404"))) {
-    throw new Error("MODEL_NOT_FOUND");
-  }
-  
   throw new Error("RATE_LIMIT_EXCEEDED");
 }
 
@@ -285,38 +297,86 @@ Return your response strictly in the following JSON format:
 
 Ensure the output is valid JSON. Do not wrap in markdown or add notes.`;
 
-  const errors: string[] = [];
-  for (const model of MODELS) {
-    try {
-      console.log(`[GEMINI CUSTOM UNIT] Trying model: ${model}`);
-      const parsed = await callGeminiApi(model, prompt);
-      if (parsed.name && parsed.included && parsed.excluded && parsed.deliverables) {
-        console.log(`[GEMINI CUSTOM UNIT] Successfully expanded unit with model ${model}`);
-        return parsed;
-      }
-    } catch (e: any) {
-      console.warn(`[GEMINI CUSTOM UNIT] Model ${model} failed:`, e.message || e);
-      errors.push(e.message || "");
+  try {
+    const parsed = await callOpenRouterApi(PRIMARY_MODELS, prompt);
+    if (parsed.name && parsed.included && parsed.excluded && parsed.deliverables) {
+      console.log("[OPENROUTER] Successfully expanded custom unit");
+      return parsed;
     }
+  } catch (e: any) {
+    console.error("[OPENROUTER] Custom unit expansion failed:", e);
+    throw e;
   }
-
-  console.warn("[GEMINI CUSTOM UNIT] All models failed or rate limited. Errors: ", errors);
-  if (errors.some(e => e.includes("429"))) {
-    throw new Error("RATE_LIMIT_EXCEEDED");
-  } else if (errors.some(e => e.includes("403") || e.includes("401") || e.includes("400"))) {
-    throw new Error("API_KEY_INVALID");
-  } else if (errors.some(e => e.includes("404"))) {
-    throw new Error("MODEL_NOT_FOUND");
-  }
-
   throw new Error("RATE_LIMIT_EXCEEDED");
+}
+
+// Helper to calculate freelancer match score using deterministic platform logic
+export function calculateFreelancerMatchScore(
+  project: { title: string; goal: string; field: string; requiredLevel?: number; functionalUnits: any[] },
+  freelancer: { id: string; name: string; domain: string; level: number | null; specializations: string[]; bio: string; testScore: number | null; available?: boolean }
+): number {
+  // 1. Skills overlap (35% weight)
+  const projectText = (
+    project.title + " " +
+    project.goal + " " +
+    project.functionalUnits.map(u => u.name + " " + u.description + " " + (u.included || []).join(" ")).join(" ")
+  ).toLowerCase();
+
+  const freelancerSkills = freelancer.specializations || [];
+  let matchedSkillsCount = 0;
+  freelancerSkills.forEach(skill => {
+    if (projectText.includes(skill.toLowerCase())) {
+      matchedSkillsCount++;
+    }
+  });
+
+  // Check domain match
+  if (freelancer.domain && projectText.includes(freelancer.domain.toLowerCase().replace("_", " "))) {
+    matchedSkillsCount += 1;
+  }
+
+  let skillsScore = 70; // baseline
+  if (freelancerSkills.length > 0) {
+    const skillRatio = matchedSkillsCount / Math.max(1, freelancerSkills.length);
+    skillsScore = 70 + Math.min(30, skillRatio * 30);
+  }
+
+  // 2. Experience Level vs Project Level (35% weight)
+  const fLevel = freelancer.level || 1;
+  const pLevel = project.requiredLevel || 2;
+  let expScore = 70;
+  if (fLevel >= pLevel) {
+    expScore = 90 + Math.min(10, (fLevel - pLevel) * 5); // 90 to 100
+  } else if (fLevel === pLevel - 1) {
+    expScore = 80;
+  } else {
+    expScore = 65; // two levels below
+  }
+
+  // 3. Vetting Results (20% weight)
+  // testScore is out of 50. Normalize to 0-100.
+  const testScoreVal = freelancer.testScore !== null ? freelancer.testScore : 40;
+  const vettingScore = (testScoreVal / 50) * 100;
+
+  // 4. Availability (10% weight)
+  const availabilityScore = freelancer.available !== false ? 100 : 0;
+
+  // Combine: Skills (35%), Experience (35%), Vetting (20%), Availability (10%)
+  let fitScore = Math.round(
+    (skillsScore * 0.35) +
+    (expScore * 0.35) +
+    (vettingScore * 0.20) +
+    (availabilityScore * 0.10)
+  );
+
+  return Math.max(0, Math.min(100, fitScore));
 }
 
 export async function askGeminiToMatchFreelancers(
   project: { title: string; goal: string; field: string; requiredLevel?: number; functionalUnits: any[] },
-  freelancers: Array<{ id: string; name: string; domain: string; level: number | null; specializations: string[]; bio: string; testScore: number | null }>
+  freelancers: Array<{ id: string; name: string; domain: string; level: number | null; specializations: string[]; bio: string; testScore: number | null; available?: boolean }>
 ): Promise<any | null> {
-  const prompt = `You are a premium AI matching agent. Your task is to evaluate and match the best freelancer(s) for the following project:
+  const prompt = `You are a premium AI matching agent. Your task is to write detailed fit explanations for qualified freelancers for the following project:
 
 Project Title: "${project.title}"
 Goal: "${project.goal}"
@@ -336,28 +396,17 @@ Test Score: ${f.testScore || "N/A"}/50
 Bio: "${f.bio}"
 `).join("\n\n")}
 
-For each freelancer, calculate a match percentage (fitScore, integer 0-100) based on:
-1. Specialization and skill overlap with the project functional units and goal.
-2. Capability level (freelancers at or above required project level are preferred).
-3. Test performance score.
+INSTRUCTIONS:
+1. For each freelancer, explain in a highly articulate, premium paragraph (fitReason) exactly how the freelancer's specific skills and specializations align to the scope of this project and why they are qualified to execute it. Focus on specific technical domain compatibility (e.g. why their React or Figma expertise matches the functional units).
+2. Identify the absolute best-suited freelancer(s) for the project:
+   - If Field is "development" or "design", identify the absolute best-suited freelancer and return their ID in 'bestMatches' with role "fullstack" or the relevant domain.
+   - If Field is "design_development", you MUST identify TWO distinct top freelancers: one specifically specialized in Design and one specifically specialized in Development. Return BOTH of their IDs in the 'bestMatches' array, explicitly assigning them the "design" and "development" roles respectively.
 
-CRITICAL CALIBRATION RULE FOR MATCH SCORE (fitScore):
-- Be constructive, encouraging, and balanced. Since every candidate in this pool has ALREADY passed our rigorous, multi-hour vetting test and is approved, their baseline match score should be high.
-- A candidate who has matching skills/specializations but is one level below the project required difficulty (e.g. a Level 2 freelancer for a Level 3 project) is still highly competent and should be scored between 70% and 88% based on their skill overlap. Do not penalize them down to low or discouraging scores (like 30% - 50%).
-- A candidate who is an exact level match or higher should be scored between 85% and 98% based on skill alignment.
-
-Explain in a highly articulate, premium paragraph (fitReason) exactly how the freelancer's specific skills align to the scope of this project and why they are qualified to execute it.
-
-MATCHING LOGIC:
-- If Field is "development" or "design", identify the absolute best-suited freelancer and return their ID in 'bestMatches' with role "fullstack" or the relevant domain.
-- If Field is "design_development", you MUST identify TWO distinct top freelancers: one specifically specialized in Design and one specifically specialized in Development. Return BOTH of their IDs in the 'bestMatches' array, explicitly assigning them the "design" and "development" roles respectively.
-
-Return your response strictly in the following JSON format:
+Return your response strictly in the following JSON format. Do not wrap in markdown or add notes.
 {
   "matches": [
     {
       "freelancerId": "ID of freelancer",
-      "fitScore": 95,
       "fitReason": "Highly detailed paragraph explaining the exact capability match..."
     }
   ],
@@ -367,25 +416,60 @@ Return your response strictly in the following JSON format:
       "role": "design or development or fullstack"
     }
   ]
-}
+}`;
 
-Ensure the output is valid JSON. Do not wrap in markdown or add notes.`;
+  try {
+    const parsed = await callOpenRouterApi(MATCHING_MODELS, prompt);
+    if (parsed && parsed.matches && parsed.bestMatches) {
+      const matches = freelancers.map(f => {
+        const matchDetails = (parsed.matches || []).find((m: any) => m.freelancerId === f.id);
+        const fitScore = calculateFreelancerMatchScore(project, f);
+        return {
+          freelancerId: f.id,
+          fitScore,
+          fitReason: matchDetails?.fitReason || "Highly qualified professional with matching domain expertise."
+        };
+      });
 
-  for (const model of MODELS) {
-    try {
-      console.log(`[GEMINI MATCHING] Trying model: ${model}`);
-      const parsed = await callGeminiApi(model, prompt);
-      if (parsed.matches && parsed.bestMatches) {
-        console.log(`[GEMINI MATCHING] Successfully evaluated matches with model ${model}`);
-        return parsed;
-      }
-    } catch (e: any) {
-      console.warn(`[GEMINI MATCHING] Model ${model} failed:`, e.message || e);
+      console.log("[OPENROUTER] Successfully matched freelancers with platform-calculated scores");
+      return {
+        matches,
+        bestMatches: parsed.bestMatches
+      };
+    }
+  } catch (e: any) {
+    console.error("[OPENROUTER] Matching failed:", e);
+  }
+
+  // Fallback: calculate matches entirely on platform logic
+  console.log("[OPENROUTER] Fallback: Calculating matches entirely on platform logic");
+  const matches = freelancers.map(f => {
+    const fitScore = calculateFreelancerMatchScore(project, f);
+    return {
+      freelancerId: f.id,
+      fitScore,
+      fitReason: `Vetted ${f.domain} specialist with matching capabilities. Highly capable at Level ${f.level || 1}.`
+    };
+  });
+
+  const sorted = [...freelancers].map(f => ({
+    ...f,
+    fitScore: calculateFreelancerMatchScore(project, f)
+  })).sort((a, b) => b.fitScore - a.fitScore);
+
+  const bestMatches: any[] = [];
+  if (project.field === "design_development") {
+    const bestDesigner = sorted.find(f => f.domain === "ui_ux" || f.domain === "product" || f.domain === "motion" || f.domain === "branding" || f.domain === "graphic");
+    const bestDeveloper = sorted.find(f => f.domain !== "ui_ux" && f.domain !== "product" && f.domain !== "motion" && f.domain !== "branding" && f.domain !== "graphic");
+    if (bestDesigner) bestMatches.push({ freelancerId: bestDesigner.id, role: "design" });
+    if (bestDeveloper) bestMatches.push({ freelancerId: bestDeveloper.id, role: "development" });
+  } else {
+    if (sorted[0]) {
+      bestMatches.push({ freelancerId: sorted[0].id, role: project.field === "design" ? "design" : "development" });
     }
   }
 
-  console.warn("[GEMINI MATCHING] All models failed. Returning null.");
-  return null;
+  return { matches, bestMatches };
 }
 
 export async function askGeminiForCustomTest(
@@ -442,28 +526,24 @@ The output MUST be a strict, valid JSON matching the following structure:
 Ensure that for EACH micro-capability selected, you include at least 1 dimension under "capabilitySpecificDimensions".
 Ensure the output is valid JSON. Do not wrap in markdown or add notes.`;
 
-  for (const model of MODELS) {
-    try {
-      console.log(`[GEMINI CUSTOM TEST] Trying model: ${model}`);
-      const parsed = await callGeminiApi(model, prompt);
-      if (
-        parsed.prompt &&
-        Array.isArray(parsed.requirements) &&
-        parsed.projectContext &&
-        parsed.businessProblem &&
-        Array.isArray(parsed.constraints) &&
-        Array.isArray(parsed.deliverables) &&
-        Array.isArray(parsed.capabilitySpecificDimensions)
-      ) {
-        console.log(`[GEMINI CUSTOM TEST] Successfully generated custom structured test with model ${model}`);
-        return parsed;
-      }
-    } catch (e: any) {
-      console.warn(`[GEMINI CUSTOM TEST] Model ${model} failed:`, e.message || e);
+  try {
+    const parsed = await callOpenRouterApi(PRIMARY_MODELS, prompt);
+    if (
+      parsed &&
+      parsed.prompt &&
+      Array.isArray(parsed.requirements) &&
+      parsed.projectContext &&
+      parsed.businessProblem &&
+      Array.isArray(parsed.constraints) &&
+      Array.isArray(parsed.deliverables) &&
+      Array.isArray(parsed.capabilitySpecificDimensions)
+    ) {
+      console.log("[OPENROUTER] Successfully generated custom structured test");
+      return parsed;
     }
+  } catch (e: any) {
+    console.error("[OPENROUTER] Custom test generation failed:", e);
   }
-
-  console.warn("[GEMINI CUSTOM TEST] All models failed. Returning null.");
   return null;
 }
 
@@ -508,18 +588,14 @@ Return your response strictly in the following JSON format. Do not wrap in markd
   "deliverableImpact": ["New deliverable to expect", "Changes to existing deliverables"]
 }`;
 
-  for (const model of MODELS) {
-    try {
-      console.log(`[GEMINI UPGRADE] Trying model: ${model}`);
-      const parsed = await callGeminiApi(model, prompt);
-      if (parsed.proposedUnit && parsed.scopeImpactSummary) {
-        return parsed;
-      }
-    } catch (e: any) {
-      console.warn(`[GEMINI UPGRADE] Model ${model} failed:`, e.message || e);
+  try {
+    const parsed = await callOpenRouterApi(PRIMARY_MODELS, prompt);
+    if (parsed && parsed.proposedUnit && parsed.scopeImpactSummary) {
+      console.log("[OPENROUTER] Successfully generated scope upgrade unit");
+      return parsed;
     }
+  } catch (e: any) {
+    console.error("[OPENROUTER] Scope upgrade unit generation failed:", e);
   }
-
-  console.warn("[GEMINI UPGRADE] All models failed. Returning null.");
   return null;
 }
