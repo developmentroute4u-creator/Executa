@@ -8,13 +8,16 @@ export default function FreelancerLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const hideRail = pathname.includes("/execution/") || pathname.includes("/freelancer/onboarding") || pathname.includes("/freelancer/test");
+  const hideRail =
+    pathname.includes("/execution/") ||
+    pathname.includes("/freelancer/onboarding") ||
+    pathname.includes("/freelancer/test") ||
+    pathname.includes("/freelancer/assessment");
 
   return (
     <div className="min-h-screen bg-background flex flex-col relative selection:bg-accent/10 selection:text-accent">
-      <FloatingWorkspaceRail />
-      <div className={`flex-1 flex flex-col transition-all duration-300 ${!hideRail ? "lg:pl-[100px] pb-20 lg:pb-0" : ""
-        }`}>
+      {!hideRail && <FloatingWorkspaceRail />}
+      <div className={`flex-1 flex flex-col transition-all duration-300 ${!hideRail ? "lg:pl-[100px] pb-20 lg:pb-0" : ""}`}>
         {children}
       </div>
     </div>

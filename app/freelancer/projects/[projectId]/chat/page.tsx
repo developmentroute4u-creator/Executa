@@ -59,7 +59,7 @@ export default function FreelancerProjectChatPage() {
     { label: "Overview", href: "/freelancer/dashboard", icon: NavIcons.overview },
     { label: "My Projects", href: "/freelancer/projects", icon: NavIcons.projects, active: true },
     { label: "Earnings", href: "/freelancer/earnings", icon: NavIcons.earnings },
-    { label: "Skill Profile", href: "/freelancer/test", icon: NavIcons.skillProfile },
+    { label: "Skill Profile", href: "/freelancer/capability", icon: NavIcons.skillProfile },
     { label: "Settings", href: "/freelancer/settings", icon: NavIcons.settings },
   ];
 

@@ -56,7 +56,7 @@ export default function WorkspaceEnvironment() {
           return;
         }
         if (d.test && d.test.status === "assigned") {
-          router.push("/freelancer/test");
+          router.push("/freelancer/assessment");
           return;
         }
         setProfile(d.profile);

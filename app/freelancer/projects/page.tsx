@@ -21,7 +21,7 @@ export default function ProjectsEnvironment() {
           return;
         }
         if (data.test && data.test.status === "assigned") {
-          router.push("/freelancer/test");
+          router.push("/freelancer/assessment");
           return;
         }
         setProjects(data.activeProjects || []);

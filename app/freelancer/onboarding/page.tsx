@@ -152,7 +152,7 @@ function OnboardingContent() {
         setLoading(false);
         return;
       }
-      router.push(source ? `/freelancer/test?source=${source}` : "/freelancer/test");
+      router.push(source ? `/freelancer/assessment?source=${source}` : "/freelancer/assessment");
     } catch {
       setError("Something went wrong.");
       setLoading(false);
