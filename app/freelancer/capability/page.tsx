@@ -31,6 +31,18 @@ export default function CapabilityEnvironment() {
 
   // ── Generate assignment, then navigate ──────────────────────────────────────
   async function handleGenerate() {
+    // Evaluated — go straight to the dedicated report page
+    if (test && test.status === "evaluated") {
+      router.push(`/freelancer/report/${test._id}`);
+      return;
+    }
+
+    // Already has a generated brief — navigate to it
+    if (test && test.assignmentTitle) {
+      router.push(`/freelancer/assessment?id=${test._id}`);
+      return;
+    }
+
     if (!profile) return;
     setGenerating(true);
     setGenError("");
@@ -40,7 +52,7 @@ export default function CapabilityEnvironment() {
       const checkRes = await fetch("/api/freelancer/assessment");
       const checkData = await checkRes.json();
       if (checkData.assessment) {
-        router.push("/freelancer/assessment");
+        router.push(`/freelancer/assessment?id=${checkData.assessment._id}`);
         return;
       }
 
@@ -68,7 +80,11 @@ export default function CapabilityEnvironment() {
         return;
       }
 
-      router.push("/freelancer/assessment");
+      if (data.assessmentId) {
+        router.push(`/freelancer/assessment?id=${data.assessmentId}`);
+      } else {
+        router.push("/freelancer/assessment");
+      }
     } catch (e: any) {
       setGenError(e.message || "Something went wrong. Please try again.");
     } finally {
@@ -266,7 +282,13 @@ export default function CapabilityEnvironment() {
             <h3 className="text-sm font-bold text-text-secondary uppercase tracking-wider pl-2">Past Skill Assessments</h3>
             <div className="grid gap-3">
               {tests.slice(1).map((pastTest: any) => (
-                <div key={pastTest._id} className="flex items-center justify-between p-4 bg-white/50 backdrop-blur-sm border border-border/40 rounded-2xl hover:bg-white transition-colors group">
+                <div key={pastTest._id}
+                     onClick={() => router.push(
+                       pastTest.status === "evaluated"
+                         ? `/freelancer/report/${pastTest._id}`
+                         : `/freelancer/assessment?id=${pastTest._id}`
+                     )}
+                     className="cursor-pointer flex items-center justify-between p-4 bg-white/50 backdrop-blur-sm border border-border/40 rounded-2xl hover:bg-white transition-colors group">
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center shrink-0">
                       {pastTest.status === "evaluated" ? (

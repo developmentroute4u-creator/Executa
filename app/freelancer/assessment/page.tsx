@@ -396,6 +396,7 @@ export default function AssessmentWorkspace() {
   const [profile, setProfile]             = useState<any>(null);
   const [activeSection, setActiveSection] = useState("s-assignment");
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [showFullReport, setShowFullReport] = useState(false);
 
   const [form, setForm] = useState<Record<string, string>>({
     repositoryLink: "", designFileUrl: "", prototypeLink: "",
@@ -407,6 +408,7 @@ export default function AssessmentWorkspace() {
 
   const isActive = assessment?.status === "in_progress" && !submitted;
   useExitGuard(isActive);
+  const isEvaluated = assessment?.status === "evaluated";
 
   const checkpoints: Checkpoint[] = useMemo(() => {
     if (!assessment?.progressCheckpoints) return [];
@@ -483,8 +485,12 @@ export default function AssessmentWorkspace() {
   useEffect(() => {
     async function load() {
       try {
+        const searchParams = new URLSearchParams(window.location.search);
+        const idParam = searchParams.get("id");
+        const url = idParam ? `/api/freelancer/assessment?id=${idParam}` : "/api/freelancer/assessment";
+
         // 1. Check for existing assessment
-        const res = await fetch("/api/freelancer/assessment");
+        const res = await fetch(url);
         const d = await res.json();
 
         // 2. Fetch profile details (always needed for profile context or fallback)
@@ -709,7 +715,7 @@ export default function AssessmentWorkspace() {
   }
 
   // ─── Render: Submitted ─────────────────────────────────────────────────────
-  if (submitted || ["under_review","submitted","evaluated"].includes(assessment.status)) {
+  if (submitted || ["under_review","submitted"].includes(assessment.status)) {
     return <ConfirmationScreen title={assessment.assignmentTitle || "Your Assessment"} />;
   }
 
@@ -723,10 +729,10 @@ export default function AssessmentWorkspace() {
       <header className="sticky top-0 z-50 bg-background/90 backdrop-blur-xl border-b border-border/40 print:hidden">
         <div className="max-w-7xl mx-auto px-6 md:px-10 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4 min-w-0">
-            <a href="/freelancer/capability"
+            <a href={isEvaluated ? "/freelancer/capability" : "/freelancer/workspace"}
               onClick={e => { if (isActive && !confirm("Leave the assessment workspace? Your progress is saved.")) e.preventDefault(); }}
               className="flex items-center gap-1.5 text-xs text-text-tertiary hover:text-text-primary transition-colors shrink-0">
-              <ChevronLeft size={14} /><span>Back</span>
+              <ChevronLeft size={14} /><span>{isEvaluated ? "Return to Skills Section" : "Back"}</span>
             </a>
             <div className="w-px h-4 bg-border" />
             <div className="min-w-0">
@@ -768,18 +774,21 @@ export default function AssessmentWorkspace() {
             </p>
             <div className="space-y-1">
               {NAV_SECTIONS.map(({ id, label }, idx) => {
-                const isActive = activeSection === id;
+                if (isEvaluated && !showFullReport && idx > 1) return null;
+                if (isEvaluated && id === "s-start") return null;
+
+                const isActiveSection = activeSection === id;
                 return (
                   <motion.button
                     key={id}
                     onClick={() => scrollTo(id)}
                     animate={{
-                      x: isActive ? 8 : 0,
-                      scale: isActive ? 1.06 : 1.0,
+                      x: isActiveSection ? 8 : 0,
+                      scale: isActiveSection ? 1.06 : 1.0,
                     }}
                     transition={{ type: "spring", stiffness: 350, damping: 25 }}
                     className={`w-full flex items-center gap-3 py-1.5 text-left transition-colors duration-200 cursor-pointer origin-left ${
-                      isActive
+                      isActiveSection
                         ? "text-accent font-semibold"
                         : id === "s-start"
                         ? "text-accent/70 hover:text-accent font-medium"
@@ -798,6 +807,23 @@ export default function AssessmentWorkspace() {
 
           {/* ── Main document ── */}
           <main className="flex-1 min-w-0 space-y-14 pb-24">
+            {isEvaluated && assessment.evaluation && (
+              <div className="bg-red-50/50 border border-red-100 rounded-3xl p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="space-y-2 text-center md:text-left">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">Evaluation Score</p>
+                  <p className="text-sm font-semibold text-text-secondary">Verified Capabilities</p>
+                </div>
+                <div className="text-center md:text-right">
+                  <p className="text-4xl font-display font-bold text-accent">
+                    {Math.round((assessment.evaluation.total / 50) * 100)}%
+                  </p>
+                  <p className="text-[11px] font-semibold text-text-tertiary tracking-wider uppercase mt-1">
+                    {assessment.evaluation.total} / 50 Raw Points
+                  </p>
+                </div>
+              </div>
+            )}
+
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700 flex items-center gap-2">
                 <X size={14} />{error}
@@ -863,6 +889,18 @@ export default function AssessmentWorkspace() {
                 </div>
               </Card>
             </DocSection>
+
+            {isEvaluated && !showFullReport ? (
+              <div className="flex justify-center pt-2 pb-10">
+                <button
+                  onClick={() => setShowFullReport(true)}
+                  className="px-10 py-4 bg-white border border-border/80 hover:border-accent/40 text-text-primary hover:text-accent rounded-2xl text-sm font-semibold tracking-wide transition-all shadow-[0_2px_12px_rgba(232,82,57,0.02)] active:scale-[0.98]"
+                >
+                  Read Full Assignment Details
+                </button>
+              </div>
+            ) : (
+              <>
 
             {/* ══ 03 — Your Role ═══════════════════════════════════════════ */}
             <DocSection id="s-role" number={3} title="Your Role" icon={User}>
@@ -989,6 +1027,7 @@ export default function AssessmentWorkspace() {
             </DocSection>
 
             {/* ══ 11 — Start Assignment ════════════════════════════════════ */}
+            {!isEvaluated && (
             <DocSection id="s-start" number={11} title="Start Assignment" icon={PlayCircle}>
               {!isActive ? (
                 <Card className="text-center py-10">
@@ -1064,6 +1103,10 @@ export default function AssessmentWorkspace() {
                 </section>
               )}
             </DocSection>
+            )}
+
+              </>
+            )}
 
           </main>
         </div>
