@@ -159,22 +159,31 @@ Return ONLY valid JSON — no markdown, no code fences — matching this exact s
 
     let assessment;
     if (existing) {
-      existing.assignmentTitle = data.assignmentTitle;
-      existing.capabilityArea = data.capabilityArea;
-      existing.assignmentSummary = data.assignmentSummary;
-      existing.projectOverview = data.projectOverview;
-      existing.yourRole = data.yourRole;
-      existing.projectObjectives = data.projectObjectives;
-      existing.constraints = data.constraints;
-      existing.exceptions = data.exceptions;
-      existing.successCriteria = data.successCriteria;
-      existing.deliverables = data.deliverables;
-      existing.commonMistakes = data.commonMistakes;
-      existing.importantNotes = data.importantNotes;
-      existing.internalArtifacts = data.internalArtifacts;
-      existing.progressCheckpoints = DEFAULT_CHECKPOINTS;
-      await existing.save();
-      assessment = existing;
+      // Use findByIdAndUpdate with $set to avoid Mongoose VersionError.
+      // The mutate-then-save pattern fails when the AI takes >~5s because
+      // the document version can change between the initial findOne and save().
+      assessment = await Test.findByIdAndUpdate(
+        existing._id,
+        {
+          $set: {
+            assignmentTitle:     data.assignmentTitle,
+            capabilityArea:      data.capabilityArea,
+            assignmentSummary:   data.assignmentSummary,
+            projectOverview:     data.projectOverview,
+            yourRole:            data.yourRole,
+            projectObjectives:   data.projectObjectives,
+            constraints:         data.constraints,
+            exceptions:          data.exceptions,
+            successCriteria:     data.successCriteria,
+            deliverables:        data.deliverables,
+            commonMistakes:      data.commonMistakes,
+            importantNotes:      data.importantNotes,
+            internalArtifacts:   data.internalArtifacts,
+            progressCheckpoints: DEFAULT_CHECKPOINTS,
+          },
+        },
+        { returnDocument: "after" } // replaces deprecated { new: true }
+      );
     } else {
       assessment = await Test.create({
         freelancerId:     userId,

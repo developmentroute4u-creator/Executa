@@ -113,7 +113,6 @@ const FreelancerProfileSchema = new Schema<IFreelancerProfile>(
   { timestamps: true }
 );
 
-FreelancerProfileSchema.index({ userId: 1 });
 FreelancerProfileSchema.index({ field: 1, domain: 1, level: 1, available: 1 });
 
 if (mongoose.models.FreelancerProfile) {
