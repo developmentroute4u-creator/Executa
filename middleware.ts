@@ -7,6 +7,12 @@ export default withAuth(
     const isAuth = !!token;
     const isAuthPage = req.nextUrl.pathname.startsWith("/auth/login") || req.nextUrl.pathname.startsWith("/auth/register");
 
+    // Payment success pages must be reachable immediately after PhonePe redirect,
+    // before the session cookie fully hydrates. Guard is handled client-side.
+    if (req.nextUrl.pathname.includes("/payment-success")) {
+      return null;
+    }
+
     if (isAuthPage) {
       // Always allow access to auth pages — even if already logged in.
       // Users must explicitly click through the sign-in page to reach their dashboard.

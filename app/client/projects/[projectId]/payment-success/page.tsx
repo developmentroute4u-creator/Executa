@@ -1,18 +1,20 @@
 "use client";
 
-import React, { useEffect, useState, Suspense } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 
 function PaymentSuccessContent() {
   const params = useParams<{ projectId: string }>();
   const searchParams = useSearchParams();
   const router = useRouter();
   const merchantTransactionId = searchParams.get("txnId");
+  const { status: sessionStatus } = useSession();
 
-  const [status, setStatus] = useState<"verifying" | "paid" | "failed">("verifying");
+  const [status, setStatus] = useState<"waiting" | "verifying" | "paid" | "failed">("waiting");
   const [attempts, setAttempts] = useState(0);
 
   useEffect(() => {
@@ -21,6 +23,20 @@ function PaymentSuccessContent() {
       return;
     }
 
+    // Wait until session is resolved — PhonePe redirects can arrive before
+    // the NextAuth session cookie has been re-read by the browser.
+    if (sessionStatus === "loading") return;
+
+    // If still unauthenticated after session resolves, redirect to login
+    // with a callbackUrl so the user lands back here after signing in.
+    if (sessionStatus === "unauthenticated") {
+      const callbackUrl = encodeURIComponent(window.location.href);
+      router.replace(`/auth/login?callbackUrl=${callbackUrl}`);
+      return;
+    }
+
+    // Session is authenticated — begin verification
+    setStatus("verifying");
     let tries = 0;
     const MAX_TRIES = 20;  // 20 × 3s = 60s window
 
@@ -34,12 +50,8 @@ function PaymentSuccessContent() {
         if (data.paid) {
           setStatus("paid");
           setTimeout(() => {
-            if (data.isMilestone) {
+            if (data.isMilestone || data.isUpgrade) {
               router.push(`/client/execution/${params.projectId}`);
-            } else if (data.isUpgrade) {
-              router.push(`/client/execution/${params.projectId}`);
-            } else if (data.isCustomUnit) {
-              router.push(`/client/projects/${params.projectId}/scope`);
             } else {
               router.push(`/client/projects/${params.projectId}/scope`);
             }
@@ -61,9 +73,10 @@ function PaymentSuccessContent() {
       }
     }
 
-    // Start verifying after 2.5s — give PhonePe time to process redirect
+    // Give PhonePe 2.5s after the redirect before first verification attempt
     setTimeout(verify, 2500);
-  }, [merchantTransactionId, params.projectId, router]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [merchantTransactionId, sessionStatus]);
 
   return (
     <div className="min-h-screen bg-[#FFF7F5] flex items-center justify-center p-6">
@@ -88,7 +101,8 @@ function PaymentSuccessContent() {
           </svg>
         </div>
 
-        {status === "verifying" && (
+        {/* Waiting for session / Verifying — same spinner */}
+        {(status === "waiting" || status === "verifying") && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
