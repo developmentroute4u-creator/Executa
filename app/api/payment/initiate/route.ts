@@ -68,8 +68,30 @@ const CLIENT_SECRET = process.env.PHONEPE_CLIENT_SECRET && process.env.PHONEPE_C
   : "NWFlMzczMzktMTk1NC00MDdhLWFkMTktODZhZDJlMzhjNDhj";
 
 const CLIENT_VERSION = process.env.PHONEPE_CLIENT_VERSION || "1";
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ||
   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+
+// Warn loudly if APP_URL is not explicitly set — dynamic Vercel preview URLs
+// are not whitelisted in PhonePe and will cause "Something went wrong" on their page.
+if (!process.env.NEXT_PUBLIC_APP_URL) {
+  console.warn(
+    "[Payment] NEXT_PUBLIC_APP_URL is not set. Using fallback:",
+    APP_URL,
+    "— Set this in Vercel env vars to your stable production URL and whitelist it in PhonePe dashboard."
+  );
+}
+
+/**
+ * Generates a short, unique merchantTransactionId (≤38 chars).
+ * PhonePe v2 enforces a strict 38-character limit on merchantOrderId.
+ * Format: {PREFIX}-{base36_timestamp}-{4_random_hex_bytes}
+ * Example: EXC-m9d2x4k-a3f1c2e9  (27 chars)
+ */
+function makeTxnId(prefix: "EXP" | "EXM" | "EXC" | "EXU"): string {
+  const ts  = Date.now().toString(36); // ~8 chars
+  const rnd = crypto.randomBytes(4).toString("hex"); // 8 chars
+  return `${prefix}-${ts}-${rnd}`; // max: 3+1+8+1+8 = 21 chars  ✓
+}
 
 // Get OAuth token from PhonePe
 async function getPhonePeToken(): Promise<string> {
@@ -122,7 +144,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ skipPayment: true, unitPrice, platformFee: 0 });
     }
 
-    const merchantTransactionId = `EXECUTA_CU_${projectId}_${Date.now()}`;
+    const merchantTransactionId = makeTxnId("EXC");
     const amountInPaise = Math.round(platformFee * 100);
 
     try {
@@ -204,7 +226,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ skipPayment: true, upgrade });
     }
 
-    const merchantTransactionId = `EXECUTA_UG_${upgradeId}_${Date.now()}`;
+    const merchantTransactionId = makeTxnId("EXU");
     const amountInPaise = Math.round(platformFee * 100);
 
     try {
@@ -299,7 +321,7 @@ export async function POST(req: NextRequest) {
 
     const milestoneAmount = milestone.amount || 0;
     const amountInPaise = Math.round(milestoneAmount * 100);
-    const merchantTransactionId = `EXECUTA_MS_${projectId}_${milestoneIndex}_${Date.now()}`;
+    const merchantTransactionId = makeTxnId("EXM");
 
     try {
       const token = await getPhonePeToken();
@@ -375,7 +397,7 @@ export async function POST(req: NextRequest) {
   const amountInPaise = Math.round(platformFees * 100);
 
   // Unique merchant transaction ID
-  const merchantTransactionId = `EXECUTA_${projectId}_${Date.now()}`;
+  const merchantTransactionId = makeTxnId("EXP");
 
   try {
     const token = await getPhonePeToken();

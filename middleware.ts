@@ -20,7 +20,10 @@ export default withAuth(
     }
 
     if (!isAuth) {
-      return NextResponse.redirect(new URL("/auth/login", req.url));
+      const loginUrl = new URL("/auth/login", req.url);
+      // Preserve the intended destination so the login page can redirect back after sign-in.
+      loginUrl.searchParams.set("callbackUrl", req.nextUrl.pathname + req.nextUrl.search);
+      return NextResponse.redirect(loginUrl);
     }
 
     // Role isolation: freelancers cannot access client pages and vice versa

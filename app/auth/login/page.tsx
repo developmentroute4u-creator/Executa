@@ -154,12 +154,32 @@ function LoginContent() {
         return;
       }
 
-      // If successful, redirect to the correct dashboard based on selected role
-      if (activeRole === "freelancer" && isSignUp) {
-        router.push("/freelancer/onboarding");
+      // Redirect priority:
+      // 1. ?callbackUrl from query string (set by NextAuth middleware or payment-success page)
+      // 2. sessionStorage post_payment_redirect (set by payment-success page)
+      // 3. Default role dashboard
+      const callbackUrl = searchParams.get("callbackUrl");
+      let destination: string;
+
+      if (callbackUrl && callbackUrl.startsWith("/")) {
+        // Only allow relative paths to prevent open redirect
+        destination = callbackUrl;
       } else {
-        router.push(activeRole === "client" ? "/client/dashboard" : "/freelancer/workspace");
+        // Check sessionStorage for post-payment redirect
+        let storedRedirect = "";
+        try { storedRedirect = sessionStorage.getItem("post_payment_redirect") || ""; } catch { }
+
+        if (storedRedirect) {
+          try { sessionStorage.removeItem("post_payment_redirect"); } catch { }
+          destination = storedRedirect;
+        } else if (activeRole === "freelancer" && isSignUp) {
+          destination = "/freelancer/onboarding";
+        } else {
+          destination = activeRole === "client" ? "/client/dashboard" : "/freelancer/workspace";
+        }
       }
+
+      router.push(destination);
     } catch (err) {
       setIsSubmitting(false);
       setAuthError("An unexpected error occurred. Please try again.");
