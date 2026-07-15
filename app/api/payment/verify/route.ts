@@ -55,13 +55,12 @@ const PHONEPE_TOKEN_BASE = PHONEPE_ENV === "UAT"
   ? "https://api-preprod.phonepe.com/apis/pg-sandbox"
   : "https://api.phonepe.com/apis/identity-manager";
 
-const CLIENT_ID = process.env.PHONEPE_CLIENT_ID && process.env.PHONEPE_CLIENT_ID !== "undefined"
-  ? process.env.PHONEPE_CLIENT_ID
-  : "M22XTO82UL82X_2606031540";
+const CLIENT_ID = process.env.PHONEPE_CLIENT_ID || "";
+const CLIENT_SECRET = process.env.PHONEPE_CLIENT_SECRET || "";
 
-const CLIENT_SECRET = process.env.PHONEPE_CLIENT_SECRET && process.env.PHONEPE_CLIENT_SECRET !== "undefined"
-  ? process.env.PHONEPE_CLIENT_SECRET
-  : "NWFlMzczMzktMTk1NC00MDdhLWFkMTktODZhZDJlMzhjNDhj";
+if (!CLIENT_ID || !CLIENT_SECRET) {
+  console.error("[PhonePe] PHONEPE_CLIENT_ID or PHONEPE_CLIENT_SECRET is not set in environment variables!");
+}
 
 const CLIENT_VERSION = process.env.PHONEPE_CLIENT_VERSION || "1";
 
@@ -397,6 +396,24 @@ export async function GET(req: NextRequest) {
 // POST: PhonePe server-to-server webhook callback
 export async function POST(req: NextRequest) {
   try {
+    // ── Webhook Authentication (SHA Basic Auth) ─────────────────────────────
+    // PhonePe sends: Authorization: Basic base64(username:password)
+    // This must match what was entered in PhonePe Dashboard → Developer Settings → Webhooks
+    const webhookUser = process.env.PHONEPE_WEBHOOK_USERNAME;
+    const webhookPass = process.env.PHONEPE_WEBHOOK_PASSWORD;
+
+    if (webhookUser && webhookPass) {
+      const authHeader = req.headers.get("authorization") || "";
+      const expectedToken = Buffer.from(`${webhookUser}:${webhookPass}`).toString("base64");
+      const expectedHeader = `Basic ${expectedToken}`;
+
+      if (authHeader !== expectedHeader) {
+        console.warn("[PhonePe webhook] Unauthorized — auth header mismatch");
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+    }
+    // ───────────────────────────────────────────────────────────────────────
+
     const body = await req.json();
     // Extract state using all known PhonePe v2 field variants
     const state: string = (
