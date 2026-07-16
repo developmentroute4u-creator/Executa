@@ -957,6 +957,7 @@ export default function LandingPage() {
                     { label: "Contact Us", href: "/contact" },
                     { label: "Terms of Service", href: "/terms" },
                     { label: "Privacy Policy", href: "/privacy" },
+                    { label: "Refund & Cancellation", href: "/refund" },
                     { label: "LinkedIn", href: "#" },
                   ].map((l) => (
                     <Link key={l.label} href={l.href} className="text-[12px] text-stone-500 hover:text-[#E85239] transition-colors duration-200 font-medium">
