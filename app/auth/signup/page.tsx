@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -73,7 +73,7 @@ function SignupForm() {
               <rect x="8" y="8" width="5" height="5" rx="1" fill="white"/>
             </svg>
           </div>
-          <span className="text-sm font-semibold text-text-primary">Executa</span>
+          <span className="text-sm font-semibold text-text-primary">FINDADE</span>
         </Link>
         <div>
           <h2 className="text-2xl font-semibold tracking-tight text-text-primary mb-4">
@@ -103,7 +103,7 @@ function SignupForm() {
           {step === 1 && (
             <>
               <div className="mb-10">
-                <h1 className="text-2xl font-semibold tracking-tight mb-2">Join Executa</h1>
+                <h1 className="text-2xl font-semibold tracking-tight mb-2">Join FINDADE</h1>
                 <p className="text-sm text-text-secondary">Choose how you'll use the platform.</p>
               </div>
               <div className="space-y-3 mb-8">

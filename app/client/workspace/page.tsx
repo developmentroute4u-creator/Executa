@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -194,7 +194,7 @@ function ActionCentre({ projects }: { projects: any[] }) {
           {urgent.map((item, i) => (
             <motion.div key={item.id} initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.05 * i }}>
               <Link href={item.href}>
-                <div className="flex items-start gap-3.5 p-4 bg-[#FFF7F6] border border-[#E85239]/20 rounded-2xl hover:bg-[#FFE8E4]/50 hover:border-[#E85239]/40 transition-all group cursor-pointer">
+                <div className="flex items-start gap-3.5 p-4 bg-[#f6f4f0] border border-[#E85239]/20 rounded-2xl hover:bg-[#FFE8E4]/50 hover:border-[#E85239]/40 transition-all group cursor-pointer">
                   <div className="w-8 h-8 rounded-xl bg-[#E85239]/10 flex items-center justify-center shrink-0 mt-0.5">
                     <AlertTriangle size={14} className="text-[#E85239]" />
                   </div>

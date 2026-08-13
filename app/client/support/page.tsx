@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { motion } from "framer-motion";
 import { MessageSquare, Mail, BookOpen, ChevronDown, ChevronUp, Phone } from "lucide-react";
 import { useState } from "react";
@@ -8,7 +8,7 @@ import { SupportChatWidget } from "@/components/SupportChatWidget";
 const faqs = [
   {
     q: "How does the escrow payment system work?",
-    a: "When you fund a project, your payment is securely held in escrow by Executa. Funds are only released to the freelancer once you approve each milestone. This protects you as the client at every stage of the project."
+    a: "When you fund a project, your payment is securely held in escrow by FINDADE. Funds are only released to the freelancer once you approve each milestone. This protects you as the client at every stage of the project."
   },
   {
     q: "How do I review and approve my project scope?",
@@ -16,7 +16,7 @@ const faqs = [
   },
   {
     q: "What are the platform fees?",
-    a: "Executa charges a transparent total of 10% on the project value, broken down as: Support Fee (5%), Continuity Fee (3%), and Execution Fee (2%). There are no hidden charges."
+    a: "FINDADE charges a transparent total of 10% on the project value, broken down as: Support Fee (5%), Continuity Fee (3%), and Execution Fee (2%). There are no hidden charges."
   },
   {
     q: "How do I invite team members to my organization?",
@@ -100,7 +100,7 @@ export default function ClientSupport() {
             Contact Us
           </h2>
 
-          <div className="bg-[#FFF7F6] border border-orange-100 rounded-3xl p-8 flex flex-col gap-6">
+          <div className="bg-[#f6f4f0] border border-orange-100 rounded-3xl p-8 flex flex-col gap-6">
             <div className="flex gap-4 items-start">
               <div className="w-10 h-10 rounded-xl bg-[#E85239]/10 flex items-center justify-center shrink-0">
                 <Mail size={18} className="text-[#E85239]" />
@@ -109,10 +109,10 @@ export default function ClientSupport() {
                 <h3 className="text-[14px] font-black text-stone-900 mb-1">Email Support</h3>
                 <p className="text-[13px] text-stone-500 mb-3">Average response time: 4–8 hours.</p>
                 <a
-                  href="mailto:support@executa.in"
+                  href="mailto:support@FINDADE.in"
                   className="text-[13px] font-bold text-[#E85239] hover:text-[#d44127] transition-colors"
                 >
-                  support@executa.in
+                  support@FINDADE.in
                 </a>
               </div>
             </div>

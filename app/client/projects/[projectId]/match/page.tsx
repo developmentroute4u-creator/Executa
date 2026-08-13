@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -160,7 +160,7 @@ export default function MatchFreelancerPage() {
             {/* Wordmark logo pulse */}
             <div className="mb-10 flex items-center justify-center animate-pulse" style={{ animationDuration: "2.5s" }}>
               <span className="font-black text-[36px] tracking-tighter text-stone-900 leading-none">
-                EXECUTA<span className="text-[#E85239]">.</span>
+                FINDADE<span className="text-[#E85239]">.</span>
               </span>
             </div>
 
@@ -243,7 +243,7 @@ export default function MatchFreelancerPage() {
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <span className="px-3 py-1 bg-[#FFF7F6] text-[#E85239] text-[11px] font-bold rounded-full border border-orange-100 uppercase tracking-wider">
+                <span className="px-3 py-1 bg-[#f6f4f0] text-[#E85239] text-[11px] font-bold rounded-full border border-orange-100 uppercase tracking-wider">
                   {isSplitMode ? "2 Experts Found" : `${freelancers?.length || 0} Found`}
                 </span>
                 {!isSplitMode && freelancers?.length > displayCount && (
@@ -315,7 +315,7 @@ export default function MatchFreelancerPage() {
                     {/* Rank badge */}
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center text-[12px] font-black flex-shrink-0 transition-colors ${
                       idx === 0
-                        ? "bg-[#FFF7F6] text-[#E85239] border-2 border-orange-200 shadow-sm"
+                        ? "bg-[#f6f4f0] text-[#E85239] border-2 border-orange-200 shadow-sm"
                         : "bg-stone-50 text-stone-400 border border-stone-100 group-hover:border-stone-200 group-hover:text-stone-500"
                     }`}>
                       #{idx + 1}
@@ -345,7 +345,7 @@ export default function MatchFreelancerPage() {
                         <div className="text-[9px] font-bold text-stone-400 uppercase tracking-wider mt-1">Match</div>
                       </div>
                       
-                      <div className="w-8 h-8 rounded-full bg-stone-50 flex items-center justify-center group-hover:bg-[#FFF7F6] transition-colors">
+                      <div className="w-8 h-8 rounded-full bg-stone-50 flex items-center justify-center group-hover:bg-[#f6f4f0] transition-colors">
                         <ChevronRight size={16} className="text-stone-300 group-hover:text-[#E85239] transition-colors" />
                       </div>
                     </div>
@@ -450,7 +450,7 @@ export default function MatchFreelancerPage() {
                     </div>
                   </div>
 
-                  <div className="rounded-xl bg-gradient-to-br from-[#FFF7F6] to-orange-50/30 border border-orange-100 p-4">
+                  <div className="rounded-xl bg-gradient-to-br from-[#f6f4f0] to-orange-50/30 border border-orange-100 p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="w-2 h-2 rounded-full bg-[#E85239] animate-pulse" />
                       <span className="text-[10px] font-black text-[#E85239] uppercase tracking-widest">Why this expert?</span>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -21,13 +21,13 @@ const CATEGORIES = [
     articles: [
       {
         id: "gs-1",
-        title: "Welcome to Executa for Experts",
+        title: "Welcome to FINDADE for Experts",
         readTime: "3 min",
-        content: `## Welcome to Executa
+        content: `## Welcome to FINDADE
 
-Executa is a premium freelance marketplace built to match top-tier expert developer talent with high-intent clients. Our business model is designed around **locked scope, zero commissions, and complete financial security**.
+FINDADE is a premium freelance marketplace built to match top-tier expert developer talent with high-intent clients. Our business model is designed around **locked scope, zero commissions, and complete financial security**.
 
-### How Executa works for Freelancers
+### How FINDADE works for Freelancers
 
 1. **Verify your skills** — Complete our Level 2 Assessment to qualify for projects.
 2. **Review incoming matches** — View structured scopes matched to your tech stack and expertise.
@@ -51,7 +51,7 @@ Executa is a premium freelance marketplace built to match top-tier expert develo
         readTime: "4 min",
         content: `## Level 2 Skills Assessment
 
-Every freelancer on Executa must pass a standard evaluation before receiving project matches. This process ensures only premium talent is matched with clients, allowing us to maintain high budgets and professional engagements.
+Every freelancer on FINDADE must pass a standard evaluation before receiving project matches. This process ensures only premium talent is matched with clients, allowing us to maintain high budgets and professional engagements.
 
 ### The Assessment Process
 
@@ -75,7 +75,7 @@ Every freelancer on Executa must pass a standard evaluation before receiving pro
         readTime: "3 min",
         content: `## Understanding the Project Matching Queue
 
-Executa does not use bidding or proposal contests. Instead, our automated matching system connects the right expert with the right project scope.
+FINDADE does not use bidding or proposal contests. Instead, our automated matching system connects the right expert with the right project scope.
 
 ### How Matching Logic Works
 
@@ -163,11 +163,11 @@ Clients can request revisions if a deliverable does not meet the criteria specif
         readTime: "3 min",
         content: `## How escrow protects your earnings
 
-Escrow is the heart of Executa's commitment to freelancers. It guarantees that you will be paid for the work you do.
+Escrow is the heart of FINDADE's commitment to freelancers. It guarantees that you will be paid for the work you do.
 
 ### The Escrow Guarantee
 
-- **Pre-Funded Milestones** — The expert is never expected to start a milestone until the client has paid the funds into Executa's escrow account.
+- **Pre-Funded Milestones** — The expert is never expected to start a milestone until the client has paid the funds into FINDADE's escrow account.
 - **Independent Security** — Once in escrow, the client cannot simply withdraw their money back to their bank account without your consent or going through the formal dispute process.
 - **Guaranteed Payout** — As long as you deliver the deliverables matching the locked scope, the escrowed funds are legally guaranteed to be released to you.
 
@@ -198,7 +198,7 @@ Once a milestone is approved, the funds enter your wallet balance immediately. Y
 - **UPI & IMPS (India)**: instant processing, available 24/7.
 - **NEFT / RTGS (India)**: 2–4 hours during business days.
 - **International Transfers (Stripe/SWIFT)**: 2–5 business days depending on destination country.
-- **Withdrawal Fees**: Executa charges ₹0 withdrawal fee. Any fees you see are direct network/forex rates charged by the payment gateway.`,
+- **Withdrawal Fees**: FINDADE charges ₹0 withdrawal fee. Any fees you see are direct network/forex rates charged by the payment gateway.`,
       },
     ],
   },
@@ -224,19 +224,19 @@ If a client requests out-of-scope work:
 1. Navigate to the **Workspace** of the project.
 2. Click the **Flag Scope Boundary** action button in the chat or milestone drawer.
 3. Select the messages where the client requested the work and write a short explanation of why it exceeds the scope.
-4. This freezes the milestone progress, alerts the client, and notifies the Executa audit team.
+4. This freezes the milestone progress, alerts the client, and notifies the FINDADE audit team.
 
 ### Live Audit Engagement
 
-- Once flagged, Executa's senior audit panel inspects the secure chat log, the locked scope document, and the deliverables.
+- Once flagged, FINDADE's senior audit panel inspects the secure chat log, the locked scope document, and the deliverables.
 - If the auditor agrees the request is out-of-scope, the client must either withdraw the request or pay for a **Scope Upgrade** (a mini-scope addition with its own funded escrow payment).
 - The auditor's decision is final and binding for both parties.`,
       },
       {
         id: "disp-2",
-        title: "How Executa resolves disputes",
+        title: "How FINDADE resolves disputes",
         readTime: "4 min",
-        content: `## How Executa resolves disputes
+        content: `## How FINDADE resolves disputes
 
 When a disagreement cannot be resolved through revisions, a dispute is initiated. Our resolution process is evidence-based and objective.
 
@@ -251,8 +251,8 @@ When a disagreement cannot be resolved through revisions, a dispute is initiated
    - **Partial Delivery**: Funds are split proportionally based on the value of the completed features.
 
 ### Tips for Freelancers during a dispute
-- Keep all communication inside the Executa project workspace chat. External communications (Slack, WhatsApp, Email) are not accepted as evidence.
-- Ensure your code is pushed to the secure Executa repository branch regularly so the technical auditor can inspect your contributions.`,
+- Keep all communication inside the FINDADE project workspace chat. External communications (Slack, WhatsApp, Email) are not accepted as evidence.
+- Ensure your code is pushed to the secure FINDADE repository branch regularly so the technical auditor can inspect your contributions.`,
       },
     ],
   },

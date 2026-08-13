@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 import { useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
-const ACCESS_KEY = "Executa@Docs#2026";
-const SESSION_KEY = "executa_docs_auth";
+const ACCESS_KEY = "FINDADE@Docs#2026";
+const SESSION_KEY = "FINDADE_docs_auth";
 
 export default function PlatformDocsPage() {
   const [unlocked, setUnlocked] = useState(false);
@@ -48,7 +48,7 @@ export default function PlatformDocsPage() {
         }}>
           <div style={{ marginBottom: "32px", textAlign: "center" }}>
             <div style={{ fontSize: "22px", fontWeight: 900, letterSpacing: "-1px", color: "#1A1A1A", marginBottom: "8px" }}>
-              EXECUTA<span style={{ color: "#E85239" }}>.</span>
+              FINDADE<span style={{ color: "#E85239" }}>.</span>
             </div>
             <div style={{ fontSize: "13px", color: "#9A9A9A", marginTop: "4px" }}>
               Internal Platform Documentation
@@ -105,7 +105,7 @@ export default function PlatformDocsPage() {
           </form>
 
           <div style={{ marginTop: "24px", textAlign: "center", fontSize: "11px", color: "#C4BFB9" }}>
-            Restricted access · Executa Internal Only
+            Restricted access · FINDADE Internal Only
           </div>
         </div>
       </div>
@@ -231,7 +231,7 @@ export default function PlatformDocsPage() {
       {/* ── STICKY NAV ── */}
       <nav className="doc-nav">
         <div className="doc-nav-inner">
-          <div className="doc-logo">EXECUTA<span>.</span></div>
+          <div className="doc-logo">FINDADE<span>.</span></div>
           <div className="doc-nav-meta">Platform Documentation · v1.0 · Internal</div>
         </div>
       </nav>
@@ -242,7 +242,7 @@ export default function PlatformDocsPage() {
           <div className="doc-eyebrow">Internal Platform Documentation</div>
           <div className="doc-h1">Features &amp;<br />Functionality<br />Overview</div>
           <div className="doc-subtitle">
-            The complete product specification for the Executa platform as of Version 1.0 — covering every feature, flow, and functionality across the Client, Freelancer, and Admin portals.
+            The complete product specification for the FINDADE platform as of Version 1.0 — covering every feature, flow, and functionality across the Client, Freelancer, and Admin portals.
           </div>
           <div className="doc-cover-meta">
             <span><strong>Version</strong>1.0 Milestone</span>
@@ -259,7 +259,7 @@ export default function PlatformDocsPage() {
           <div className="toc-title">Table of Contents</div>
           <div className="toc-grid">
             <div>
-              <div className="toc-item toc-main"><span className="toc-num">01</span><a href="#s1">What is Executa</a></div>
+              <div className="toc-item toc-main"><span className="toc-num">01</span><a href="#s1">What is FINDADE</a></div>
               <div className="toc-item toc-main"><span className="toc-num">02</span><a href="#s2">How the Platform Works</a></div>
               <div className="toc-item toc-main"><span className="toc-num">03</span><a href="#s3">Client Portal</a></div>
               <div className="toc-item toc-sub"><span className="toc-num">3.1</span><a href="#s3-1">Landing Page</a></div>
@@ -307,21 +307,21 @@ export default function PlatformDocsPage() {
       {/* ── MAIN CONTENT ── */}
       <div className="doc-container">
 
-        {/* ── S1: WHAT IS EXECUTA ── */}
+        {/* ── S1: WHAT IS FINDADE ── */}
         <div id="s1" className="section">
           <div className="chapter-eyebrow">Section 01</div>
-          <h1 className="chapter">What is Executa</h1>
+          <h1 className="chapter">What is FINDADE</h1>
           <div className="chapter-desc">A managed execution platform that connects vetted freelance professionals with businesses that need software or design projects built.</div>
 
           <div className="intro-box">
-            Executa is <strong>not</strong> a marketplace where clients browse profiles and negotiate deals. It is a <strong>structured, managed process</strong> where every project goes through AI scoping, every freelancer is vetted, and platform admins manage the quality and governance of every engagement.
+            FINDADE is <strong>not</strong> a marketplace where clients browse profiles and negotiate deals. It is a <strong>structured, managed process</strong> where every project goes through AI scoping, every freelancer is vetted, and platform admins manage the quality and governance of every engagement.
           </div>
 
           <h3 className="subsec">Three Types of Users</h3>
           <div className="tbl-wrap"><table><thead><tr><th>User Type</th><th>Who They Are</th><th>What They Do</th></tr></thead><tbody>
             <tr><td><strong>Client</strong></td><td>A business or individual hiring talent</td><td>Creates projects, reviews scope, pays platform fee, approves milestones</td></tr>
             <tr><td><strong>Freelancer</strong></td><td>A vetted designer or developer</td><td>Gets assessed, receives invitations, executes project milestones</td></tr>
-            <tr><td><strong>Admin</strong></td><td>Executa platform operators</td><td>Manages vetting, assigns freelancers, resolves disputes, controls the platform</td></tr>
+            <tr><td><strong>Admin</strong></td><td>FINDADE platform operators</td><td>Manages vetting, assigns freelancers, resolves disputes, controls the platform</td></tr>
           </tbody></table></div>
 
           <h3 className="subsec">Core Principles</h3>
@@ -340,9 +340,9 @@ export default function PlatformDocsPage() {
           <div className="chapter-desc">The complete end-to-end journey every project takes — from a client's idea to delivered product.</div>
           <ol className="steps">
             <li><div><strong>Client Creates a Project</strong><br/>The client answers 7 structured discovery questions — what to build, who will use it, how it should work, and what success means. Takes 10–15 minutes. No technical knowledge required.</div></li>
-            <li><div><strong>AI Generates the Scope</strong><br/>Executa's AI Scope Engine analyses the answers and automatically generates a detailed scope — functional units, effort scores, timeline estimate, revision rules. Happens in seconds.</div></li>
+            <li><div><strong>AI Generates the Scope</strong><br/>FINDADE's AI Scope Engine analyses the answers and automatically generates a detailed scope — functional units, effort scores, timeline estimate, revision rules. Happens in seconds.</div></li>
             <li><div><strong>Client Pays Platform Fee</strong><br/>The scope comes with a pricing breakdown. The client reviews and pays the platform fee via PhonePe. This unlocks the project for the matching queue.</div></li>
-            <li><div><strong>Admin Assigns a Freelancer</strong><br/>Executa's admin team reviews the project, matches it with a qualified freelancer based on skill level and domain, and sends the invitation.</div></li>
+            <li><div><strong>Admin Assigns a Freelancer</strong><br/>FINDADE's admin team reviews the project, matches it with a qualified freelancer based on skill level and domain, and sends the invitation.</div></li>
             <li><div><strong>Freelancer Accepts</strong><br/>The freelancer reviews the full project scope and either accepts or declines. Once accepted, work officially begins.</div></li>
             <li><div><strong>Work &amp; Milestones</strong><br/>The freelancer delivers milestone by milestone. The client reviews and approves each one directly in the platform.</div></li>
             <li><div><strong>Scope Upgrades (if needed)</strong><br/>If new features are requested, either party initiates a scope upgrade. Both must approve before additional work begins.</div></li>
@@ -357,7 +357,7 @@ export default function PlatformDocsPage() {
           <div className="chapter-desc">Everything a client experiences — from discovering the platform to managing projects, billing, and their team.</div>
 
           <h2 id="s3-1" className="sec">3.1 Landing Page</h2>
-          <p>The public-facing page accessible without login. Shows: how the platform works (4-step flow), why Executa differs from marketplaces, how vetting works for freelancers, the transparent pricing model, FAQs, and CTAs ("Start Your Project" / "Join as Expert").</p>
+          <p>The public-facing page accessible without login. Shows: how the platform works (4-step flow), why FINDADE differs from marketplaces, how vetting works for freelancers, the transparent pricing model, FAQs, and CTAs ("Start Your Project" / "Join as Expert").</p>
 
           <h2 id="s3-2" className="sec">3.2 Client Onboarding — Creating a Project</h2>
           <p>A guided 5-step wizard — a structured discovery interview that extracts enough information for AI scope generation. No technical language required.</p>
@@ -388,8 +388,8 @@ export default function PlatformDocsPage() {
             <li><div>Client clicks "Pay with PhonePe"</div></li>
             <li><div>Redirected to PhonePe's hosted payment page (UPI, card, net banking supported)</div></li>
             <li><div>Client completes payment on PhonePe</div></li>
-            <li><div>Redirected back to Executa's payment success page</div></li>
-            <li><div>Executa verifies payment with PhonePe in real time</div></li>
+            <li><div>Redirected back to FINDADE's payment success page</div></li>
+            <li><div>FINDADE verifies payment with PhonePe in real time</div></li>
             <li><div>Project moves to "Matching" status — admin now receives it for freelancer assignment</div></li>
             <li><div>Payment instrument auto-saved to client's billing profile</div></li>
           </ol>
@@ -459,7 +459,7 @@ export default function PlatformDocsPage() {
             <tr><td><strong>Credit/Debit Card</strong></td><td>Card number (auto-formats), expiry MM/YY, cardholder name. Brand auto-detected: VISA / Mastercard / RuPay / Amex. Consent required.</td></tr>
             <tr><td><strong>Net Banking</strong></td><td>Bank dropdown (HDFC, ICICI, SBI, Axis, Kotak, PNB, BOB, Canara, IDFC FIRST, Yes, IndusInd, Federal). Account holder name. Consent required.</td></tr>
           </tbody></table></div>
-          <div className="callout"><strong>Consent:</strong> "By saving, I authorise Executa to store this payment method and use it to fund project escrow on my behalf. My financial data is encrypted and never shared."</div>
+          <div className="callout"><strong>Consent:</strong> "By saving, I authorise FINDADE to store this payment method and use it to fund project escrow on my behalf. My financial data is encrypted and never shared."</div>
 
           <h2 id="s3-15" className="sec">3.15 Organization &amp; Team</h2>
           <div className="tbl-wrap"><table><thead><tr><th>Section</th><th>Features</th></tr></thead><tbody>
@@ -469,7 +469,7 @@ export default function PlatformDocsPage() {
           </tbody></table></div>
 
           <h2 id="s3-16" className="sec">3.16 Client Support</h2>
-          <p>In-app support chat connecting client directly to Executa's support team (admin). Full conversation history preserved. Marked open or resolved by admin. Available at all times.</p>
+          <p>In-app support chat connecting client directly to FINDADE's support team (admin). Full conversation history preserved. Marked open or resolved by admin. Available at all times.</p>
 
           <h2 id="s3-17" className="sec">3.17 Help &amp; Articles</h2>
           <p>Built-in knowledge base covering: platform overview &amp; FAQ, how scoping works, creating a project, pricing model, escrow and payments, project statuses, milestone management, and raising disputes.</p>
@@ -584,14 +584,14 @@ export default function PlatformDocsPage() {
           </ul>
 
           <h2 id="s4-11" className="sec">4.11 Freelancer Support</h2>
-          <p>Direct in-app support chat with Executa's support team. Connects to admin inbox. Conversations marked open or resolved by admin.</p>
+          <p>Direct in-app support chat with FINDADE's support team. Connects to admin inbox. Conversations marked open or resolved by admin.</p>
         </div>
 
         {/* ── S5: ADMIN PORTAL ── */}
         <div id="s5" className="section">
           <div className="chapter-eyebrow">Section 05</div>
           <h1 className="chapter">Admin Portal — Features &amp; Flows</h1>
-          <div className="chapter-desc">The platform governance layer — where Executa operators manage quality, assignments, disputes, and platform health.</div>
+          <div className="chapter-desc">The platform governance layer — where FINDADE operators manage quality, assignments, disputes, and platform health.</div>
 
           <h2 className="sec">5.1 Admin Login</h2>
           <p>Separate password-protected login page for platform operators. Not connected to client/freelancer auth. Sets a secure session cookie verified on every admin page. Auto-redirects to login if missing.</p>
@@ -683,9 +683,9 @@ export default function PlatformDocsPage() {
           <h3 className="subsec">Fee Breakdown</h3>
           <div className="tbl-wrap"><table><thead><tr><th>Fee Component</th><th>Who It Goes To</th><th>How Calculated</th></tr></thead><tbody>
             <tr><td><strong>Freelancer Price</strong></td><td>The freelancer (via escrow)</td><td>Effort Score × Rate Per Point</td></tr>
-            <tr><td><strong>Scope Fee</strong></td><td>Executa</td><td>Flat fee for AI scoping service</td></tr>
-            <tr><td><strong>Accountability Fee</strong></td><td>Executa</td><td>10% of Freelancer Price (Accountability Mode only)</td></tr>
-            <tr><td><strong>Execution Fee</strong></td><td>Executa</td><td>5% of Freelancer Price</td></tr>
+            <tr><td><strong>Scope Fee</strong></td><td>FINDADE</td><td>Flat fee for AI scoping service</td></tr>
+            <tr><td><strong>Accountability Fee</strong></td><td>FINDADE</td><td>10% of Freelancer Price (Accountability Mode only)</td></tr>
+            <tr><td><strong>Execution Fee</strong></td><td>FINDADE</td><td>5% of Freelancer Price</td></tr>
             <tr><td><strong>Total</strong></td><td>Sum of all above</td><td>—</td></tr>
           </tbody></table></div>
           <div className="callout"><strong>Important:</strong> Client pays only the Platform Fee (Scope + Accountability + Execution) at scope creation. The Freelancer Price is held in escrow and released only on project completion.</div>
@@ -695,7 +695,7 @@ export default function PlatformDocsPage() {
         <div id="s8" className="section">
           <div className="chapter-eyebrow">Section 08</div>
           <h1 className="chapter">Payment System</h1>
-          <div className="chapter-desc">Executa uses PhonePe — one of India's largest and most trusted payment platforms.</div>
+          <div className="chapter-desc">FINDADE uses PhonePe — one of India's largest and most trusted payment platforms.</div>
 
           <div className="card-grid">
             <div className="card"><div className="card-title">UPI</div><div className="card-body">GPay, PhonePe, Paytm, and any UPI app.</div></div>
@@ -704,7 +704,7 @@ export default function PlatformDocsPage() {
             <div className="card"><div className="card-title">Wallets</div><div className="card-body">Supported through PhonePe's hosted payment interface.</div></div>
           </div>
 
-          <p><strong>Security:</strong> All processing on PhonePe's infrastructure. Executa stores no sensitive financial data — only reference identifiers and instrument type for billing display.</p>
+          <p><strong>Security:</strong> All processing on PhonePe's infrastructure. FINDADE stores no sensitive financial data — only reference identifiers and instrument type for billing display.</p>
           <p><strong>Auto-Capture:</strong> On successful payment, the instrument type is auto-detected and saved to the client's billing profile.</p>
         </div>
 
@@ -712,14 +712,14 @@ export default function PlatformDocsPage() {
         <div id="s9" className="section">
           <div className="chapter-eyebrow">Section 09</div>
           <h1 className="chapter">AI Capabilities &amp; Architecture</h1>
-          <div className="chapter-desc">Executa uses the OpenRouter AI Stack (Qwen 3 and DeepSeek R1 Distill, with Llama 3.3 70B fallbacks) across 5 core features to power intelligent, governed execution.</div>
+          <div className="chapter-desc">FINDADE uses the OpenRouter AI Stack (Qwen 3 and DeepSeek R1 Distill, with Llama 3.3 70B fallbacks) across 5 core features to power intelligent, governed execution.</div>
 
           <h2 className="sec">9.1 AI Scope Generation (Qwen 3)</h2>
           <p>Converts a client's plain-language project description into a structured, professional scope document in seconds.</p>
           <div className="tbl-wrap"><table><thead><tr><th>Input</th><th>Output (Qwen 3)</th></tr></thead><tbody>
             <tr><td>7 discovery questions from onboarding</td><td>Written project summary + all features as functional units + effort scores + timeline + revision rules + upgrade rules + deliverables list + required freelancer capabilities</td></tr>
           </tbody></table></div>
-          <div className="callout"><strong>Why it matters:</strong> This eliminates the most common failure point in freelance projects — unclear, ambiguous requirements. Every Executa project starts with a professional scope regardless of client's technical knowledge.</div>
+          <div className="callout"><strong>Why it matters:</strong> This eliminates the most common failure point in freelance projects — unclear, ambiguous requirements. Every FINDADE project starts with a professional scope regardless of client's technical knowledge.</div>
 
           <h2 className="sec">9.2 Freelancer Match Justification (DeepSeek R1 Distill)</h2>
           <p>Generates natural-language fit explanations justifying the alignment between project scope and freelancer capabilities.</p>
@@ -751,7 +751,7 @@ export default function PlatformDocsPage() {
 
         {/* FOOTER */}
         <div className="doc-footer">
-          <div className="doc-footer-logo">EXECUTA<span>.</span></div>
+          <div className="doc-footer-logo">FINDADE<span>.</span></div>
           <div className="doc-footer-text">
             Platform Features &amp; Functionality Document · Version 1.0 · June 2026<br />
             Internal Document · Restricted Access · Confidential

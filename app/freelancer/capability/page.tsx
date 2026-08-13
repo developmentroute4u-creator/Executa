@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -185,7 +185,7 @@ export default function CapabilityEnvironment() {
 
                   {/* Evaluation score */}
                   {test.status === "evaluated" && test.evaluation && (
-                    <div className="bg-[#FFF7F6] border border-[#E85239]/20 rounded-2xl p-6 relative overflow-hidden">
+                    <div className="bg-[#f6f4f0] border border-[#E85239]/20 rounded-2xl p-6 relative overflow-hidden">
                       <div className="absolute top-0 right-0 w-32 h-32 bg-[#E85239]/10 rounded-full blur-2xl pointer-events-none translate-x-1/3 -translate-y-1/3" />
                       <div className="flex flex-col gap-4 relative z-10">
                         <div className="flex items-end justify-between">

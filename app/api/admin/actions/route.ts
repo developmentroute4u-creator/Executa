@@ -1,3 +1,4 @@
+﻿export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -386,7 +387,7 @@ export async function POST(req: NextRequest) {
       await Message.create({
         projectId: project._id,
         senderRole: "admin",
-        content: `⚙️ [Executa Support Override]: Platform Audit successfully complete. Active dispute has been RESOLVED.\n\nResolution Notes: "${notes || 'Resolved by administrator.'}"\n\nCanvas billing has resumed under active state and Executa's contributing rails are certified.`
+        content: `⚙️ [Findade Support Override]: Platform Audit successfully complete. Active dispute has been RESOLVED.\n\nResolution Notes: "${notes || 'Resolved by administrator.'}"\n\nCanvas billing has resumed under active state and Findade's contributing rails are certified.`
       });
 
       return NextResponse.json({ success: true, project });

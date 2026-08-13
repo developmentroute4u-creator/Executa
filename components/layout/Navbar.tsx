@@ -47,7 +47,7 @@ export function Navbar() {
             </svg>
           </div>
           <span className="text-lg font-bold tracking-tight text-text-primary group-hover:text-accent transition-colors duration-300">
-            Executa
+            Findade
           </span>
         </Link>
 
@@ -155,7 +155,7 @@ export function Sidebar({ items, user }: SidebarProps) {
                 lineHeight: "1.1",
               }}
             >
-              Executa
+              Findade
             </span>
             <span style={{ fontSize: "10px", color: "#E63E00", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>
               Truth Engine

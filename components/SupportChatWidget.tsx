@@ -174,7 +174,7 @@ export function SupportChatWidget({ userRole, triggerOpen, onClose }: SupportCha
                   <MessageSquare size={17} />
                 </div>
                 <div>
-                  <p className="text-[13px] font-black">Executa Support</p>
+                  <p className="text-[13px] font-black">Findade Support</p>
                   <div className="flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-300 animate-pulse" />
                     <p className="text-[10px] text-white/80">Available Mon–Fri, 10am–7pm IST</p>

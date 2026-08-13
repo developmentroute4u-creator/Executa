@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import Link from "next/link";
@@ -7,7 +7,7 @@ import { ArrowLeft, RefreshCw } from "lucide-react";
 
 export default function RefundPage() {
   return (
-    <div className="min-h-screen bg-[#FFF7F6] flex flex-col relative overflow-hidden font-sans">
+    <div className="min-h-screen bg-[#f6f4f0] flex flex-col relative overflow-hidden font-sans">
       {/* Glow blobs */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#E85239]/5 rounded-full blur-[140px] pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-orange-300/10 rounded-full blur-[140px] pointer-events-none" />
@@ -15,7 +15,7 @@ export default function RefundPage() {
       {/* Navbar */}
       <nav className="relative z-20 w-full px-6 py-6 md:px-12 flex items-center justify-between">
         <Link href="/" className="font-black text-2xl tracking-tighter text-stone-900">
-          EXECUTA<span className="text-[#E85239]">.</span>
+          FINDADE<span className="text-[#E85239]">.</span>
         </Link>
         <Link
           href="/"
@@ -53,13 +53,26 @@ export default function RefundPage() {
           <div className="prose prose-stone max-w-none text-stone-600 prose-headings:text-stone-900 prose-headings:font-bold prose-h2:text-2xl prose-h2:tracking-tight prose-h2:mt-10 prose-h2:mb-4 prose-p:leading-[1.7] prose-li:leading-[1.7]">
 
             <p className="lead text-lg font-medium text-stone-700">
-              At Executa, we are committed to fair and transparent payment practices. This policy outlines our
+              At FINDADE, we are committed to fair and transparent payment practices. This policy outlines our
               refund and cancellation terms for all payments made on our platform, including platform fees,
               milestone payments, and scope upgrade charges.
             </p>
 
-            <h2>1. Types of Payments on Executa</h2>
-            <p>Executa processes three categories of payments:</p>
+            <h2>Pricing Overview</h2>
+            <p>
+              FINDADE&apos;s pricing is <strong>variable</strong> and is determined by the scope and complexity of each project.
+              Total project budgets <strong>start from approximately ₹10,000 INR</strong>. The final project cost — comprising the Expert&apos;s fee plus Platform Fees — is transparently displayed to the Client before any payment is initiated. No payment is collected without explicit Client confirmation.
+            </p>
+            <p>Platform fees are made up of:</p>
+            <ul>
+              <li><strong>Scope Fee</strong> — A one-time AI scoping fee (displayed at checkout).</li>
+              <li><strong>Accountability Fee</strong> — A flat fee for dispute coverage and delivery oversight.</li>
+              <li><strong>Execution Fee</strong> — 5% of the Expert&apos;s project cost for platform operations and escrow management.</li>
+            </ul>
+            <p>All amounts are in Indian Rupees (INR). For the full fee schedule, refer to our <a href="/terms" className="text-[#E85239] font-medium hover:underline">Terms of Service</a>.</p>
+
+            <h2>1. Types of Payments on Findade</h2>
+            <p>Findade processes three categories of payments:</p>
             <ul>
               <li><strong>Platform Fees</strong> — One-time fees charged at project onboarding (Scope Fee + Accountability Fee + Execution Fee).</li>
               <li><strong>Milestone Payments</strong> — Payments made by Clients to release funds to the assigned Expert upon completion of a project milestone.</li>
@@ -69,7 +82,7 @@ export default function RefundPage() {
             <h2>2. Platform Fee Refunds</h2>
             <p>Platform fees are charged to set up and manage the intelligent project scoping, expert matching, and accountability infrastructure. The following refund rules apply:</p>
             <ul>
-              <li><strong>Before expert matching:</strong> If no expert has been matched or assigned to your project within 7 days of payment, you are eligible for a full refund of the platform fee. Contact us at <a href="mailto:support@executa.in" className="text-[#E85239] font-medium hover:underline">support@executa.in</a>.</li>
+              <li><strong>Before expert matching:</strong> If no expert has been matched or assigned to your project within 7 days of payment, you are eligible for a full refund of the platform fee. Contact us at <a href="mailto:support@findade.com" className="text-[#E85239] font-medium hover:underline">support@findade.com</a>.</li>
               <li><strong>After expert matching:</strong> Platform fees are non-refundable once an expert has been successfully matched and accepted the project, as significant platform resources have been deployed.</li>
               <li><strong>Technical errors:</strong> If your payment was processed but the platform failed to complete the transaction on our end, you will receive a full refund within 5–7 business days.</li>
             </ul>
@@ -77,7 +90,7 @@ export default function RefundPage() {
             <h2>3. Milestone Payment Refunds</h2>
             <p>Milestone payments are held in a secure escrow system and released to the Expert only after Client approval. The following terms apply:</p>
             <ul>
-              <li><strong>Before release (in escrow):</strong> If a milestone is disputed and the Expert fails to deliver the agreed scope, Executa's dispute team will review the case. If the dispute is upheld in the Client's favour, funds will be refunded to the Client within 7–10 business days.</li>
+              <li><strong>Before release (in escrow):</strong> If a milestone is disputed and the Expert fails to deliver the agreed scope, FINDADE's dispute team will review the case. If the dispute is upheld in the Client's favour, funds will be refunded to the Client within 7–10 business days.</li>
               <li><strong>After release:</strong> Once a Client has approved and released a milestone payment to the Expert, the transaction is final and cannot be reversed. Ensure you are satisfied with the deliverables before approving.</li>
               <li><strong>Auto-release:</strong> If a Client does not approve or dispute a submitted milestone within 14 days of submission, funds are automatically released to the Expert. No refund is available after auto-release.</li>
             </ul>
@@ -90,15 +103,15 @@ export default function RefundPage() {
             <ul>
               <li><strong>Cancel before matching:</strong> A Client may cancel a project at any time before an Expert is matched. The platform fee will be refunded as per Section 2 above.</li>
               <li><strong>Cancel after matching:</strong> If a project is cancelled after an Expert has been matched and has begun work, milestone funds already in escrow will be handled via the dispute resolution process. Platform fees are non-refundable at this stage.</li>
-              <li><strong>Expert-initiated cancellation:</strong> If an Expert cancels after accepting a project, the Client will not be charged any further fees and any platform fees may be eligible for a partial refund at Executa's discretion.</li>
+              <li><strong>Expert-initiated cancellation:</strong> If an Expert cancels after accepting a project, the Client will not be charged any further fees and any platform fees may be eligible for a partial refund at FINDADE's discretion.</li>
             </ul>
 
             <h2>6. Payment Gateway — Failed or Duplicate Payments</h2>
             <p>
-              All payments on Executa are processed securely via <strong>PhonePe Payment Gateway</strong> (a service of PhonePe Private Limited). In the event of:
+              All payments on Findade are processed securely via <strong>PhonePe Payment Gateway</strong> (a service of PhonePe Private Limited). In the event of:
             </p>
             <ul>
-              <li><strong>Failed transaction:</strong> If your bank account or card has been debited but the payment has not been confirmed on Executa, please wait up to 5 business days. The amount will be automatically reversed by your bank or PhonePe. If not received, contact us at <a href="mailto:support@executa.in" className="text-[#E85239] font-medium hover:underline">support@executa.in</a> with your transaction ID.</li>
+              <li><strong>Failed transaction:</strong> If your bank account or card has been debited but the payment has not been confirmed on Findade, please wait up to 5 business days. The amount will be automatically reversed by your bank or PhonePe. If not received, contact us at <a href="mailto:support@findade.com" className="text-[#E85239] font-medium hover:underline">support@findade.com</a> with your transaction ID.</li>
               <li><strong>Duplicate payment:</strong> If you have been charged twice for the same transaction, contact us immediately with both transaction IDs. Duplicate charges will be refunded within 5–7 business days.</li>
             </ul>
 
@@ -113,8 +126,8 @@ export default function RefundPage() {
             <h2>8. How to Request a Refund</h2>
             <p>To request a refund, please:</p>
             <ol>
-              <li>Email us at <a href="mailto:support@executa.in" className="text-[#E85239] font-medium hover:underline">support@executa.in</a> with the subject line: <strong>Refund Request — [Your Project ID]</strong>.</li>
-              <li>Include your registered email address, the PhonePe or Executa Transaction ID, and a brief description of the reason.</li>
+              <li>Email us at <a href="mailto:support@findade.com" className="text-[#E85239] font-medium hover:underline">support@findade.com</a> with the subject line: <strong>Refund Request — [Your Project ID]</strong>.</li>
+              <li>Include your registered email address, the PhonePe or Findade Transaction ID, and a brief description of the reason.</li>
               <li>Our team will respond within 2 business days and initiate the refund if eligible.</li>
             </ol>
 
@@ -124,8 +137,8 @@ export default function RefundPage() {
             </p>
             <p>
               <strong>Grievance Officer:</strong> Jay Thaker<br />
-              <strong>Email:</strong> <a href="mailto:grievance@executa.in" className="text-[#E85239] font-medium hover:underline">grievance@executa.in</a><br />
-              <strong>Address:</strong> Executa (DevelopmentRoute4U), Ahmedabad, Gujarat — 380001, India<br />
+              <strong>Email:</strong> <a href="mailto:findade.info@gmail.com" className="text-[#E85239] font-medium hover:underline">findade.info@gmail.com</a><br />
+              <strong>Address:</strong> Findade (Route4U Technology LLP), B 401, Devam Residency, Opp. Ayodhya Residency, Vatva Gamdi Road, Vatva, Daskroi, Ahmedabad – 382440, Gujarat, India<br />
               <strong>Response Time:</strong> Within 5 business days of receipt of complaint.
             </p>
             <p>
@@ -135,7 +148,7 @@ export default function RefundPage() {
             <hr className="my-10 border-stone-200" />
             <p className="text-sm text-stone-500">
               For refund inquiries, contact us at{" "}
-              <a href="mailto:support@executa.in" className="text-[#E85239] font-medium hover:underline">support@executa.in</a>
+              <a href="mailto:support@findade.com" className="text-[#E85239] font-medium hover:underline">support@findade.com</a>
               {" "}or call{" "}
               <a href="tel:+918000000000" className="text-[#E85239] font-medium hover:underline">+91 80000 00000</a>
               {" "}(Mon–Fri, 10am–6pm IST).

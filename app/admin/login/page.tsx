@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState } from "react";
 import { Button, Card } from "@/components/ui";
 import { Eye, EyeOff } from "lucide-react";
@@ -40,7 +40,7 @@ export default function AdminLoginPage() {
               <rect x="8" y="8" width="5" height="5" rx="1" fill="white" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Executa Admin Gateway</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">FINDADE Admin Gateway</h1>
           <p className="text-xs text-text-secondary mt-1">ProvideAdministrative Credentials</p>
         </div>
 

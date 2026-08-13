@@ -1,3 +1,4 @@
+﻿export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -118,7 +119,7 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
 
     // ─── POST CHAT NOTIFICATION MESSAGE ───
     const sideName = proposerRole === "client" ? "client" : "expert team";
-    const conflictMsg = `⚠️ [Executa Support Alert]\n\nThe ${sideName} has officially flagged a conflict.\n\nReason: "${reason}"\n${details ? `Details: "${details}"\n` : ""}\nLIVE AUDIT ENGAGED: Executa's senior audit panel has been alerted and will inspect this secure chat thread and scope functional definitions. Project parameters, communications, and deliverables are under immediate platform review.`;
+    const conflictMsg = `⚠️ [Findade Support Alert]\n\nThe ${sideName} has officially flagged a conflict.\n\nReason: "${reason}"\n${details ? `Details: "${details}"\n` : ""}\nLIVE AUDIT ENGAGED: Findade's senior audit panel has been alerted and will inspect this secure chat thread and scope functional definitions. Project parameters, communications, and deliverables are under immediate platform review.`;
 
     const message = await Message.create({
       projectId: project._id,

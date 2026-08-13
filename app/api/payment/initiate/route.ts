@@ -1,3 +1,4 @@
+﻿export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -9,14 +10,6 @@ import fs from "fs";
 import path from "path";
 
 function loadEnvFallback() {
-  if (
-    process.env.PHONEPE_CLIENT_ID && 
-    process.env.PHONEPE_CLIENT_ID !== "undefined" &&
-    process.env.PHONEPE_CLIENT_SECRET &&
-    process.env.PHONEPE_CLIENT_SECRET !== "undefined"
-  ) {
-    return;
-  }
   const envFiles = [".env.local", ".env"];
   for (const file of envFiles) {
     try {
@@ -32,9 +25,8 @@ function loadEnvFallback() {
             if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
               value = value.substring(1, value.length - 1);
             }
-            if (!process.env[key] || process.env[key] === "undefined") {
-              process.env[key] = value;
-            }
+            // Always overwrite — so that the file value wins over stale in-memory value
+            process.env[key] = value;
           }
         });
       }
@@ -44,63 +36,63 @@ function loadEnvFallback() {
   }
 }
 
-// Ensure env variables are loaded before evaluating top-level constants
-loadEnvFallback();
+/** Read PhonePe config fresh on every call — never cache at module level */
+function getPhonePeConfig() {
+  // Always re-read the .env.local file so changes take effect without restart
+  loadEnvFallback();
 
-const PHONEPE_ENV = process.env.PHONEPE_ENV || "UAT";
+  const env = process.env.PHONEPE_ENV || "UAT";
+  const clientId      = process.env.PHONEPE_CLIENT_ID     || "";
+  const clientSecret  = process.env.PHONEPE_CLIENT_SECRET  || "";
+  const clientVersion = process.env.PHONEPE_CLIENT_VERSION || "1";
 
-// PhonePe PG base URL (for checkout/v2/pay)
-const PHONEPE_BASE = PHONEPE_ENV === "UAT"
-  ? "https://api-preprod.phonepe.com/apis/pg-sandbox"
-  : "https://api.phonepe.com/apis/pg";
+  const pgBase = env === "UAT"
+    ? "https://api-preprod.phonepe.com/apis/pg-sandbox"
+    : "https://api.phonepe.com/apis/pg";
 
-// PhonePe identity manager base URL (for oauth/token)
-const PHONEPE_TOKEN_BASE = PHONEPE_ENV === "UAT"
-  ? "https://api-preprod.phonepe.com/apis/pg-sandbox"
-  : "https://api.phonepe.com/apis/identity-manager";
+  const tokenBase = env === "UAT"
+    ? "https://api-preprod.phonepe.com/apis/pg-sandbox"
+    : "https://api.phonepe.com/apis/identity-manager";
 
-const CLIENT_ID = process.env.PHONEPE_CLIENT_ID || "";
-const CLIENT_SECRET = process.env.PHONEPE_CLIENT_SECRET || "";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
 
-if (!CLIENT_ID || !CLIENT_SECRET) {
-  console.error("[PhonePe] PHONEPE_CLIENT_ID or PHONEPE_CLIENT_SECRET is not set in environment variables!");
-}
+  if (!clientId || !clientSecret) {
+    console.error("[PhonePe] CREDENTIALS MISSING —",
+      { clientId: clientId ? "SET" : "MISSING", clientSecret: clientSecret ? "SET" : "MISSING", env });
+  } else {
+    console.log(`[PhonePe] Config OK — ENV=${env} CLIENT_ID=${clientId.slice(0, 6)}...`);
+  }
 
-const CLIENT_VERSION = process.env.PHONEPE_CLIENT_VERSION || "1";
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ||
-  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+  if (!process.env.NEXT_PUBLIC_APP_URL) {
+    console.warn("[Payment] NEXT_PUBLIC_APP_URL not set, using fallback:", appUrl);
+  }
 
-// Warn loudly if APP_URL is not explicitly set — dynamic Vercel preview URLs
-// are not whitelisted in PhonePe and will cause "Something went wrong" on their page.
-if (!process.env.NEXT_PUBLIC_APP_URL) {
-  console.warn(
-    "[Payment] NEXT_PUBLIC_APP_URL is not set. Using fallback:",
-    APP_URL,
-    "— Set this in Vercel env vars to your stable production URL and whitelist it in PhonePe dashboard."
-  );
+  return { env, clientId, clientSecret, clientVersion, pgBase, tokenBase, appUrl };
 }
 
 /**
  * Generates a short, unique merchantTransactionId (≤38 chars).
- * PhonePe v2 enforces a strict 38-character limit on merchantOrderId.
  * Format: {PREFIX}-{base36_timestamp}-{4_random_hex_bytes}
  * Example: EXC-m9d2x4k-a3f1c2e9  (27 chars)
  */
 function makeTxnId(prefix: "EXP" | "EXM" | "EXC" | "EXU"): string {
-  const ts  = Date.now().toString(36); // ~8 chars
-  const rnd = crypto.randomBytes(4).toString("hex"); // 8 chars
-  return `${prefix}-${ts}-${rnd}`; // max: 3+1+8+1+8 = 21 chars  ✓
+  const ts  = Date.now().toString(36);
+  const rnd = crypto.randomBytes(4).toString("hex");
+  return `${prefix}-${ts}-${rnd}`;
 }
 
-// Get OAuth token from PhonePe
+/** Get OAuth token from PhonePe — reads credentials fresh on every call */
 async function getPhonePeToken(): Promise<string> {
-  const res = await fetch(`${PHONEPE_TOKEN_BASE}/v1/oauth/token`, {
+  const { tokenBase, clientId, clientSecret, clientVersion } = getPhonePeConfig();
+
+  const res = await fetch(`${tokenBase}/v1/oauth/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
-      client_id: CLIENT_ID,
-      client_version: CLIENT_VERSION,
-      client_secret: CLIENT_SECRET,
+      client_id: clientId,
+      client_version: clientVersion,
+      client_secret: clientSecret,
       grant_type: "client_credentials",
     }),
   });
@@ -132,6 +124,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Read config fresh on every request — never stale
+  const { pgBase, appUrl } = getPhonePeConfig();
+
   // ─── CUSTOM UNIT SCOPE FEE (5% of unit price) ───────────────────────────────
   if (customUnit) {
     const ratePerPoint = project.pricing?.ratePerPoint || 400;
@@ -161,14 +156,14 @@ export async function POST(req: NextRequest) {
         },
         paymentFlow: {
           type: "PG_CHECKOUT",
-          message: `Executa Scope Upgrade Fee: ${customUnit.name}`,
+          message: `Findade Scope Upgrade Fee: ${customUnit.name}`,
           merchantUrls: {
-            redirectUrl: `${APP_URL}/client/projects/${projectId}/payment-success?txnId=${merchantTransactionId}`,
+            redirectUrl: `${appUrl}/client/projects/${projectId}/payment-success?txnId=${merchantTransactionId}`,
           },
         },
       };
 
-      const orderRes = await fetch(`${PHONEPE_BASE}/checkout/v2/pay`, {
+      const orderRes = await fetch(`${pgBase}/checkout/v2/pay`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -242,14 +237,14 @@ export async function POST(req: NextRequest) {
         },
         paymentFlow: {
           type: "PG_CHECKOUT",
-          message: `Executa Scope Upgrade Fee: ${upgrade.proposedUnit?.name || "Functional Unit"}`,
+          message: `Findade Scope Upgrade Fee: ${upgrade.proposedUnit?.name || "Functional Unit"}`,
           merchantUrls: {
-            redirectUrl: `${APP_URL}/client/projects/${projectId}/payment-success?txnId=${merchantTransactionId}`,
+            redirectUrl: `${appUrl}/client/projects/${projectId}/payment-success?txnId=${merchantTransactionId}`,
           },
         },
       };
 
-      const orderRes = await fetch(`${PHONEPE_BASE}/checkout/v2/pay`, {
+      const orderRes = await fetch(`${pgBase}/checkout/v2/pay`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `O-Bearer ${token}` },
         body: JSON.stringify(orderPayload),
@@ -339,12 +334,12 @@ export async function POST(req: NextRequest) {
           type: "PG_CHECKOUT",
           message: `Release Milestone ${milestoneIndex + 1} for: ${project.title}`,
           merchantUrls: {
-            redirectUrl: `${APP_URL}/client/projects/${projectId}/payment-success?txnId=${merchantTransactionId}`,
+            redirectUrl: `${appUrl}/client/projects/${projectId}/payment-success?txnId=${merchantTransactionId}`,
           },
         },
       };
 
-      const orderRes = await fetch(`${PHONEPE_BASE}/checkout/v2/pay`, {
+      const orderRes = await fetch(`${pgBase}/checkout/v2/pay`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -381,7 +376,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Fallback to legacy platform fee payment flow
+  // ─── PLATFORM FEE PAYMENT (legacy / initial project payment) ─────────────────
   // If already paid, return success immediately
   if (project.payment?.status === "paid") {
     return NextResponse.json({ alreadyPaid: true });
@@ -413,14 +408,14 @@ export async function POST(req: NextRequest) {
       },
       paymentFlow: {
         type: "PG_CHECKOUT",
-        message: `Executa Platform Fees for project: ${project.title}`,
+        message: `Findade Platform Fees for project: ${project.title}`,
         merchantUrls: {
-          redirectUrl: `${APP_URL}/client/projects/${projectId}/payment-success?txnId=${merchantTransactionId}`,
+          redirectUrl: `${appUrl}/client/projects/${projectId}/payment-success?txnId=${merchantTransactionId}`,
         },
       },
     };
 
-    const orderRes = await fetch(`${PHONEPE_BASE}/checkout/v2/pay`, {
+    const orderRes = await fetch(`${pgBase}/checkout/v2/pay`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

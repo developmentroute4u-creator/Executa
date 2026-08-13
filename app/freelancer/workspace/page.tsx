@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -241,7 +241,7 @@ export default function WorkspaceEnvironment() {
             )}
 
             {pendingUpgrades.length > 0 && (
-              <div className="bg-[#FFF7F6] border border-orange-200 rounded-2xl p-8 md:p-10 shadow-sm relative overflow-hidden">
+              <div className="bg-[#f6f4f0] border border-orange-200 rounded-2xl p-8 md:p-10 shadow-sm relative overflow-hidden">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
                     <AlertTriangle className="text-orange-500" size={24} />

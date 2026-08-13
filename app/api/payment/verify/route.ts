@@ -1,3 +1,4 @@
+﻿export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { Project } from "@/models/Project";
@@ -7,14 +8,6 @@ import fs from "fs";
 import path from "path";
 
 function loadEnvFallback() {
-  if (
-    process.env.PHONEPE_CLIENT_ID && 
-    process.env.PHONEPE_CLIENT_ID !== "undefined" &&
-    process.env.PHONEPE_CLIENT_SECRET &&
-    process.env.PHONEPE_CLIENT_SECRET !== "undefined"
-  ) {
-    return;
-  }
   const envFiles = [".env.local", ".env"];
   for (const file of envFiles) {
     try {
@@ -30,9 +23,8 @@ function loadEnvFallback() {
             if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
               value = value.substring(1, value.length - 1);
             }
-            if (!process.env[key] || process.env[key] === "undefined") {
-              process.env[key] = value;
-            }
+            // Always overwrite — so .env.local wins over stale in-memory value from server startup
+            process.env[key] = value;
           }
         });
       }
@@ -42,36 +34,41 @@ function loadEnvFallback() {
   }
 }
 
-// Ensure env variables are loaded before evaluating top-level constants
-loadEnvFallback();
+/** Read PhonePe config fresh on every call — never cache at module level */
+function getPhonePeConfig() {
+  loadEnvFallback();
 
-const PHONEPE_ENV = process.env.PHONEPE_ENV || "UAT";
+  const env            = process.env.PHONEPE_ENV             || "UAT";
+  const clientId       = process.env.PHONEPE_CLIENT_ID       || "";
+  const clientSecret   = process.env.PHONEPE_CLIENT_SECRET   || "";
+  const clientVersion  = process.env.PHONEPE_CLIENT_VERSION  || "1";
 
-const PHONEPE_BASE = PHONEPE_ENV === "UAT"
-  ? "https://api-preprod.phonepe.com/apis/pg-sandbox"
-  : "https://api.phonepe.com/apis/pg";
+  const pgBase = env === "UAT"
+    ? "https://api-preprod.phonepe.com/apis/pg-sandbox"
+    : "https://api.phonepe.com/apis/pg";
 
-const PHONEPE_TOKEN_BASE = PHONEPE_ENV === "UAT"
-  ? "https://api-preprod.phonepe.com/apis/pg-sandbox"
-  : "https://api.phonepe.com/apis/identity-manager";
+  const tokenBase = env === "UAT"
+    ? "https://api-preprod.phonepe.com/apis/pg-sandbox"
+    : "https://api.phonepe.com/apis/identity-manager";
 
-const CLIENT_ID = process.env.PHONEPE_CLIENT_ID || "";
-const CLIENT_SECRET = process.env.PHONEPE_CLIENT_SECRET || "";
+  if (!clientId || !clientSecret) {
+    console.error("[PhonePe/verify] CREDENTIALS MISSING —",
+      { clientId: clientId ? "SET" : "MISSING", clientSecret: clientSecret ? "SET" : "MISSING", env });
+  }
 
-if (!CLIENT_ID || !CLIENT_SECRET) {
-  console.error("[PhonePe] PHONEPE_CLIENT_ID or PHONEPE_CLIENT_SECRET is not set in environment variables!");
+  return { env, clientId, clientSecret, clientVersion, pgBase, tokenBase };
 }
 
-const CLIENT_VERSION = process.env.PHONEPE_CLIENT_VERSION || "1";
-
 async function getPhonePeToken(): Promise<string> {
-  const res = await fetch(`${PHONEPE_TOKEN_BASE}/v1/oauth/token`, {
+  const { tokenBase, clientId, clientSecret, clientVersion } = getPhonePeConfig();
+
+  const res = await fetch(`${tokenBase}/v1/oauth/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
-      client_id: CLIENT_ID,
-      client_version: CLIENT_VERSION,
-      client_secret: CLIENT_SECRET,
+      client_id: clientId,
+      client_version: clientVersion,
+      client_secret: clientSecret,
       grant_type: "client_credentials",
     }),
   });
@@ -82,6 +79,7 @@ async function getPhonePeToken(): Promise<string> {
   const data = await res.json();
   return data.access_token;
 }
+
 
 // GET: called from frontend payment-success page to verify payment status
 export async function GET(req: NextRequest) {
@@ -163,7 +161,8 @@ export async function GET(req: NextRequest) {
   // Otherwise, check with PhonePe
   try {
     const token = await getPhonePeToken();
-    const statusRes = await fetch(`${PHONEPE_BASE}/checkout/v2/order/${merchantTransactionId}/status`, {
+    const { pgBase } = getPhonePeConfig();
+    const statusRes = await fetch(`${pgBase}/checkout/v2/order/${merchantTransactionId}/status`, {
       headers: { Authorization: `O-Bearer ${token}` },
     });
 

@@ -1,3 +1,4 @@
+﻿export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -38,7 +39,7 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
 
     let senderDisplayName = "";
     if (m.senderRole === "admin") {
-      senderDisplayName = "Executa System Alert";
+      senderDisplayName = "Findade System Alert";
     } else if (isAdmin) {
       senderDisplayName = m.senderRole === "client" ? "Client" : "Expert";
     } else if (role === "client") {

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useSearchParams } from "next/navigation";
@@ -93,11 +93,11 @@ function PaymentSuccessContent() {
 
   // ── Helpers ──────────────────────────────────────────────────────────────
   const successMessage =
-    merchantTxnId?.startsWith("EXM") || merchantTxnId?.startsWith("EXECUTA_MS_")
+    merchantTxnId?.startsWith("EXM") || merchantTxnId?.startsWith("FINDADE_MS_")
       ? "Your milestone payment has been processed. Deliverables are now unlocked."
-      : merchantTxnId?.startsWith("EXU") || merchantTxnId?.startsWith("EXECUTA_UG_")
+      : merchantTxnId?.startsWith("EXU") || merchantTxnId?.startsWith("FINDADE_UG_")
       ? "Scope upgrade paid. The new unit is unlocked and sent to your expert for approval."
-      : merchantTxnId?.startsWith("EXC") || merchantTxnId?.startsWith("EXECUTA_CU_")
+      : merchantTxnId?.startsWith("EXC") || merchantTxnId?.startsWith("FINDADE_CU_")
       ? "Scope addition paid. Your new functionality has been added to the project scope."
       : "Platform fees paid. Your full project scope is now unlocked.";
 
@@ -107,7 +107,7 @@ function PaymentSuccessContent() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#FFF7F5] flex items-center justify-center p-6">
+    <div className="min-h-screen bg-[#f6f4f0] flex items-center justify-center p-6">
       <div className="absolute top-[-20%] right-[-10%] w-[700px] h-[700px] bg-[#E85239]/8 rounded-full blur-[140px] pointer-events-none" />
 
       <motion.div
@@ -124,7 +124,7 @@ function PaymentSuccessContent() {
             <text x="50%" y="50%" dominantBaseline="central" textAnchor="middle"
               className="font-sans font-black"
               style={{ fontSize: "28px", letterSpacing: "-0.05em", fill: "#1c1917" }}>
-              EXECUTA<tspan fill="#E85239">.</tspan>
+              FINDADE<tspan fill="#E85239">.</tspan>
             </text>
           </svg>
         </div>
@@ -136,7 +136,7 @@ function PaymentSuccessContent() {
             <div className="relative">
               <div className="w-20 h-20 rounded-full border-4 border-stone-100 border-t-[#E85239] animate-spin" />
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-12 h-12 bg-[#FFF7F5] rounded-full flex items-center justify-center">
+                <div className="w-12 h-12 bg-[#f6f4f0] rounded-full flex items-center justify-center">
                   <Loader2 size={22} className="text-[#E85239] animate-spin" />
                 </div>
               </div>
@@ -245,7 +245,7 @@ function PaymentSuccessContent() {
 export default function PaymentSuccessPage() {
   return (
     <React.Suspense fallback={
-      <div className="min-h-screen bg-[#FFF7F5] flex items-center justify-center">
+      <div className="min-h-screen bg-[#f6f4f0] flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-[#E85239]/20 border-t-[#E85239] rounded-full animate-spin" />
       </div>
     }>

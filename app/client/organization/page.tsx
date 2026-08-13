@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Building, Settings, Plus, X } from "lucide-react";
 import { useSession } from "next-auth/react";
@@ -109,7 +109,7 @@ export default function ClientOrganization() {
 
         {/* COMPANY PROFILE */}
         <div className="lg:col-span-4 flex flex-col gap-8">
-          <div className="bg-[#FFF7F6] border border-orange-100 rounded-3xl p-8">
+          <div className="bg-[#f6f4f0] border border-orange-100 rounded-3xl p-8">
             <div className="flex items-center gap-4 mb-8">
               <div className="w-16 h-16 rounded-2xl bg-white shadow-sm border border-stone-100 flex items-center justify-center shrink-0">
                 <Building size={24} className="text-stone-900" />

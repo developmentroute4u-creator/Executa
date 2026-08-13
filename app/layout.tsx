@@ -23,8 +23,8 @@ const caveat = Caveat({
 
 export const metadata: Metadata = {
   title: {
-    default: "Executa",
-    template: "%s | Executa",
+    default: "Findade",
+    template: "%s | Findade",
   },
   description:
     "A governed execution platform that defines work, evaluates freelancer capability, calculates structured pricing, and enforces outcomes.",

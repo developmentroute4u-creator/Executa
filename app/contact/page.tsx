@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
@@ -29,7 +29,7 @@ export default function ContactPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#FFF7F6] flex flex-col relative overflow-hidden font-sans selection:bg-[#E85239]/20">
+    <div className="min-h-screen bg-[#f6f4f0] flex flex-col relative overflow-hidden font-sans selection:bg-[#E85239]/20">
       {/* Premium Glow blobs */}
       <div className="absolute top-[-10%] left-[-10%] w-[800px] h-[800px] bg-[#E85239]/5 rounded-full blur-[160px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-orange-300/10 rounded-full blur-[140px] pointer-events-none" />
@@ -40,7 +40,7 @@ export default function ContactPage() {
       {/* Navbar Minimal */}
       <nav className="relative z-20 w-full px-8 py-6 md:px-16 flex items-center justify-between">
         <Link href="/" className="font-black text-2xl tracking-tighter text-stone-900 flex items-center gap-1">
-          EXECUTA<span className="text-[#E85239]">.</span>
+          FINDADE<span className="text-[#E85239]">.</span>
         </Link>
         <Link
           href="/"
@@ -67,28 +67,34 @@ export default function ContactPage() {
             </span>
           </h1>
           <p className="text-stone-500 font-medium leading-[1.8] max-w-[400px] mb-16 text-[16px]">
-            We&apos;re here to ensure your projects run smoothly. Reach out to our team in Bengaluru for support with matching, escrow, or enterprise solutions.
+            We&apos;re here to ensure your projects run smoothly. Reach out to our team in Ahmedabad for support with matching, escrow, or enterprise solutions.
           </p>
 
           <div className="flex flex-col gap-10">
             <div>
               <h3 className="text-[11px] font-bold tracking-[0.2em] text-stone-400 uppercase mb-2">Email Support</h3>
-              <a href="mailto:support@executa.com" className="text-stone-900 font-semibold text-lg hover:text-[#E85239] transition-colors">
-                support@executa.com
+              <a href="mailto:support@findade.com" className="text-stone-900 font-semibold text-lg hover:text-[#E85239] transition-colors">
+                support@findade.com
               </a>
             </div>
 
             <div>
               <h3 className="text-[11px] font-bold tracking-[0.2em] text-stone-400 uppercase mb-2">Office Headquarters</h3>
-              <p className="text-stone-900 font-semibold text-lg">
-                Bengaluru, India
+              <p className="text-stone-900 font-semibold text-[15px] leading-relaxed">
+                B 401, Devam Residency,<br />
+                Opp. Ayodhya Residency, Vatva Gamdi Road,<br />
+                Vatva, Daskroi, Ahmedabad – 382440,<br />
+                Gujarat, India
               </p>
             </div>
 
             <div>
               <h3 className="text-[11px] font-bold tracking-[0.2em] text-stone-400 uppercase mb-2">Phone Inquiries</h3>
               <p className="text-stone-900 font-semibold text-lg">
-                +91 80 4123 5678
+                <a href="tel:+917433880868" className="hover:text-[#E85239] transition-colors">+91 74338 80868</a>
+              </p>
+              <p className="text-stone-900 font-semibold text-lg mt-1">
+                <a href="tel:+919558171690" className="hover:text-[#E85239] transition-colors">+91 95581 71690</a>
               </p>
             </div>
           </div>

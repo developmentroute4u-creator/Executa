@@ -281,7 +281,7 @@ function StageHero({ onNext }: { onNext: () => void }) {
         {/* Nav */}
         <div className="relative z-10 flex items-center justify-between px-5 pt-12 shrink-0">
           <div className="flex items-center">
-            <span className="font-black text-[19px] tracking-tight text-stone-900">EXECUTA</span>
+            <span className="font-black text-[19px] tracking-tight text-stone-900">FINDADE</span>
             <span className="font-black text-[19px] text-accent ml-0.5">.</span>
           </div>
           <Link href="/auth/login?role=client&mode=signup">
@@ -322,7 +322,7 @@ function StageHero({ onNext }: { onNext: () => void }) {
         <div className="px-5 w-full shrink-0">
           <motion.button onClick={onNext} whileTap={{ scale: 0.97 }}
             className="w-full bg-accent text-white font-bold text-[15px] py-[15px] rounded-2xl flex items-center justify-center gap-2 shadow-[0_8px_28px_rgba(232,82,57,0.38)]">
-            Explore Executa <ArrowRight size={16} />
+            Explore Findade <ArrowRight size={16} />
           </motion.button>
         </div>
       </div>
@@ -837,7 +837,7 @@ function StageCTA({ onPrev }: { onPrev: () => void }) {
       <div className="h-6 shrink-0" />
 
       <div className="flex-1 flex flex-col justify-start items-center px-5 text-center z-10 pt-[40px] pb-4">
-        {/* Pulsing EXECUTA logo in the center (smoother, larger, interactive concentric rings) */}
+        {/* Pulsing FINDADE logo in the center (smoother, larger, interactive concentric rings) */}
         <div className="relative flex items-center justify-center mb-[30px] py-4 w-full max-w-[280px] shrink-0">
           {/* Subtle breathing double outline contour behind the logo */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -883,7 +883,7 @@ function StageCTA({ onPrev }: { onPrev: () => void }) {
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
             className="relative z-10 flex items-center bg-white px-7 py-4 rounded-full border border-[#E85239]/25 cursor-pointer logo-cta-btn"
           >
-            <span className="font-black text-[28px] tracking-tight text-stone-900 leading-none select-none logo-cta-text">EXECUTA</span>
+            <span className="font-black text-[28px] tracking-tight text-stone-900 leading-none select-none logo-cta-text">FINDADE</span>
             <span className="font-black text-[28px] text-accent ml-0.5 leading-none select-none logo-cta-text">.</span>
           </motion.div>
         </div>
@@ -940,6 +940,15 @@ function StageCTA({ onPrev }: { onPrev: () => void }) {
       </div>
 
       <div className="relative z-10 px-5 pb-8 space-y-3 shrink-0 mt-auto">
+        {/* Pricing note */}
+        <div className="px-4 py-3 rounded-2xl bg-white/70 border border-[#E85239]/15 mb-1">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[#E85239] mb-1">Pricing</p>
+          <p className="text-[11px] text-stone-600 font-medium leading-relaxed">
+            Variable by project · starts from <span className="font-black text-stone-800">₹10,000</span> · 5% platform fee on expert cost.{" "}
+            <Link href="/terms" className="text-[#E85239] underline">See full details</Link>
+          </p>
+        </div>
+
         <Link href="/auth/login?role=client&mode=signup" className="block">
           <motion.button
             whileTap={{ scale: 0.97 }}
@@ -964,8 +973,8 @@ function StageCTA({ onPrev }: { onPrev: () => void }) {
             Join as Freelancer <ArrowRight size={16} />
           </motion.button>
         </Link>
-        <div className="flex justify-center gap-7 pt-2">
-          {[["Contact", "/contact"], ["Terms", "/terms"], ["Privacy", "/privacy"]].map(([label, href]) => (
+        <div className="flex justify-center gap-5 pt-2">
+          {[["Contact", "/contact"], ["Terms", "/terms"], ["Privacy", "/privacy"], ["Refund", "/refund"]].map(([label, href]) => (
             <Link key={label} href={href} className="text-[11px] text-stone-400 font-medium hover:text-stone-600 transition-colors">{label}</Link>
           ))}
         </div>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import Link from "next/link";
@@ -7,7 +7,7 @@ import { ArrowLeft, Lock } from "lucide-react";
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-[#FFF7F6] flex flex-col relative overflow-hidden font-sans">
+    <div className="min-h-screen bg-[#f6f4f0] flex flex-col relative overflow-hidden font-sans">
       {/* Glow blobs */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#E85239]/5 rounded-full blur-[140px] pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-orange-300/10 rounded-full blur-[140px] pointer-events-none" />
@@ -15,7 +15,7 @@ export default function PrivacyPage() {
       {/* Navbar */}
       <nav className="relative z-20 w-full px-6 py-6 md:px-12 flex items-center justify-between">
         <Link href="/" className="font-black text-2xl tracking-tighter text-stone-900">
-          EXECUTA<span className="text-[#E85239]">.</span>
+          FINDADE<span className="text-[#E85239]">.</span>
         </Link>
         <Link
           href="/"
@@ -53,18 +53,18 @@ export default function PrivacyPage() {
           <div className="prose prose-stone max-w-none text-stone-600 prose-headings:text-stone-900 prose-headings:font-bold prose-h2:text-2xl prose-h2:tracking-tight prose-h2:mt-10 prose-h2:mb-4 prose-p:leading-[1.7] prose-li:leading-[1.7]">
 
             <p className="lead text-lg font-medium text-stone-700">
-              Executa (&quot;we&quot;, &quot;our&quot;, &quot;us&quot;) is operated by <strong>DevelopmentRoute4U</strong>, based in Ahmedabad, Gujarat, India. This Privacy Policy explains how we collect, use, store, share, and protect your personal information when you use the Executa platform at <a href="https://executa-sigma.vercel.app" className="text-[#E85239] font-medium hover:underline">executa-sigma.vercel.app</a>.
+              FINDADE (&quot;we&quot;, &quot;our&quot;, &quot;us&quot;) is operated by <strong>Route4U Technology LLP</strong>, based in Ahmedabad, Gujarat, India. This Privacy Policy explains how we collect, use, store, share, and protect your personal information when you use the FINDADE platform at <a href="https://findade.com" className="text-[#E85239] font-medium hover:underline">findade.com</a>.
             </p>
 
             <h2>1. Who We Are</h2>
             <p>
-              Executa is an AI-powered freelance project management platform that connects Clients (businesses and individuals) with verified independent Experts (freelancers) for scoped, milestone-based projects. All payments are processed via <strong>PhonePe Payment Gateway</strong> (PhonePe Private Limited).
+              FINDADE is an AI-powered freelance project management platform that connects Clients (businesses and individuals) with verified independent Experts (freelancers) for scoped, milestone-based projects. All payments are processed via <strong>PhonePe Payment Gateway</strong> (PhonePe Private Limited).
             </p>
             <p>
-              <strong>Business Name:</strong> DevelopmentRoute4U (operating as Executa)<br />
-              <strong>Registered Address:</strong> Ahmedabad, Gujarat — 380001, India<br />
-              <strong>Contact Email:</strong> <a href="mailto:privacy@executa.in" className="text-[#E85239] font-medium hover:underline">privacy@executa.in</a><br />
-              <strong>Support:</strong> <a href="mailto:support@executa.in" className="text-[#E85239] font-medium hover:underline">support@executa.in</a>
+              <strong>Business Name:</strong> Route4U Technology LLP (operating as FINDADE)<br />
+              <strong>Registered Address:</strong> B 401, Devam Residency, Opp. Ayodhya Residency, Vatva Gamdi Road, Vatva, Daskroi, Ahmedabad – 382440, Gujarat, India<br />
+              <strong>Contact Email:</strong> <a href="mailto:privacy@findade.com" className="text-[#E85239] font-medium hover:underline">privacy@findade.com</a><br />
+              <strong>Support:</strong> <a href="mailto:support@findade.com" className="text-[#E85239] font-medium hover:underline">support@findade.com</a>
             </p>
 
             <h2>2. Information We Collect</h2>
@@ -93,7 +93,7 @@ export default function PrivacyPage() {
 
             <h2>4. Payment Processing via PhonePe</h2>
             <p>
-              Executa uses <strong>PhonePe Payment Gateway</strong> (operated by PhonePe Private Limited, Bengaluru) for all payment processing. When you make a payment on Executa:
+              FINDADE uses <strong>PhonePe Payment Gateway</strong> (operated by PhonePe Private Limited, Bengaluru) for all payment processing. When you make a payment on Findade:
             </p>
             <ul>
               <li>You are redirected to PhonePe&apos;s secure hosted checkout page.</li>
@@ -101,6 +101,13 @@ export default function PrivacyPage() {
               <li>PhonePe may store your payment instrument details for faster future payments, subject to their own <a href="https://www.phonepe.com/privacy-policy/" className="text-[#E85239] font-medium hover:underline" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.</li>
               <li>We receive a transaction ID and payment confirmation from PhonePe to update your project status.</li>
             </ul>
+
+            <h2>4a. Pricing &amp; Transaction Transparency</h2>
+            <p>
+              FINDADE&apos;s pricing is <strong>variable</strong> and depends on the type, scope, and complexity of your project.
+              Total project budgets <strong>start from approximately ₹10,000 INR</strong> and are determined by the AI-powered scoping engine. The final breakdown — including Expert fees and all Platform Fees (Scope Fee, Accountability Fee, and 5% Execution Fee) — is shown to the Client before any payment is confirmed.
+              No charge is made without your explicit approval. All amounts are in INR and include applicable taxes. For the complete fee schedule, see our <a href="/terms" className="text-[#E85239] font-medium hover:underline">Terms of Service</a>.
+            </p>
 
             <h2>5. Information Sharing and Disclosure</h2>
             <p>We do not sell your personal information. We share your data only in the following circumstances:</p>
@@ -147,7 +154,7 @@ export default function PrivacyPage() {
               <li><strong>Opt-out:</strong> Unsubscribe from promotional communications at any time.</li>
             </ul>
             <p>
-              To exercise any of these rights, email <a href="mailto:privacy@executa.in" className="text-[#E85239] font-medium hover:underline">privacy@executa.in</a>. We will respond within 30 days.
+              To exercise any of these rights, email <a href="mailto:privacy@findade.com" className="text-[#E85239] font-medium hover:underline">privacy@findade.com</a>. We will respond within 30 days.
             </p>
 
             <h2>9. Cookies Policy</h2>
@@ -159,7 +166,7 @@ export default function PrivacyPage() {
 
             <h2>10. Children&apos;s Privacy</h2>
             <p>
-              Executa is not intended for users under the age of 18. We do not knowingly collect personal data from minors. If we become aware that a child under 18 has provided us with personal information, we will delete it immediately.
+              FINDADE is not intended for users under the age of 18. We do not knowingly collect personal data from minors. If we become aware that a child under 18 has provided us with personal information, we will delete it immediately.
             </p>
 
             <h2>11. Grievance Officer (Data Protection)</h2>
@@ -169,8 +176,8 @@ export default function PrivacyPage() {
             <p>
               <strong>Grievance Officer:</strong> Jay Thaker<br />
               <strong>Designation:</strong> Data Protection &amp; Grievance Officer<br />
-              <strong>Email:</strong> <a href="mailto:grievance@executa.in" className="text-[#E85239] font-medium hover:underline">grievance@executa.in</a><br />
-              <strong>Address:</strong> Executa (DevelopmentRoute4U), Ahmedabad, Gujarat — 380001, India<br />
+              <strong>Email:</strong> <a href="mailto:findade.info@gmail.com" className="text-[#E85239] font-medium hover:underline">findade.info@gmail.com</a><br />
+              <strong>Address:</strong> Findade (Route4U Technology LLP), B 401, Devam Residency, Opp. Ayodhya Residency, Vatva Gamdi Road, Vatva, Daskroi, Ahmedabad – 382440, Gujarat, India<br />
               <strong>Response Time:</strong> Within 30 days of receipt of complaint.
             </p>
 
@@ -182,7 +189,7 @@ export default function PrivacyPage() {
             <hr className="my-10 border-stone-200" />
             <p className="text-sm text-stone-500">
               For privacy-related questions, contact our Data Protection Officer at{" "}
-              <a href="mailto:privacy@executa.in" className="text-[#E85239] font-medium hover:underline">privacy@executa.in</a>. View our{" "}
+              <a href="mailto:privacy@findade.com" className="text-[#E85239] font-medium hover:underline">privacy@findade.com</a>. View our{" "}
               <Link href="/refund" className="text-[#E85239] font-medium hover:underline">Refund &amp; Cancellation Policy</Link> and{" "}
               <Link href="/terms" className="text-[#E85239] font-medium hover:underline">Terms of Service</Link>.
             </p>

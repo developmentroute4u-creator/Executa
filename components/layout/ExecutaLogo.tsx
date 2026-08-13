@@ -5,10 +5,10 @@ interface ExecutaLogoProps {
 }
 
 /**
- * ExecutaLogo — "E" is always anchored. On expand, "XECUTA" + dot slide in from the right.
+ * ExecutaLogo — "F" is always anchored. On expand, "INDADE" + dot slide in from the right.
  *
  * Layout:
- *   [E fixed] → [XECUTA slides in via max-width] → [dot always visible]
+ *   [F fixed] → [INDADE slides in via max-width] → [dot always visible]
  *
  * The "E" never moves. The sidebar's Framer Motion handles the pill width.
  * max-width is used (not width) for a reliable cross-zoom CSS transition.
@@ -27,7 +27,7 @@ export default function ExecutaLogo({ expanded }: ExecutaLogoProps) {
         overflow: "hidden",
       }}
     >
-      {/* ── "E" — always visible, never moves ── */}
+      {/* ── "F" — always visible, never moves ── */}
       <span
         style={{
           fontFamily: "'Inter Tight', 'Inter', 'Arial Black', Arial, sans-serif",
@@ -40,10 +40,10 @@ export default function ExecutaLogo({ expanded }: ExecutaLogoProps) {
           flexShrink: 0,
         }}
       >
-        E
+        F
       </span>
 
-      {/* ── "XECUTA" — slides in from E's right edge ── */}
+      {/* ── "INDADE" — slides in from F's right edge ── */}
       <div
         style={{
           overflow: "hidden",
@@ -67,7 +67,7 @@ export default function ExecutaLogo({ expanded }: ExecutaLogoProps) {
             display: "block",
           }}
         >
-          XECUTA
+          INDADE
         </span>
       </div>
 

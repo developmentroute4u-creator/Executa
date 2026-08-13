@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
@@ -230,7 +230,7 @@ function LoginContent() {
               transition={{ delay: 0.2 }}
               className="text-stone-500 font-medium"
             >
-              Securing connection to Executa
+              Securing connection to FINDADE
             </motion.p>
           </motion.div>
         )}
@@ -241,7 +241,7 @@ function LoginContent() {
         {/* GLOBAL NAVIGATION (Absolute so it doesn't move when layout flips) */}
         <nav className="absolute top-0 inset-x-0 w-full px-8 md:px-16 py-10 flex items-center justify-between z-50 pointer-events-none">
           <Link href="/" className="font-black text-2xl tracking-tighter text-stone-900 flex items-center gap-1 pointer-events-auto">
-            EXECUTA<span className="text-[#E85239]">.</span>
+            FINDADE<span className="text-[#E85239]">.</span>
           </Link>
           <Link
             href="/"
@@ -265,7 +265,7 @@ function LoginContent() {
                 </h1>
                 <p className="text-stone-500 font-medium text-[16px] mb-8 leading-relaxed">
                   {isSignUp 
-                    ? `Join Executa as a ${activeRole === 'client' ? 'client to lock scopes' : 'freelancer to execute flawlessly'}.` 
+                    ? `Join FINDADE as a ${activeRole === 'client' ? 'client to lock scopes' : 'freelancer to execute flawlessly'}.` 
                     : `Sign in to manage your ${activeRole === 'client' ? 'projects and escrow' : 'freelance profile'}.`
                   }
                 </p>
@@ -431,7 +431,7 @@ function LoginContent() {
         </div>
 
         {/* TYPOGRAPHY SECTION */}
-        <div className="hidden lg:flex flex-1 relative bg-[#FFF7F6] items-center justify-center overflow-hidden z-10 pt-28 pb-12">
+        <div className="hidden lg:flex flex-1 relative bg-[#f6f4f0] items-center justify-center overflow-hidden z-10 pt-28 pb-12">
           {/* Subtle cinematic glows */}
           <div className="absolute top-[-10%] right-[-10%] w-[800px] h-[800px] bg-[#E85239]/5 rounded-full blur-[140px] pointer-events-none" />
           <div className="absolute bottom-[-20%] left-[-10%] w-[600px] h-[600px] bg-orange-300/10 rounded-full blur-[120px] pointer-events-none" />

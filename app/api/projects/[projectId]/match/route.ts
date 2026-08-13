@@ -17,42 +17,42 @@ async function seedMockFreelancers() {
   const mockUsers = [
     {
       name: "Alex Rivera",
-      email: "alex.rivera@executa.io",
+      email: "alex.rivera@findade.com",
       password: "password123",
       role: "freelancer" as const,
       onboardingComplete: true
     },
     {
       name: "Sophia Chen",
-      email: "sophia.chen@executa.io",
+      email: "sophia.chen@findade.com",
       password: "password123",
       role: "freelancer" as const,
       onboardingComplete: true
     },
     {
       name: "David Kim",
-      email: "david.kim@executa.io",
+      email: "david.kim@findade.com",
       password: "password123",
       role: "freelancer" as const,
       onboardingComplete: true
     },
     {
       name: "Elena Rostova",
-      email: "elena.rostova@executa.io",
+      email: "elena.rostova@findade.com",
       password: "password123",
       role: "freelancer" as const,
       onboardingComplete: true
     },
     {
       name: "Marcus Vance",
-      email: "marcus.vance@executa.io",
+      email: "marcus.vance@findade.com",
       password: "password123",
       role: "freelancer" as const,
       onboardingComplete: true
     },
     {
       name: "Isabella Rossi",
-      email: "isabella.rossi@executa.io",
+      email: "isabella.rossi@findade.com",
       password: "password123",
       role: "freelancer" as const,
       onboardingComplete: true

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -176,7 +176,7 @@ export default function ScopeReviewPage() {
                <span className="text-xs font-bold uppercase tracking-widest text-[#E85239] mb-2 block">Scope Definition</span>
                <div className="flex flex-wrap items-center gap-3">
                  <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-stone-900">{project.title}</h1>
-                 <span className="capitalize text-[11px] font-bold bg-[#FFF7F5] text-[#E85239] border border-[#FCE1DC] px-3 py-1 rounded-md">
+                 <span className="capitalize text-[11px] font-bold bg-[#f6f4f0] text-[#E85239] border border-[#FCE1DC] px-3 py-1 rounded-md">
                    {project.field === "design_development" ? "Design & Development" : project.field}
                  </span>
                </div>
@@ -220,7 +220,7 @@ export default function ScopeReviewPage() {
                     <p className="text-sm text-stone-500 mt-2 leading-relaxed">{unit.description}</p>
                   </div>
                   {unit.addedByClient && (
-                    <span className="shrink-0 ml-4 text-[10px] font-bold uppercase tracking-wider bg-[#FFF7F5] text-[#E85239] border border-[#FCE1DC] px-2 py-1 rounded-md">
+                    <span className="shrink-0 ml-4 text-[10px] font-bold uppercase tracking-wider bg-[#f6f4f0] text-[#E85239] border border-[#FCE1DC] px-2 py-1 rounded-md">
                       Custom Add-on
                     </span>
                   )}
@@ -435,7 +435,7 @@ export default function ScopeReviewPage() {
               {/* ── STEP 3: REVIEW AI PROPOSAL ── */}
               {upgradeStep === "review" && proposedUpgrade?.proposedUnit && (
                 <div className="flex flex-col gap-6">
-                  <div className="bg-[#FFF7F6] border border-orange-100 rounded-2xl p-6">
+                  <div className="bg-[#f6f4f0] border border-orange-100 rounded-2xl p-6">
                     <h3 className="text-[18px] font-bold text-stone-900 mb-2">{proposedUpgrade.proposedUnit.name}</h3>
                     <p className="text-[13px] text-stone-700 leading-relaxed">{proposedUpgrade.proposedUnit.description}</p>
                   </div>
@@ -457,7 +457,7 @@ export default function ScopeReviewPage() {
                   </div>
 
                   {/* Price preview notice */}
-                  <div className="rounded-xl border border-[#FCE1DC] bg-[#FFF7F5] p-4 flex items-center gap-3">
+                  <div className="rounded-xl border border-[#FCE1DC] bg-[#f6f4f0] p-4 flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-[#E85239]/10 flex items-center justify-center shrink-0">
                       <CreditCard size={15} className="text-[#E85239]" />
                     </div>
@@ -476,7 +476,7 @@ export default function ScopeReviewPage() {
               {upgradeStep === "payment" && proposedUpgrade?.proposedUnit && (
                 <div className="flex flex-col gap-6">
                   {/* Unit summary */}
-                  <div className="bg-[#FFF7F6] border border-orange-100 rounded-2xl p-5">
+                  <div className="bg-[#f6f4f0] border border-orange-100 rounded-2xl p-5">
                     <div className="flex items-start gap-3">
                       <Zap size={16} className="text-[#E85239] shrink-0 mt-0.5" />
                       <div>

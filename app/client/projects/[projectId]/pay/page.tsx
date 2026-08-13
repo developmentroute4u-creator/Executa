@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -39,10 +39,10 @@ const FEE_DETAILS = {
       "Dedicated dispute resolution if issues arise",
       "Expert quality review at every milestone",
       "Contract governance & delivery enforcement",
-      "24/7 support channel with the Executa team",
+      "24/7 support channel with the FINDADE team",
       "Money-back guarantee if scope isn't delivered",
     ],
-    why: "This is your safety net. If the expert doesn't deliver what the scope says, Executa steps in. No platform in India offers this level of execution accountability for just ₹199.",
+    why: "This is your safety net. If the expert doesn't deliver what the scope says, FINDADE steps in. No platform in India offers this level of execution accountability for just ₹199.",
   },
   executionFee: {
     label: "Execution Fee",
@@ -55,7 +55,7 @@ const FEE_DETAILS = {
       "Platform maintenance & security",
       "Expert vetting & background verification",
     ],
-    why: "Just 5% — that's it. Industry platforms like Upwork charge 20%+ in fees. Executa charges only 5% to keep operations running, so the maximum money goes directly to the expert building your product.",
+    why: "Just 5% — that's it. Industry platforms like Upwork charge 20%+ in fees. FINDADE charges only 5% to keep operations running, so the maximum money goes directly to the expert building your product.",
   },
 };
 
@@ -107,7 +107,9 @@ export default function PaymentGatePage() {
       if (d.redirectUrl) {
         window.location.href = d.redirectUrl;
       } else {
-        setError(d.error || "Payment initiation failed. Please try again.");
+        // Show the real PhonePe error detail so we can diagnose the issue
+        const detail = d.detail ? ` — ${d.detail}` : "";
+        setError((d.error || "Payment initiation failed") + detail);
       }
     } catch {
       setError("Something went wrong. Please try again.");
@@ -118,7 +120,7 @@ export default function PaymentGatePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FFF7F5] flex items-center justify-center">
+      <div className="min-h-screen bg-[#f6f4f0] flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-[#E85239]/20 border-t-[#E85239] rounded-full animate-spin" />
       </div>
     );
@@ -140,15 +142,15 @@ export default function PaymentGatePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#FFF7F5] relative overflow-hidden">
+    <div className="min-h-screen bg-[#f6f4f0] relative overflow-hidden">
       {/* Ambient brand glows */}
       <div className="absolute top-[-18%] right-[-10%] w-[700px] h-[700px] bg-[#E85239]/5 rounded-full blur-[160px] pointer-events-none" />
       <div className="absolute bottom-[-12%] left-[-6%] w-[500px] h-[500px] bg-[#FCE1DC]/50 rounded-full blur-[120px] pointer-events-none" />
 
       {/* ── Top Nav ── */}
-      <div className="fixed top-0 inset-x-0 z-50 bg-[#FFF7F5]/95 backdrop-blur-md border-b border-[#F5DDD9] h-14 flex items-center px-4 sm:px-8 justify-between">
+      <div className="fixed top-0 inset-x-0 z-50 bg-[#f6f4f0]/95 backdrop-blur-md border-b border-[#F5DDD9] h-14 flex items-center px-4 sm:px-8 justify-between">
         <span className="font-black text-[18px] sm:text-[22px] tracking-tighter text-stone-900 leading-none select-none">
-          EXECUTA<span className="text-[#E85239]">.</span>
+          FINDADE<span className="text-[#E85239]">.</span>
         </span>
         {/* 5-step progress */}
         <div className="flex items-center gap-1 sm:gap-2">
@@ -513,7 +515,7 @@ export default function PaymentGatePage() {
                   <div className="w-6 h-6 rounded-full bg-[#FFF0ED] flex items-center justify-center">
                     <Headphones size={12} className="text-[#E85239]" />
                   </div>
-                  <span className="text-[10px] font-black text-[#E85239] uppercase tracking-widest">Executa Vetting Support</span>
+                  <span className="text-[10px] font-black text-[#E85239] uppercase tracking-widest">FINDADE Vetting Support</span>
                 </div>
                 
                 <h3 className="text-2xl font-black text-stone-900 tracking-tight mb-2">Contact Our Team</h3>
@@ -523,7 +525,7 @@ export default function PaymentGatePage() {
 
                 <div className="space-y-4">
                   {/* Option 1: Live Chat */}
-                  <div className="flex gap-4 p-5 bg-[#FFF7F6] border border-orange-100 rounded-2xl items-start">
+                  <div className="flex gap-4 p-5 bg-[#f6f4f0] border border-orange-100 rounded-2xl items-start">
                     <div className="w-10 h-10 rounded-xl bg-[#E85239]/10 flex items-center justify-center shrink-0">
                       <MessageSquare size={18} className="text-[#E85239]" />
                     </div>
@@ -550,8 +552,8 @@ export default function PaymentGatePage() {
                     <div>
                       <h4 className="text-[14px] font-black text-stone-900 mb-0.5">Email Support</h4>
                       <p className="text-xs text-stone-500 leading-normal mb-2">Replied in 4–8 hours.</p>
-                      <a href="mailto:support@executa.in" className="text-sm font-bold text-[#E85239] hover:underline">
-                        support@executa.in
+                      <a href="mailto:support@FINDADE.in" className="text-sm font-bold text-[#E85239] hover:underline">
+                        support@FINDADE.in
                       </a>
                     </div>
                   </div>

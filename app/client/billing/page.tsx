@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -187,7 +187,7 @@ function AddPaymentModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
                     key={id}
                     onClick={() => goToStep(id)}
                     id={`pm-choose-${id}`}
-                    className="group flex items-center gap-4 p-4 border border-stone-200 rounded-2xl hover:border-[#E85239] hover:bg-[#FFF7F6] transition-all duration-200 text-left"
+                    className="group flex items-center gap-4 p-4 border border-stone-200 rounded-2xl hover:border-[#E85239] hover:bg-[#f6f4f0] transition-all duration-200 text-left"
                   >
                     <div className="w-11 h-11 rounded-xl bg-[#FFF0ED] flex items-center justify-center shrink-0 group-hover:bg-[#FCE1DC] transition-colors">
                       <Icon size={20} className="text-[#E85239]" />
@@ -331,7 +331,7 @@ function AddPaymentModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
             {consent && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
           </div>
           <p className="text-[12px] text-stone-500 leading-relaxed">
-            By saving, I authorise Executa to store this payment method and use it to fund project escrow on my behalf. My financial data is encrypted and never shared.
+            By saving, I authorise FINDADE to store this payment method and use it to fund project escrow on my behalf. My financial data is encrypted and never shared.
           </p>
         </label>
         <button
@@ -623,7 +623,7 @@ export default function ClientBilling() {
             initial={{ opacity: 0, x: 16 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
-            className="bg-[#FFF7F6] border border-orange-100 rounded-3xl p-7 flex flex-col gap-0"
+            className="bg-[#f6f4f0] border border-orange-100 rounded-3xl p-7 flex flex-col gap-0"
           >
             <div className="mb-5">
               <h3 className="text-[16px] font-bold text-stone-900 mb-1">Payment Methods</h3>

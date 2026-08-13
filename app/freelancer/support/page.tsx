@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { motion } from "framer-motion";
 import { MessageSquare, Mail, BookOpen, ChevronDown, ChevronUp, Phone } from "lucide-react";
 import { useState } from "react";
@@ -16,7 +16,7 @@ const faqs = [
   },
   {
     q: "What is the platform fee for freelancers?",
-    a: "Executa does not charge freelancers any fees. You keep 100% of your earnings. The client covers all platform, support, and escrow costs."
+    a: "FINDADE does not charge freelancers any fees. You keep 100% of your earnings. The client covers all platform, support, and escrow costs."
   },
   {
     q: "How do I update my skills?",
@@ -106,7 +106,7 @@ export default function FreelancerSupport() {
             Contact Us
           </h2>
 
-          <div className="bg-[#FFF7F6] border border-orange-100 rounded-3xl p-8 flex flex-col gap-6">
+          <div className="bg-[#f6f4f0] border border-orange-100 rounded-3xl p-8 flex flex-col gap-6">
             <div className="flex gap-4 items-start">
               <div className="w-10 h-10 rounded-xl bg-[#E85239]/10 flex items-center justify-center shrink-0">
                 <Mail size={18} className="text-[#E85239]" />
@@ -115,10 +115,10 @@ export default function FreelancerSupport() {
                 <h3 className="text-[14px] font-black text-stone-900 mb-1">Email Support</h3>
                 <p className="text-[13px] text-stone-500 mb-3">Average response time: 2–4 hours.</p>
                 <a
-                  href="mailto:support@executa.in"
+                  href="mailto:support@FINDADE.in"
                   className="text-[13px] font-bold text-[#E85239] hover:text-[#d44127] transition-colors"
                 >
-                  support@executa.in
+                  support@FINDADE.in
                 </a>
               </div>
             </div>

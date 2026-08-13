@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -49,7 +49,7 @@ export default function ClientExecutionRoom({ params }: { params: { projectId: s
 
       const reasonText = reasonMap[selectedConflictReason] || "Other freelancer quality, cooperation, or scope conflict.";
       
-      const conflictMsg = `⚠️ [Executa Support Alert]\n\nThe client has officially flagged a scope or cooperation conflict.\n\nReason: "${reasonText}"\n${conflictDetails ? `Details: "${conflictDetails}"\n` : ""}\nLIVE AUDIT ENGAGED: Executa's senior audit panel has been alerted and will inspect this secure chat thread and scope functional definitions. All project parameters, communications, and deliverables are under immediate platform review.`;
+      const conflictMsg = `⚠️ [FINDADE Support Alert]\n\nThe client has officially flagged a scope or cooperation conflict.\n\nReason: "${reasonText}"\n${conflictDetails ? `Details: "${conflictDetails}"\n` : ""}\nLIVE AUDIT ENGAGED: FINDADE's senior audit panel has been alerted and will inspect this secure chat thread and scope functional definitions. All project parameters, communications, and deliverables are under immediate platform review.`;
 
       const res = await fetch(`/api/projects/${params.projectId}/disputes`, {
         method: "POST",
@@ -515,7 +515,7 @@ export default function ClientExecutionRoom({ params }: { params: { projectId: s
                     <p>{m.content}</p>
                   </div>
                   <span className="text-[11px] font-medium text-stone-400 mt-2 mx-1">
-                    {isSystem ? "Executa System Alert" : m.senderDisplayName} • {new Date(m.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                    {isSystem ? "FINDADE System Alert" : m.senderDisplayName} • {new Date(m.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                   </span>
                 </div>
               );
@@ -617,7 +617,7 @@ export default function ClientExecutionRoom({ params }: { params: { projectId: s
                   </div>
 
                   {/* AI generated unit name preview */}
-                  <div className="bg-[#FFF7F6] border border-orange-100 rounded-xl p-5 flex items-start gap-3">
+                  <div className="bg-[#f6f4f0] border border-orange-100 rounded-xl p-5 flex items-start gap-3">
                     <div className="w-8 h-8 bg-[#E85239]/10 rounded-full flex items-center justify-center shrink-0">
                       <Plus size={14} className="text-[#E85239]" />
                     </div>
@@ -724,7 +724,7 @@ export default function ClientExecutionRoom({ params }: { params: { projectId: s
             
             <div className="p-6 overflow-y-auto flex-1 space-y-5 font-sans">
               <p className="text-[11px] text-stone-500 leading-normal">
-                Select the specific cooperation issue or scope violation below. Upon submission, Executa will immediately freeze this secure execution canvas and audit the secure comms to protect your project under **Contributing Mode**.
+                Select the specific cooperation issue or scope violation below. Upon submission, FINDADE will immediately freeze this secure execution canvas and audit the secure comms to protect your project under **Contributing Mode**.
               </p>
 
               <div className="space-y-2">

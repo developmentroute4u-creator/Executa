@@ -8,6 +8,8 @@ import { Project } from "@/models/Project";
 import { User } from "@/models/User";
 import { Test } from "@/models/Test";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
   const adminCookie = req.cookies.get("admin_session")?.value;
   const session = await getServerSession(authOptions);

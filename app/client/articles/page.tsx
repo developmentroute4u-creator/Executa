@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -21,24 +21,24 @@ const CATEGORIES = [
     articles: [
       {
         id: "gs-1",
-        title: "What is Executa and how does it work?",
+        title: "What is FINDADE and how does it work?",
         readTime: "3 min",
-        content: `## What is Executa?
+        content: `## What is FINDADE?
 
-Executa is a premium freelance platform built for clients who need predictability. Unlike traditional platforms, Executa locks scope, price, and deliverables **before work begins** — eliminating the most common project failure points.
+FINDADE is a premium freelance platform built for clients who need predictability. Unlike traditional platforms, FINDADE locks scope, price, and deliverables **before work begins** — eliminating the most common project failure points.
 
 ### How the process works
 
 1. **Describe your project** — You tell us what you need in plain language. No technical specs required.
 2. **AI scope generation** — Our system converts your brief into a structured scope document with milestones and deliverables.
 3. **Review & lock** — You review the scope, request changes, and lock it. Once locked, no scope creep is possible.
-4. **Expert matching** — Executa matches your project with a vetted, Level-2-assessed expert.
+4. **Expert matching** — FINDADE matches your project with a vetted, Level-2-assessed expert.
 5. **Milestone payments** — You release payment only when each milestone is delivered and approved.
 6. **Project complete** — Work is delivered, reviewed, and signed off. Your funds release automatically.
 
-### Why Executa is different
+### Why FINDADE is different
 
-| Traditional Freelance | Executa |
+| Traditional Freelance | FINDADE |
 |---|---|
 | Hourly billing | Fixed-price milestones |
 | Self-reported CVs | Level 2 Skills Assessment |
@@ -53,11 +53,11 @@ You're always in control — and you only pay for what's delivered.`,
         readTime: "2 min",
         content: `## Creating your client account
 
-Getting started on Executa takes less than 2 minutes.
+Getting started on FINDADE takes less than 2 minutes.
 
 ### Step-by-step
 
-1. Go to **executa.in** and click **Hire a Freelancer**
+1. Go to **FINDADE.in** and click **Hire a Freelancer**
 2. Enter your email address and choose a strong password
 3. Verify your email via the confirmation link sent to your inbox
 4. Complete your profile — add your name, company (optional), and timezone
@@ -79,7 +79,7 @@ Getting started on Executa takes less than 2 minutes.
         readTime: "5 min",
         content: `## Understanding the scope document
 
-The scope document is the foundation of every Executa project. It is a legally-binding, AI-generated summary of exactly what will be built, by when, and for how much.
+The scope document is the foundation of every FINDADE project. It is a legally-binding, AI-generated summary of exactly what will be built, by when, and for how much.
 
 ### What's inside a scope document
 
@@ -105,7 +105,7 @@ The scope document is the foundation of every Executa project. It is a legally-b
 3. Confirm milestones and their payment amounts match your budget
 4. Click **Lock Scope** once you are satisfied
 
-Once locked, neither party can change the scope without renegotiating through the Executa dispute process.`,
+Once locked, neither party can change the scope without renegotiating through the FINDADE dispute process.`,
       },
     ],
   },
@@ -123,7 +123,7 @@ Once locked, neither party can change the scope without renegotiating through th
         readTime: "4 min",
         content: `## How milestone payments and escrow work
 
-Executa uses a milestone-based escrow system that protects both you (the client) and the expert.
+FINDADE uses a milestone-based escrow system that protects both you (the client) and the expert.
 
 ### The flow
 
@@ -135,7 +135,7 @@ Executa uses a milestone-based escrow system that protects both you (the client)
 
 ### What is escrow?
 
-Escrow is a secure holding account managed by Executa. When you fund a milestone, your money moves to escrow — it's no longer in your account, but it hasn't reached the expert either. It releases *only* when you approve.
+Escrow is a secure holding account managed by FINDADE. When you fund a milestone, your money moves to escrow — it's no longer in your account, but it hasn't reached the expert either. It releases *only* when you approve.
 
 ### What happens if I don't approve?
 
@@ -156,7 +156,7 @@ Escrow is a secure holding account managed by Executa. When you fund a milestone
         readTime: "2 min",
         content: `## Platform fees explained
 
-Executa charges a transparent service fee on each transaction. There are no hidden charges.
+FINDADE charges a transparent service fee on each transaction. There are no hidden charges.
 
 ### Client-side fees
 
@@ -188,7 +188,7 @@ A GST-compliant tax invoice is generated automatically for every transaction and
         readTime: "3 min",
         content: `## Requesting a refund
 
-Executa's escrow system is designed to protect your money. Refunds are available in specific situations.
+FINDADE's escrow system is designed to protect your money. Refunds are available in specific situations.
 
 ### When you're eligible for a refund
 
@@ -224,7 +224,7 @@ Once approved, refunds take **3–5 business days** to appear in your original p
         readTime: "3 min",
         content: `## Posting your first project
 
-Your first project on Executa is designed to be simple. Our AI does the heavy lifting.
+Your first project on FINDADE is designed to be simple. Our AI does the heavy lifting.
 
 ### Step 1: Describe your idea
 
@@ -237,7 +237,7 @@ Don't overthink this — even rough descriptions generate excellent scope docume
 
 ### Step 2: Review the AI-generated scope
 
-Within seconds, Executa generates a structured scope document. Read through it and:
+Within seconds, FINDADE generates a structured scope document. Read through it and:
 - Add any missing requirements using the **Edit Scope** tool
 - Remove anything that isn't needed
 - Confirm the milestone breakdown matches your budget
@@ -265,7 +265,7 @@ Fund the first milestone into escrow to begin the project. The expert is notifie
         readTime: "2 min",
         content: `## Communicating with your expert
 
-Every Executa project includes a dedicated project chat workspace.
+Every FINDADE project includes a dedicated project chat workspace.
 
 ### What's available in the project workspace
 
@@ -283,7 +283,7 @@ Every Executa project includes a dedicated project chat workspace.
 
 ### Response time expectations
 
-Executa experts are expected to respond within **8 business hours**. If your expert goes silent for more than 24 hours, contact support immediately.`,
+FINDADE experts are expected to respond within **8 business hours**. If your expert goes silent for more than 24 hours, contact support immediately.`,
       },
       {
         id: "proj-3",
@@ -353,7 +353,7 @@ We strongly recommend enabling 2FA:
 
 ### If you've been locked out
 
-Contact support at support@executa.in with your account email. We verify your identity and restore access within 2–4 hours.`,
+Contact support at support@FINDADE.in with your account email. We verify your identity and restore access within 2–4 hours.`,
       },
       {
         id: "acc-2",
@@ -361,7 +361,7 @@ Contact support at support@executa.in with your account email. We verify your id
         readTime: "2 min",
         content: `## Managing notifications
 
-Stay informed without being overwhelmed. Executa lets you customize exactly what you're notified about.
+Stay informed without being overwhelmed. FINDADE lets you customize exactly what you're notified about.
 
 ### Notification types
 
@@ -399,7 +399,7 @@ Instead of individual emails, you can switch to a **daily digest** that summariz
         readTime: "4 min",
         content: `## How the dispute process works
 
-Disputes are rare on Executa because of our scope-locking system. But when they do occur, our team handles them fairly and quickly.
+Disputes are rare on FINDADE because of our scope-locking system. But when they do occur, our team handles them fairly and quickly.
 
 ### When to raise a dispute
 
@@ -415,7 +415,7 @@ Raise a dispute if:
 1. **Open** — Go to the milestone, click **Raise Dispute**, and describe the issue with specific references to the scope document.
 2. **Expert responds** — The expert has 48 hours to respond with their perspective.
 3. **Evidence review** — Both parties can submit screenshots, files, and chat logs as evidence.
-4. **Executa mediates** — Our resolution team reviews everything and makes a decision within 72 hours.
+4. **FINDADE mediates** — Our resolution team reviews everything and makes a decision within 72 hours.
 5. **Resolution** — Funds are released to the expert, refunded to you, or split depending on the finding.
 
 ### Tips for a strong dispute

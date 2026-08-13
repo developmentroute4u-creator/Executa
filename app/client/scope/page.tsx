@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { FileText, Target, AlertTriangle, ArrowRight, CheckCircle2 } from "lucide-react";
@@ -106,7 +106,7 @@ export default function ClientScopeIntelligence() {
 
         {/* SCOPE INTELLIGENCE ASSISTANT */}
         <div className="flex flex-col">
-          <div className="sticky top-28 bg-[#FFF7F6] border border-orange-200/50 rounded-3xl p-8 shadow-[0_8px_32px_rgba(232,82,57,0.05)]">
+          <div className="sticky top-28 bg-[#f6f4f0] border border-orange-200/50 rounded-3xl p-8 shadow-[0_8px_32px_rgba(232,82,57,0.05)]">
             <div className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-6">
               <svg width="24" height="24" viewBox="0 0 14 14" fill="none">
                 <rect x="1" y="1" width="5" height="5" rx="1" fill="#E85239" />
@@ -117,7 +117,7 @@ export default function ClientScopeIntelligence() {
             </div>
             <h3 className="text-[20px] font-black text-stone-900 mb-2">Scope Analyzer</h3>
             <p className="text-[14px] font-medium text-stone-600 leading-relaxed mb-8">
-              Executa analyzes your drafts to identify missing requirements, ambiguities, and scope creep risks before you lock the contract.
+              FINDADE analyzes your drafts to identify missing requirements, ambiguities, and scope creep risks before you lock the contract.
             </p>
             <Link href="/client/onboarding" className="w-full group flex items-center justify-between px-5 py-4 bg-white border border-orange-100 rounded-xl hover:border-[#E85239] transition-colors text-left shadow-sm">
               <span className="text-[14px] font-bold text-stone-900">Create new project</span>

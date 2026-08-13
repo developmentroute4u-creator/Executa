@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -269,7 +269,7 @@ export default function ExecutionRoom({ params }: { params: { id: string } }) {
       const reasonText = reasonMap[selectedConflictReason] || "Other scope discrepancy or client cooperation conflict.";
       
       // Formulate secure system alert message warning the client and activating contributing mode
-      const conflictMsg = `⚠️ [Executa Support Alert]\n\nThe expert team has officially flagged a scope boundary conflict.\n\nReason: "${reasonText}"\n${conflictDetails ? `Details: "${conflictDetails}"\n` : ""}\nLIVE AUDIT ENGAGED: Executa's senior audit panel has been alerted and will inspect this secure chat thread and scope functional definitions. Expert contributions are fully protected under Executa's secure Contributing Mode. All billing limits and functional deliverables are frozen under audit.`;
+      const conflictMsg = `⚠️ [FINDADE Support Alert]\n\nThe expert team has officially flagged a scope boundary conflict.\n\nReason: "${reasonText}"\n${conflictDetails ? `Details: "${conflictDetails}"\n` : ""}\nLIVE AUDIT ENGAGED: FINDADE's senior audit panel has been alerted and will inspect this secure chat thread and scope functional definitions. Expert contributions are fully protected under FINDADE's secure Contributing Mode. All billing limits and functional deliverables are frozen under audit.`;
 
       const res = await fetch(`/api/projects/${params.id}/disputes`, {
         method: "POST",
@@ -726,7 +726,7 @@ export default function ExecutionRoom({ params }: { params: { id: string } }) {
                     <p>{m.content}</p>
                   </div>
                   <span className="text-[11px] font-medium text-stone-400 mt-2 mx-1">
-                    {isSystem ? "Executa System Alert" : m.senderDisplayName} • {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {isSystem ? "FINDADE System Alert" : m.senderDisplayName} • {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
               );
@@ -781,7 +781,7 @@ export default function ExecutionRoom({ params }: { params: { id: string } }) {
             </div>
             
             <div className="p-6 overflow-y-auto flex-1 space-y-6">
-              <div className="bg-[#FFF7F6] border border-orange-100 rounded-2xl p-5">
+              <div className="bg-[#f6f4f0] border border-orange-100 rounded-2xl p-5">
                 <h3 className="text-base font-bold text-text-primary tracking-tight">{pendingUpgrade.proposedUnit.name}</h3>
                 <p className="text-xs text-text-secondary mt-1 leading-relaxed">{pendingUpgrade.proposedUnit.description}</p>
               </div>
@@ -865,7 +865,7 @@ export default function ExecutionRoom({ params }: { params: { id: string } }) {
             
             <div className="p-6 overflow-y-auto flex-1 space-y-5">
               <p className="text-[11px] text-text-secondary leading-relaxed leading-normal">
-                Select the specific cooperation issue or scope violation below. Upon submission, Executa will immediately freeze this secure execution canvas and audit the secure comms to protect your contributions under **Contributing Mode**.
+                Select the specific cooperation issue or scope violation below. Upon submission, FINDADE will immediately freeze this secure execution canvas and audit the secure comms to protect your contributions under **Contributing Mode**.
               </p>
 
               <div className="space-y-2">

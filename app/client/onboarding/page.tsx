@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Input, Textarea, Button } from "@/components/ui";
@@ -37,7 +37,7 @@ export default function ClientOnboardingPage() {
       "Structuring execution timeline...",
       "Defining functional units...",
       "Calculating effort scores...",
-      "Finalizing executable scope..."
+      "Finalizing FINDADEble scope..."
     ];
     let i = 0;
     const textInt = setInterval(() => {
@@ -110,7 +110,7 @@ export default function ClientOnboardingPage() {
       <div className="fixed top-0 inset-x-0 z-50 bg-background/90 backdrop-blur-md border-b border-border h-14 flex items-center px-4 sm:px-8 justify-between">
         <div className="flex items-center gap-2.5">
           <span className="font-black text-[18px] sm:text-[22px] tracking-tighter text-stone-900 leading-none">
-            EXECUTA<span className="text-[#E85239]">.</span>
+            FINDADE<span className="text-[#E85239]">.</span>
           </span>
         </div>
         {/* Step indicator */}
@@ -308,7 +308,7 @@ export default function ClientOnboardingPage() {
               <p className="text-xs font-medium text-text-tertiary uppercase tracking-widest mb-3">Step 4 of {STEPS.length}</p>
               <h1 className="text-3xl font-semibold tracking-tight mb-2">Generate Scope</h1>
               <p className="text-text-secondary">
-                Our AI Scope Discovery Engine will now synthesize your business outcomes into a structured, executable project scope.
+                Our AI Scope Discovery Engine will now synthesize your business outcomes into a structured, FINDADEble project scope.
               </p>
             </div>
 
@@ -383,7 +383,7 @@ export default function ClientOnboardingPage() {
             {/* Wordmark logo pulse */}
             <div className="mb-10 flex items-center justify-center animate-pulse" style={{ animationDuration: "2.5s" }}>
               <span className="font-black text-[36px] tracking-tighter text-stone-900 leading-none">
-                EXECUTA<span className="text-[#E85239]">.</span>
+                FINDADE<span className="text-[#E85239]">.</span>
               </span>
             </div>
 

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -164,7 +164,7 @@ function OnboardingContent() {
       <div className="fixed top-0 inset-x-0 z-50 bg-background/90 backdrop-blur-md border-b border-border h-14 flex items-center px-8 justify-between">
         <div className="flex items-center gap-2.5">
           <span className="font-black text-[22px] tracking-tighter text-stone-900 leading-none">
-            EXECUTA<span className="text-[#E85239]">.</span>
+            FINDADE<span className="text-[#E85239]">.</span>
           </span>
         </div>
         <div className="flex items-center gap-2">

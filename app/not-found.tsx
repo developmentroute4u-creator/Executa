@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -6,7 +6,7 @@ import { ArrowLeft } from "lucide-react";
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-[#FFF7F5] flex flex-col items-center justify-center relative overflow-hidden font-sans">
+    <div className="min-h-screen bg-[#f6f4f0] flex flex-col items-center justify-center relative overflow-hidden font-sans">
       {/* Background ambient glows */}
       <div className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] bg-[#E85239]/10 rounded-full blur-[140px] pointer-events-none" />
       <div className="absolute bottom-[-20%] left-[-10%] w-[600px] h-[600px] bg-[#E85239]/5 rounded-full blur-[120px] pointer-events-none" />
@@ -14,7 +14,7 @@ export default function NotFound() {
       {/* Main Content Container */}
       <div className="relative z-10 flex flex-col items-center text-center px-6 max-w-3xl w-full">
 
-        {/* Executa Logo */}
+        {/* FINDADE Logo */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -23,7 +23,7 @@ export default function NotFound() {
         >
           <svg viewBox="0 0 160 40" className="w-full h-auto drop-shadow-sm overflow-visible">
             <text x="50%" y="50%" dominantBaseline="central" textAnchor="middle" className="font-sans font-black text-stone-900" style={{ fontSize: "32px", letterSpacing: "-0.05em" }}>
-              EXECUTA<tspan fill="#E85239">.</tspan>
+              FINDADE<tspan fill="#E85239">.</tspan>
             </text>
           </svg>
         </motion.div>

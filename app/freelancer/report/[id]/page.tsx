@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -318,7 +318,7 @@ export default function ReportPage() {
         {/* ── Evaluation Score ── */}
         {ev && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-            className="bg-gradient-to-br from-[#FFF7F6] to-white border border-[#E85239]/20 rounded-3xl p-7 space-y-6">
+            className="bg-gradient-to-br from-[#f6f4f0] to-white border border-[#E85239]/20 rounded-3xl p-7 space-y-6">
 
             {/* Overall score */}
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -41,8 +41,8 @@ export default function ClientProjectsList() {
   function getStatusBadge(status: string) {
     const map: Record<string, { label: string; color: string }> = {
       scoping: { label: "Scoping", color: "bg-amber-50 text-amber-600 border border-amber-100" },
-      scope_review: { label: "Scope Ready — Review Now", color: "bg-[#FFF7F6] text-[#E85239] border border-orange-100" },
-      matching: { label: "Finding Freelancer", color: "bg-[#FFF7F6] text-[#E85239] border border-orange-100" },
+      scope_review: { label: "Scope Ready — Review Now", color: "bg-[#f6f4f0] text-[#E85239] border border-orange-100" },
+      matching: { label: "Finding Freelancer", color: "bg-[#f6f4f0] text-[#E85239] border border-orange-100" },
       pending: { label: "Pending Acceptance", color: "bg-amber-50 text-amber-600 border border-amber-100" },
       execution: { label: "In Execution", color: "bg-emerald-50 text-emerald-600 border border-emerald-100" },
       active: { label: "Active", color: "bg-emerald-50 text-emerald-600 border border-emerald-100" },
