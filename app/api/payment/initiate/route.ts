@@ -1,4 +1,4 @@
-﻿export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -37,7 +37,7 @@ function loadEnvFallback() {
 }
 
 /** Read PhonePe config fresh on every call — never cache at module level */
-function getPhonePeConfig() {
+function getPhonePeConfig(req?: NextRequest) {
   // Always re-read the .env.local file so changes take effect without restart
   loadEnvFallback();
 
@@ -54,18 +54,29 @@ function getPhonePeConfig() {
     ? "https://api-preprod.phonepe.com/apis/pg-sandbox"
     : "https://api.phonepe.com/apis/identity-manager";
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ||
+  let appUrl = process.env.NEXT_PUBLIC_APP_URL ||
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+
+  if (req) {
+    try {
+      const origin = req.nextUrl?.origin;
+      if (origin && origin !== "null" && !origin.includes("undefined")) {
+        appUrl = origin;
+      } else {
+        const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
+        const proto = req.headers.get("x-forwarded-proto") || (host?.includes("localhost") ? "http" : "https");
+        if (host) {
+          appUrl = `${proto}://${host}`;
+        }
+      }
+    } catch {}
+  }
 
   if (!clientId || !clientSecret) {
     console.error("[PhonePe] CREDENTIALS MISSING —",
       { clientId: clientId ? "SET" : "MISSING", clientSecret: clientSecret ? "SET" : "MISSING", env });
   } else {
-    console.log(`[PhonePe] Config OK — ENV=${env} CLIENT_ID=${clientId.slice(0, 6)}...`);
-  }
-
-  if (!process.env.NEXT_PUBLIC_APP_URL) {
-    console.warn("[Payment] NEXT_PUBLIC_APP_URL not set, using fallback:", appUrl);
+    console.log(`[PhonePe] Config OK — ENV=${env} CLIENT_ID=${clientId.slice(0, 6)}... APP_URL=${appUrl}`);
   }
 
   return { env, clientId, clientSecret, clientVersion, pgBase, tokenBase, appUrl };
@@ -85,6 +96,12 @@ function makeTxnId(prefix: "EXP" | "EXM" | "EXC" | "EXU"): string {
 /** Get OAuth token from PhonePe — reads credentials fresh on every call */
 async function getPhonePeToken(): Promise<string> {
   const { tokenBase, clientId, clientSecret, clientVersion } = getPhonePeConfig();
+
+  if (!clientId || !clientSecret) {
+    throw new Error(
+      "PhonePe credentials missing: PHONEPE_CLIENT_ID or PHONEPE_CLIENT_SECRET is not set in environment variables (e.g. Vercel Dashboard or .env.local)."
+    );
+  }
 
   const res = await fetch(`${tokenBase}/v1/oauth/token`, {
     method: "POST",
@@ -124,8 +141,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Read config fresh on every request — never stale
-  const { pgBase, appUrl } = getPhonePeConfig();
+  // Read config fresh on every request — never stale, dynamically resolving appUrl from req
+  const { pgBase, appUrl } = getPhonePeConfig(req);
 
   // ─── CUSTOM UNIT SCOPE FEE (5% of unit price) ───────────────────────────────
   if (customUnit) {

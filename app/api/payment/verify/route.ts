@@ -1,4 +1,4 @@
-﻿export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { Project } from "@/models/Project";
@@ -61,6 +61,12 @@ function getPhonePeConfig() {
 
 async function getPhonePeToken(): Promise<string> {
   const { tokenBase, clientId, clientSecret, clientVersion } = getPhonePeConfig();
+
+  if (!clientId || !clientSecret) {
+    throw new Error(
+      "PhonePe credentials missing: PHONEPE_CLIENT_ID or PHONEPE_CLIENT_SECRET is not set in environment variables (e.g. Vercel Dashboard or .env.local)."
+    );
+  }
 
   const res = await fetch(`${tokenBase}/v1/oauth/token`, {
     method: "POST",

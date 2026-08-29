@@ -78,13 +78,17 @@ const STANDARD_UNITS: Record<string, any> = {
 
 // OpenRouter model configurations
 export const PRIMARY_MODELS = [
-  "qwen/qwen3-next-80b-a3b-instruct",
-  "meta-llama/llama-3.3-70b-instruct"
+  "qwen/qwen-2.5-72b-instruct",
+  "meta-llama/llama-3.3-70b-instruct",
+  "google/gemini-2.0-flash-001",
+  "deepseek/deepseek-chat"
 ];
 
 export const MATCHING_MODELS = [
+  "deepseek/deepseek-chat",
   "deepseek/deepseek-r1-distill-llama-70b",
-  "meta-llama/llama-3.3-70b-instruct"
+  "meta-llama/llama-3.3-70b-instruct",
+  "google/gemini-2.0-flash-001"
 ];
 
 // Centralized OpenRouter API wrapper with fallback logic

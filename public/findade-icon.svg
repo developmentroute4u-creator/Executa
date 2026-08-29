@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" fill="none">
+  <defs>
+    <linearGradient id="findade-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E85239" />
+      <stop offset="100%" stop-color="#FF6B35" />
+    </linearGradient>
+  </defs>
+  <rect width="48" height="48" rx="14" fill="url(#findade-grad)" />
+  <g transform="translate(10, 10)">
+    <rect x="2" y="2" width="10" height="10" rx="2.5" fill="#FFFFFF" />
+    <rect x="16" y="2" width="10" height="10" rx="2.5" fill="#FFFFFF" fill-opacity="0.65" />
+    <rect x="2" y="16" width="10" height="10" rx="2.5" fill="#FFFFFF" fill-opacity="0.65" />
+    <rect x="16" y="16" width="10" height="10" rx="2.5" fill="#FFFFFF" />
+  </g>
+</svg>

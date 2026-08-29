@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -79,8 +79,12 @@ export default function PaymentGatePage() {
 
   useEffect(() => {
     fetch(`/api/projects/${params.projectId}`)
-      .then((r) => r.json())
-      .then((d) => {
+      .then(async (r) => {
+        if (r.status === 401) {
+          router.push(`/auth/login?callbackUrl=/client/projects/${params.projectId}/pay`);
+          return;
+        }
+        const d = await r.json();
         setData(d);
         setLoading(false);
         if (d.project?.payment?.status === "paid") {

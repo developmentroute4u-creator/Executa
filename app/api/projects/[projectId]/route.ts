@@ -1,6 +1,7 @@
-﻿export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { getToken } from "next-auth/jwt";
 import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { Project } from "@/models/Project";
@@ -11,16 +12,25 @@ import { askGeminiForCustomUnit } from "@/lib/gemini";
 import mongoose from "mongoose";
 
 export async function GET(req: NextRequest, { params }: { params: { projectId: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  let session = await getServerSession(authOptions);
+  let loggedInUserId = (session?.user as any)?.id;
+
+  if (!loggedInUserId) {
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    if (token) {
+      loggedInUserId = token.id as string;
+    }
+  }
+
+  if (!loggedInUserId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   await connectDB();
   
-  const loggedInUserId = (session.user as any).id;
   const project = await Project.findById(params.projectId).lean() as any;
   if (!project) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   if (
+    project.clientId &&
     project.clientId.toString() === loggedInUserId &&
     project.freelancerAccepted &&
     !project.clientAcknowledgedAcceptance
@@ -47,14 +57,63 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
     }
   }
 
-  const scope = project.scopeId ? await Scope.findById(project.scopeId).lean() : null;
+  let scope = project.scopeId ? await Scope.findById(project.scopeId).lean() : null;
+
+  // Auto-heal missing scope or pricing so client is NEVER stuck with empty screens
+  if (!scope) {
+    const { generateScope } = await import("@/app/api/projects/route");
+    const field = project.field || "development";
+    const fallback = generateScope({
+      title: project.title,
+      goal: project.successCriteria || project.title,
+      businessModel: project.projectDescription || project.title,
+      field,
+    });
+    const effortLevel = getEffortLevel(fallback.totalEffortScore);
+    const newScope = await Scope.create({
+      projectId: project._id,
+      projectSummary: {
+        overview: project.projectDescription || "A managed project scope.",
+        businessGoal: project.successCriteria || "Achieve project success criteria.",
+        primaryUsers: [project.targetUsers || "End Users"],
+      },
+      ...fallback,
+      effortLevel,
+      status: "draft",
+    });
+    scope = newScope.toObject();
+    const rateRange = getRateRange(field, effortLevel);
+    const avgRate = Math.round((rateRange.min + rateRange.max) / 2);
+    const pricing = calculatePrice(fallback.totalEffortScore, avgRate);
+    project.pricing = { ...pricing, ratePerPoint: avgRate, accountabilityMode: "basic" };
+    project.scopeId = newScope._id;
+    project.requiredLevel = effortLevel;
+    await Project.updateOne({ _id: project._id }, { scopeId: newScope._id, pricing: project.pricing, requiredLevel: effortLevel });
+  } else if (!project.pricing || !project.pricing.total) {
+    const field = project.field || "development";
+    const effortLevel = scope.effortLevel || getEffortLevel(scope.totalEffortScore || 60);
+    const rateRange = getRateRange(field, effortLevel);
+    const avgRate = Math.round((rateRange.min + rateRange.max) / 2);
+    const pricing = calculatePrice(scope.totalEffortScore || 60, avgRate);
+    project.pricing = { ...pricing, ratePerPoint: avgRate, accountabilityMode: "basic" };
+    await Project.updateOne({ _id: project._id }, { pricing: project.pricing, requiredLevel: effortLevel });
+  }
 
   return NextResponse.json({ project, scope });
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { projectId: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  let session = await getServerSession(authOptions);
+  let loggedInUserId = (session?.user as any)?.id;
+
+  if (!loggedInUserId) {
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    if (token) {
+      loggedInUserId = token.id as string;
+    }
+  }
+
+  if (!loggedInUserId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
     const body = await req.json();
@@ -63,8 +122,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { projectId:
     if (body.reject) {
       const project = await Project.findById(params.projectId);
       if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
-
-      const loggedInUserId = (session.user as any).id;
 
       // Filter out of assignedFreelancers array
       if (project.assignedFreelancers && project.assignedFreelancers.length > 0) {
@@ -103,8 +160,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { projectId:
     if (body.accept || body.freelancerAccepted || body.action === "accept_scope") {
       const project = await Project.findById(params.projectId);
       if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
-
-      const loggedInUserId = (session.user as any).id;
 
       const assignedIdx = project.assignedFreelancers?.findIndex((a: any) => a.userId.toString() === loggedInUserId);
       const isLegacyAssigned = project.freelancerId && project.freelancerId.toString() === loggedInUserId;
@@ -262,7 +317,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { projectId:
       };
 
       scope.functionalUnits.push(newUnit);
-      scope.totalEffortScore = scope.functionalUnits.reduce((sum, u) => sum + u.unitScore, 0);
+      scope.totalEffortScore = scope.functionalUnits.reduce((sum: number, u: any) => sum + u.unitScore, 0);
       scope.effortLevel = getEffortLevel(scope.totalEffortScore);
       scope.timeline.estimated = Math.ceil(scope.totalEffortScore / 15);
       await scope.save();

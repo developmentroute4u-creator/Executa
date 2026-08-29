@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -123,18 +123,31 @@ export default function ProjectDetailView({ params }: { params: { projectId: str
       const res = await fetch(`/api/projects/${params.projectId}/match`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ freelancerId }),
+        body: JSON.stringify({
+          freelancersToAppoint: [
+            {
+              freelancerId,
+              role: project?.field === "design" ? "design" : "fullstack",
+              pricingCut: 1
+            }
+          ]
+        }),
       });
       if (res.ok) {
         setAppointSuccess(true);
         setTimeout(() => {
+          setModalFreelancer(null);
           setMatchStatus("idle");
           setAppointSuccess(false);
           reload();
-        }, 2000);
+        }, 1200);
+      } else {
+        const d = await res.json();
+        alert(d.error || "Failed to appoint specialist. Please try again.");
       }
     } catch (err) {
       console.error("Failed to appoint freelancer:", err);
+      alert("Failed to appoint specialist. Please try again.");
     } finally {
       setAppointing(false);
     }
@@ -733,11 +746,11 @@ export default function ProjectDetailView({ params }: { params: { projectId: str
                             </button>
                             <button
                               onClick={() => handleAppoint(modalFreelancer.id)}
-                              disabled={appointing}
+                              disabled={appointing || appointSuccess}
                               className="h-11 px-6 bg-[#E85239] text-white text-[13px] font-black rounded-xl flex items-center gap-2 hover:bg-[#d44530] hover:shadow-[0_6px_20px_rgba(232,82,57,0.35)] transition-all disabled:opacity-60"
                             >
                               {appointing ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle2 size={15} />}
-                              {appointing ? "Please wait…" : "Hire Now"}
+                              {appointSuccess ? "Appointed!" : appointing ? "Please wait…" : "Hire Now"}
                             </button>
                           </div>
                         </div>

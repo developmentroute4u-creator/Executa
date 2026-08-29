@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Input, Textarea, Button } from "@/components/ui";
@@ -45,15 +45,15 @@ export default function ClientOnboardingPage() {
         i++;
         setLoadingText(texts[i]);
       }
-    }, 1200);
+    }, 1000);
 
     let currentProgress = 10;
     const progInt = setInterval(() => {
-      if (currentProgress < 95) {
-        currentProgress += Math.floor(Math.random() * 8) + 2;
-        setLoadingProgress(Math.min(95, currentProgress));
+      if (currentProgress < 90) {
+        currentProgress += Math.floor(Math.random() * 8) + 3;
+        setLoadingProgress(Math.min(90, currentProgress));
       }
-    }, 400);
+    }, 300);
 
     try {
       const res = await fetch("/api/projects", {
@@ -64,29 +64,32 @@ export default function ClientOnboardingPage() {
       });
       const data = await res.json();
 
-      setTimeout(() => {
-        clearInterval(textInt);
-        clearInterval(progInt);
-
-        if (!res.ok) {
-          if (res.status === 401) {
-            router.push("/auth/login");
-            return;
-          }
-          setError(data.error || "Failed");
-          setLoading(false);
-          return;
-        }
-
-        setLoadingProgress(100);
-        setTimeout(() => {
-          router.push(`/client/projects/${data.projectId}/pay`);
-        }, 500);
-      }, 3500);
-    } catch {
       clearInterval(textInt);
       clearInterval(progInt);
-      setError("Something went wrong.");
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          setError("Your session expired. Please sign in to save your project.");
+          setLoading(false);
+          setTimeout(() => {
+            router.push("/auth/login?callbackUrl=/client/onboarding");
+          }, 1500);
+          return;
+        }
+        setError(data.error || "Failed to generate scope. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      setLoadingProgress(100);
+      setLoadingText("Scope ready! Redirecting to pricing…");
+      setTimeout(() => {
+        router.push(`/client/projects/${data.projectId}/pay`);
+      }, 600);
+    } catch (err: any) {
+      clearInterval(textInt);
+      clearInterval(progInt);
+      setError(err?.message || "Something went wrong creating your project.");
       setLoading(false);
     }
   }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { getToken } from "next-auth/jwt";
 import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { Project } from "@/models/Project";
@@ -143,8 +144,17 @@ async function seedMockFreelancers() {
 }
 
 export async function GET(req: NextRequest, { params }: { params: { projectId: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  let session = await getServerSession(authOptions);
+  let loggedInUserId = (session?.user as any)?.id;
+
+  if (!loggedInUserId) {
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    if (token) {
+      loggedInUserId = token.id as string;
+    }
+  }
+
+  if (!loggedInUserId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
     await connectDB();
@@ -234,12 +244,7 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
     let devTotalScore = 0;
     const units = scope.functionalUnits || [];
     
-    // Fallback naive split if we can't determine it
     if (project.field === "design_development") {
-      // Half and half if we don't have distinct tags
-      // For a real prod app, you might use AI or keyword parsing to categorize units.
-      // Since our new prompt enforces separate phases, let's just do a 50/50 split of the total unit score as a safe baseline, 
-      // or try to parse 'design' vs 'development' keywords.
       units.forEach((u: any) => {
         const str = (u.name + " " + u.description).toLowerCase();
         if (str.includes("design") || str.includes("ui") || str.includes("ux") || str.includes("wireframe") || str.includes("mockup")) {
@@ -249,7 +254,6 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
         }
       });
       
-      // If parsing fails to separate them cleanly, enforce an even split
       if (designTotalScore === 0 || devTotalScore === 0) {
         designTotalScore = 1;
         devTotalScore = 1;
@@ -284,31 +288,51 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
 
 // Appoint Freelancer Endpoint
 export async function POST(req: NextRequest, { params }: { params: { projectId: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  let session = await getServerSession(authOptions);
+  let loggedInUserId = (session?.user as any)?.id;
+
+  if (!loggedInUserId) {
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    if (token) {
+      loggedInUserId = token.id as string;
+    }
+  }
+
+  if (!loggedInUserId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
-    const { freelancersToAppoint } = await req.json(); // Expected format: [{ freelancerId, role }]
-    if (!freelancersToAppoint || freelancersToAppoint.length === 0) {
-      return NextResponse.json({ error: "Missing freelancersToAppoint" }, { status: 400 });
+    const body = await req.json();
+    let freelancersToAppoint = body.freelancersToAppoint;
+
+    // Support single freelancerId payload from modal click
+    if (!freelancersToAppoint && body.freelancerId) {
+      freelancersToAppoint = [{
+        freelancerId: body.freelancerId,
+        role: body.role || "fullstack",
+        pricingCut: 1
+      }];
+    }
+
+    if (!freelancersToAppoint || !Array.isArray(freelancersToAppoint) || freelancersToAppoint.length === 0) {
+      return NextResponse.json({ error: "Missing freelancer selection" }, { status: 400 });
     }
 
     await connectDB();
     const project = await Project.findById(params.projectId);
     if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
-    // Handle backward compatibility + new logic
+    // Reset assigned list
     project.assignedFreelancers = [];
 
     for (const assignment of freelancersToAppoint) {
       const freelancerUser = await User.findById(assignment.freelancerId);
-      if (!freelancerUser || freelancerUser.role !== "freelancer") {
-        return NextResponse.json({ error: `Invalid freelancer selected: ${assignment.freelancerId}` }, { status: 404 });
+      if (!freelancerUser) {
+        return NextResponse.json({ error: `Selected specialist not found: ${assignment.freelancerId}` }, { status: 404 });
       }
 
       project.assignedFreelancers.push({
         userId: new mongoose.Types.ObjectId(assignment.freelancerId),
-        role: assignment.role || "fullstack",
+        role: assignment.role || (project.field === "design" ? "design" : "fullstack"),
         splitPrice: assignment.pricingCut || 1,
         accepted: false
       });
@@ -322,7 +346,7 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
       await FreelancerProfile.updateOne(
         { userId: new mongoose.Types.ObjectId(assignment.freelancerId) },
         { 
-          $push: { activeProjectIds: project._id },
+          $addToSet: { activeProjectIds: project._id },
           $set: { available: false } // Book freelancer
         }
       );
@@ -335,6 +359,6 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
 
   } catch (err: any) {
     console.error("[POST /api/projects/:id/match] Error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: err.message || "Failed to appoint specialist" }, { status: 500 });
   }
 }

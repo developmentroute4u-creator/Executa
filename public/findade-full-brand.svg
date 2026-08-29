@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 48" width="280" height="48" fill="none">
+  <defs>
+    <linearGradient id="brand-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E85239" />
+      <stop offset="100%" stop-color="#FF6B35" />
+    </linearGradient>
+  </defs>
+  <!-- Icon Mark -->
+  <rect x="0" y="4" width="40" height="40" rx="12" fill="url(#brand-grad)" />
+  <g transform="translate(8, 12)">
+    <rect x="1" y="1" width="9" height="9" rx="2" fill="#FFFFFF" />
+    <rect x="14" y="1" width="9" height="9" rx="2" fill="#FFFFFF" fill-opacity="0.65" />
+    <rect x="1" y="14" width="9" height="9" rx="2" fill="#FFFFFF" fill-opacity="0.65" />
+    <rect x="14" y="14" width="9" height="9" rx="2" fill="#FFFFFF" />
+  </g>
+  <!-- Wordmark -->
+  <text x="56" y="34" font-family="'Outfit', 'Inter Tight', 'Inter', -apple-system, sans-serif" font-weight="900" font-size="28" letter-spacing="-0.04em" fill="#1C1917">
+    Findade<tspan fill="#E85239">.</tspan>
+  </text>
+</svg>

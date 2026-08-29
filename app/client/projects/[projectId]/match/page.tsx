@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -474,11 +474,11 @@ export default function MatchFreelancerPage() {
                     </button>
                     <button
                       onClick={() => handleAppoint([{ freelancerId: modalFreelancer.id, role: "fullstack", pricingCut: 1 }])}
-                      disabled={appointing}
+                      disabled={appointing || success}
                       className="flex-1 sm:flex-none h-11 px-6 bg-[#E85239] text-white text-[13px] font-black rounded-xl flex items-center justify-center gap-2 hover:bg-[#d44530] hover:shadow-[0_6px_20px_rgba(232,82,57,0.35)] transition-all disabled:opacity-60"
                     >
                       {appointing ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle2 size={15} />}
-                      {appointing ? "Please wait…" : "Hire Now"}
+                      {success ? "Appointed!" : appointing ? "Please wait…" : "Hire Now"}
                     </button>
                   </div>
                 </div>

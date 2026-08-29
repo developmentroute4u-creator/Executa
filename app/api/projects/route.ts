@@ -1,6 +1,8 @@
-﻿export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { Project } from "@/models/Project";
 import { Scope } from "@/models/Scope";
@@ -10,12 +12,21 @@ import { askGeminiForScope } from "@/lib/gemini";
 
 // GET /api/projects — list client's projects
 export async function GET(req: NextRequest) {
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  let session = await getServerSession(authOptions);
+  let userId = (session?.user as any)?.id;
+  let role = (session?.user as any)?.role;
+
+  if (!userId) {
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    if (token) {
+      userId = token.id as string;
+      role = token.role as string;
+    }
+  }
+
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   await connectDB();
-  const userId = token.id;
-  const role = token.role;
 
   const query = role === "client" ? { clientId: userId } : { freelancerId: userId };
   const projects = await Project.find(query).sort({ createdAt: -1 }).lean();
@@ -36,9 +47,20 @@ export async function GET(req: NextRequest) {
 
 // POST /api/projects — create project + generate scope
 export async function POST(req: NextRequest) {
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (token.role !== "client") {
+  let session = await getServerSession(authOptions);
+  let userId = (session?.user as any)?.id;
+  let role = (session?.user as any)?.role;
+
+  if (!userId) {
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    if (token) {
+      userId = token.id as string;
+      role = token.role as string;
+    }
+  }
+
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (role !== "client") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -59,19 +81,26 @@ export async function POST(req: NextRequest) {
     } = body;
 
     await connectDB();
-    const userId = token.id as string;
+
+    const domainLower = (domain || "").toLowerCase();
+    const field: "development" | "design" | "design_development" =
+      domainLower.includes("design") && domainLower.includes("dev")
+        ? "design_development"
+        : domainLower.includes("design")
+        ? "design"
+        : "development";
 
     const project = await Project.create({
       clientId: userId,
-      title,
-      field: domain === "Development" ? "development" : domain === "Design & Development" ? "design_development" : "design",
-      projectDescription,
-      projectProblem,
-      targetUsers,
-      userJourney,
-      managedEntities,
+      title: title || "Untitled Project",
+      field,
+      projectDescription: projectDescription || "",
+      projectProblem: projectProblem || "",
+      targetUsers: targetUsers || "",
+      userJourney: userJourney || "",
+      managedEntities: managedEntities || "",
       specialRequirements: specialRequirements || "",
-      successCriteria,
+      successCriteria: successCriteria || "",
       priority: priority || "medium",
       deadline: deadline ? new Date(deadline) : undefined,
       status: "scoping",
@@ -81,12 +110,12 @@ export async function POST(req: NextRequest) {
       throw new Error("Project creation failed in DB");
     }
 
-    // Attempt to generate scope using Gemini with automatic fallbacks
-    let generatedScope;
+    // Attempt to generate scope using AI engine with automatic fallbacks
+    let generatedScope: any = null;
     try {
       generatedScope = await askGeminiForScope({
         title,
-        domain,
+        domain: domain || "Development",
         projectDescription,
         projectProblem,
         targetUsers,
@@ -100,9 +129,9 @@ export async function POST(req: NextRequest) {
       generatedScope = null;
     }
 
-    // If Gemini fails (e.g. rate limit, invalid key), use the offline scope generator
-    if (!generatedScope) {
-      console.log("[POST /api/projects] Gemini failed. Generating offline fallback scope...");
+    // If AI fails or returns malformed response, use the offline scope generator
+    if (!generatedScope || !Array.isArray(generatedScope.functionalUnits) || generatedScope.functionalUnits.length === 0) {
+      console.log("[POST /api/projects] AI scope generation unavailable. Generating offline fallback scope...");
       const result = generateScope({
         title,
         goal: successCriteria,
@@ -112,7 +141,7 @@ export async function POST(req: NextRequest) {
       generatedScope = {
         ...result,
         projectSummary: {
-          overview: projectDescription || "A managed project.",
+          overview: projectDescription || "A managed project scope.",
           businessGoal: successCriteria || "Achieve project success criteria.",
           primaryUsers: [targetUsers || "End Users"]
         },
@@ -127,38 +156,45 @@ export async function POST(req: NextRequest) {
           "Continuous integration and continuous deployment pipelines"
         ],
         expectedDeliverables: [
-          domain === "Design" ? "Figma visual layout files" : "Production-ready git repository source code"
+          field === "design" ? "Figma visual layout files" : "Production-ready git repository source code"
         ],
         requiredCapabilities: [
-          domain === "Design" ? "UI/UX Design" : "Fullstack Web Development"
+          field === "design" ? "UI/UX Design" : field === "design_development" ? "UI/UX Design & Fullstack Development" : "Fullstack Web Development"
         ]
       };
     }
 
-    // Calibrate totalEffortScore and timeline from Gemini results
-    const functionalUnits = generatedScope.functionalUnits.map((u: any) => ({
-      id: u.name.toLowerCase().replace(/\s/g, "_"),
-      name: u.name,
-      description: u.description || "",
-      included: u.included || [],
-      excluded: u.excluded || [],
-      deliverables: u.deliverables || [],
-      unitScore: u.unitScore || u.effortDrivers?.totalScore || 30,
-      effortDrivers: u.effortDrivers || {
-        logicDepth: 5, interactionDensity: 5, dataHandling: 5,
-        dependencyLevel: 5, variations: 5, outputExpectation: 5,
-        totalScore: u.unitScore || 30
-      }
-    }));
+    // Calibrate totalEffortScore and timeline from results
+    const rawUnits = Array.isArray(generatedScope.functionalUnits) ? generatedScope.functionalUnits : [];
+    const functionalUnits = rawUnits.map((u: any, idx: number) => {
+      const uName = u.name || `Functional Unit ${idx + 1}`;
+      const score = Number(u.unitScore) || Number(u.effortDrivers?.totalScore) || 25;
+      return {
+        id: (u.id || uName).toLowerCase().replace(/\s+/g, "_"),
+        name: uName,
+        description: u.description || "",
+        included: Array.isArray(u.included) ? u.included : [],
+        excluded: Array.isArray(u.excluded) ? u.excluded : [],
+        deliverables: Array.isArray(u.deliverables) ? u.deliverables : [],
+        unitScore: score,
+        effortDrivers: u.effortDrivers || {
+          name: uName,
+          logicDepth: 5, interactionDensity: 5, dataHandling: 5,
+          dependencyLevel: 5, variations: 5, outputExpectation: 5,
+          totalScore: score
+        }
+      };
+    });
 
-    const totalEffortScore = functionalUnits.reduce((sum: number, u: any) => sum + u.unitScore, 0);
-    const weeks = Math.ceil(totalEffortScore / 15);
+    const calculatedEffortScore = functionalUnits.reduce((sum: number, u: any) => sum + u.unitScore, 0);
+    const totalEffortScore = Math.max(60, calculatedEffortScore);
+    const weeks = Math.max(2, Math.ceil(totalEffortScore / 15));
 
     const formattedScope = {
       projectSummary: generatedScope.projectSummary || {
-        overview: projectDescription,
-        businessGoal: successCriteria,
-        primaryUsers: [targetUsers]
+        overview: projectDescription || "A managed project.",
+        businessGoal: successCriteria || "Achieve project success criteria.",
+        primaryUsers: [targetUsers || "End Users"]
       },
       functionalUnits,
       overallIncluded: generatedScope.overallIncluded || [],
@@ -189,7 +225,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Update project with scope + pricing
-    const rateRange = getRateRange(domain === "Development" ? "development" : "design", effortLevel);
+    const rateRange = getRateRange(field, effortLevel);
     const avgRate = Math.round((rateRange.min + rateRange.max) / 2);
     const pricing = calculatePrice(formattedScope.totalEffortScore, avgRate);
 
@@ -208,7 +244,7 @@ export async function POST(req: NextRequest) {
 }
 
 // Scope generation engine — domain-aware offline fallback
-function generateScope(input: any) {
+export function generateScope(input: any) {
   const { title, goal, businessModel, field } = input;
 
   // Normalized domain type

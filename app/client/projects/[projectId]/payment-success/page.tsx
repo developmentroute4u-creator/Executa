@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useSearchParams } from "next/navigation";
@@ -180,13 +180,13 @@ function PaymentSuccessContent() {
             {redirectPath && (
               <a href={redirectPath}
                 className="mt-1 inline-flex items-center gap-2 h-11 px-6 bg-stone-900 hover:bg-[#E85239] text-white text-[13px] font-bold rounded-xl transition-all">
-                Go to Project <ArrowRight size={14} />
+                {redirectPath.includes("/execution") ? "Enter Execution Room" : "View Project Scope"} <ArrowRight size={14} />
               </a>
             )}
 
             <div className="flex items-center gap-2 text-[13px] text-stone-400">
               <Loader2 size={14} className="animate-spin" />
-              Redirecting to your project…
+              {redirectPath.includes("/execution") ? "Redirecting to execution workspace…" : "Redirecting to your project scope…"}
             </div>
           </motion.div>
         )}
@@ -225,13 +225,17 @@ function PaymentSuccessContent() {
               We could not verify your payment. If any amount was deducted, it will be refunded automatically within 3–5 business days.
             </p>
             <div className="flex flex-col gap-2 w-full mt-2">
+              <Link href={`/client/projects/${params.projectId}/pay`}
+                className="inline-flex items-center justify-center gap-2 h-12 px-8 bg-[#E85239] hover:bg-[#d44530] text-white text-[14px] font-bold rounded-xl transition-all duration-300 shadow-md">
+                Try Payment Again
+              </Link>
               <Link href={`/client/projects/${params.projectId}`}
-                className="inline-flex items-center justify-center gap-2 h-12 px-8 bg-stone-900 hover:bg-[#E85239] text-white text-[14px] font-bold rounded-xl transition-all duration-300">
-                Return to Project
+                className="inline-flex items-center justify-center gap-2 h-10 px-6 bg-stone-100 hover:bg-stone-200 text-stone-800 text-[13px] font-bold rounded-xl transition-colors">
+                Return to Project Details
               </Link>
               <Link href="/client/workspace"
                 className="inline-flex items-center justify-center gap-2 h-10 px-6 text-stone-400 hover:text-stone-700 text-[13px] font-medium transition-colors">
-                Go to Dashboard
+                Go to Workspace Dashboard
               </Link>
             </div>
           </motion.div>

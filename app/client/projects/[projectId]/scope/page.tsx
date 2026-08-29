@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -110,19 +110,38 @@ export default function ScopeReviewPage() {
 
   useEffect(() => {
     fetch(`/api/projects/${projectId}`)
-      .then((r) => r.json())
-      .then(setData)
+      .then(async (r) => {
+        if (r.status === 401) {
+          router.push(`/auth/login?callbackUrl=/client/projects/${projectId}/scope`);
+          return;
+        }
+        const d = await r.json();
+        setData(d);
+      })
+      .catch(console.error)
       .finally(() => setLoading(false));
-  }, [projectId]);
+  }, [projectId, router]);
 
   async function confirmScope() {
     setConfirming(true);
-    await fetch(`/api/projects/${projectId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: "matching" }),
-    });
-    router.push(`/client/projects/${projectId}/match`);
+    try {
+      const res = await fetch(`/api/projects/${projectId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "matching" }),
+      });
+      if (res.ok) {
+        router.push(`/client/projects/${projectId}/match`);
+      } else {
+        const d = await res.json();
+        alert(d.error || "Failed to proceed to matching. Please try again.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setConfirming(false);
+    }
   }
 
   if (loading) return (
@@ -160,7 +179,7 @@ export default function ScopeReviewPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="fixed top-0 inset-x-0 z-50 bg-background/90 backdrop-blur-md border-b border-border h-14 flex items-center px-4 sm:px-8 justify-between gap-2">
-        <Link href="/client/dashboard" className="text-sm text-text-secondary hover:text-text-primary transition-colors whitespace-nowrap">← Dashboard</Link>
+        <Link href="/client/workspace" className="text-sm text-text-secondary hover:text-text-primary transition-colors whitespace-nowrap">← Workspace</Link>
         <span className="text-sm font-medium text-text-primary hidden sm:block">Scope Review</span>
         <Button variant="primary" onClick={confirmScope} loading={confirming} size="sm">
           <span className="hidden sm:inline">Confirm scope & proceed</span>
@@ -348,7 +367,7 @@ export default function ScopeReviewPage() {
         )}
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-4">
-          <Button variant="outline" href="/client/dashboard">Back to dashboard</Button>
+          <Button variant="outline" href="/client/workspace">Back to Workspace</Button>
           <Button variant="primary" onClick={confirmScope} loading={confirming}>Confirm scope & find freelancer</Button>
         </div>
       </div>
