@@ -91,60 +91,41 @@ export const MATCHING_MODELS = [
   "google/gemini-2.0-flash-001"
 ];
 
-// Centralized OpenRouter API wrapper with fallback logic
-export async function callOpenRouterApi(models: string[], prompt: string, responseFormatJson: boolean = true): Promise<any> {
-  const apiKey = process.env.OPENROUTER_API_KEY;
-  const keyToUse = apiKey || process.env.GEMINI_API_KEY;
-
-  if (!keyToUse) {
-    console.warn("[OPENROUTER] No API key found in env variables.");
-    throw new Error("Missing OPENROUTER_API_KEY or GEMINI_API_KEY");
-  }
-
-  const errors: string[] = [];
+// Direct Google Gemini API fallback
+async function callDirectGoogleGemini(prompt: string, apiKey: string, responseFormatJson: boolean = true): Promise<any> {
+  const models = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
   for (const model of models) {
     try {
-      console.log(`[OPENROUTER] Trying model: ${model}`);
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${keyToUse}`,
-        "HTTP-Referer": "https://executa.io",
-        "X-Title": "Executa"
-      };
-
+      console.log(`[GOOGLE GEMINI] Trying direct model: ${model}`);
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
       const body: any = {
-        model: model,
-        messages: [
-          { role: "user", content: prompt }
+        contents: [
+          {
+            parts: [{ text: prompt }]
+          }
         ]
       };
-
       if (responseFormatJson) {
-        body.response_format = { type: "json_object" };
+        body.generationConfig = {
+          responseMimeType: "application/json"
+        };
       }
 
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      const response = await fetch(url, {
         method: "POST",
-        headers,
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body)
       });
 
       if (!response.ok) {
-        const resText = await response.text();
-        if (response.status === 429) {
-          throw new Error("RATE_LIMIT_EXCEEDED");
-        }
-        if (response.status === 401 || response.status === 403) {
-          throw new Error("API_KEY_INVALID");
-        }
-        throw new Error(`Status ${response.status}: ${resText}`);
+        const errText = await response.text();
+        console.warn(`[GOOGLE GEMINI] ${model} returned ${response.status}: ${errText}`);
+        continue;
       }
 
       const resJson = await response.json();
-      let text = resJson.choices?.[0]?.message?.content;
-      if (!text) {
-        throw new Error("Empty response from OpenRouter.");
-      }
+      let text = resJson.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) continue;
 
       text = text.trim();
       if (responseFormatJson) {
@@ -153,22 +134,93 @@ export async function callOpenRouterApi(models: string[], prompt: string, respon
         if (text.endsWith("```")) text = text.substring(0, text.length - 3);
         return JSON.parse(text.trim());
       }
-
       return text;
     } catch (e: any) {
-      console.warn(`[OPENROUTER] Model ${model} failed:`, e.message || e);
-      errors.push(e.message || "");
+      console.warn(`[GOOGLE GEMINI] ${model} error:`, e.message || e);
+    }
+  }
+  throw new Error("Direct Google Gemini API execution failed");
+}
+
+// Centralized AI API wrapper with OpenRouter and direct Google Gemini fallback logic
+export async function callOpenRouterApi(models: string[], prompt: string, responseFormatJson: boolean = true): Promise<any> {
+  const openRouterKey = process.env.OPENROUTER_API_KEY;
+  const geminiKey = process.env.GEMINI_API_KEY;
+
+  // 1. Try OpenRouter if valid OpenRouter key is present
+  if (openRouterKey && openRouterKey.startsWith("sk-or-")) {
+    const errors: string[] = [];
+    for (const model of models) {
+      try {
+        console.log(`[OPENROUTER] Trying model: ${model}`);
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${openRouterKey}`,
+          "HTTP-Referer": "https://executa.io",
+          "X-Title": "Executa"
+        };
+
+        const body: any = {
+          model: model,
+          messages: [
+            { role: "user", content: prompt }
+          ]
+        };
+
+        if (responseFormatJson) {
+          body.response_format = { type: "json_object" };
+        }
+
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers,
+          body: JSON.stringify(body)
+        });
+
+        if (!response.ok) {
+          const resText = await response.text();
+          if (response.status === 429) {
+            throw new Error("RATE_LIMIT_EXCEEDED");
+          }
+          if (response.status === 401 || response.status === 403) {
+            throw new Error("API_KEY_INVALID");
+          }
+          throw new Error(`Status ${response.status}: ${resText}`);
+        }
+
+        const resJson = await response.json();
+        let text = resJson.choices?.[0]?.message?.content;
+        if (!text) {
+          throw new Error("Empty response from OpenRouter.");
+        }
+
+        text = text.trim();
+        if (responseFormatJson) {
+          if (text.startsWith("```json")) text = text.substring(7);
+          else if (text.startsWith("```")) text = text.substring(3);
+          if (text.endsWith("```")) text = text.substring(0, text.length - 3);
+          return JSON.parse(text.trim());
+        }
+
+        return text;
+      } catch (e: any) {
+        console.warn(`[OPENROUTER] Model ${model} failed:`, e.message || e);
+        errors.push(e.message || "");
+      }
     }
   }
 
-  console.error("[OPENROUTER] All models in the chain failed. Errors:", errors);
-  if (errors.some(e => e.includes("RATE_LIMIT_EXCEEDED"))) {
-    throw new Error("RATE_LIMIT_EXCEEDED");
+  // 2. Try direct Google Gemini API if GEMINI_API_KEY is available
+  if (geminiKey) {
+    try {
+      console.log("[AI] Trying direct Google Gemini API fallback...");
+      return await callDirectGoogleGemini(prompt, geminiKey, responseFormatJson);
+    } catch (e: any) {
+      console.warn("[AI] Direct Google Gemini fallback failed:", e.message || e);
+    }
   }
-  if (errors.some(e => e.includes("API_KEY_INVALID"))) {
-    throw new Error("API_KEY_INVALID");
-  }
-  throw new Error("RATE_LIMIT_EXCEEDED");
+
+  throw new Error("All AI providers (OpenRouter / Gemini) failed or lack valid credentials.");
 }
 
 
