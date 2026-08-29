@@ -61,7 +61,7 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
 
   // Auto-heal missing scope or pricing so client is NEVER stuck with empty screens
   if (!scope) {
-    const { generateScope } = await import("@/app/api/projects/route");
+    const { generateScope } = await import("@/lib/scopeGenerator");
     const field = project.field || "development";
     const fallback = generateScope({
       title: project.title,
