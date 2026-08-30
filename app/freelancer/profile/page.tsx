@@ -51,7 +51,7 @@ function validateHolderName(val: string): string {
 }
 
 export default function ProfileEnvironment() {
-  const { data: session } = useSession();
+  const { data: session, update } = useSession();
   const [profile, setProfile] = useState<any>(null);
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -111,6 +111,9 @@ export default function ProfileEnvironment() {
           body: JSON.stringify({ avatar: base64String }),
         });
         if (!res.ok) throw new Error("Failed to save avatar image");
+        if (typeof update === "function") {
+          await update({ avatar: base64String });
+        }
         fetchProfile();
       } catch (err) {
         console.error(err);
@@ -136,6 +139,10 @@ export default function ProfileEnvironment() {
         body: JSON.stringify({ name: nameInput, email: emailInput, bio: bioInput }),
       });
       if (!res.ok) throw new Error("Failed to save profile modifications");
+      if (typeof update === "function") {
+        await update({ name: nameInput, email: emailInput });
+      }
+      setUserData((prev: any) => ({ ...prev, name: nameInput, email: emailInput }));
       fetchProfile();
       setIsEditing(false);
     } catch (err: any) {

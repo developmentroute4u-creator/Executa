@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -25,6 +25,7 @@ function getFormattedDate() {
 export default function WorkspaceEnvironment() {
   const { data: session } = useSession();
   const [profile, setProfile] = useState<any>(null);
+  const [userData, setUserData] = useState<any>(null);
   const [test, setTest] = useState<any>(null);
   const [dashboardSubmissionUrl, setDashboardSubmissionUrl] = useState("");
   const [dashboardSubmissionNotes, setDashboardSubmissionNotes] = useState("");
@@ -60,6 +61,7 @@ export default function WorkspaceEnvironment() {
           return;
         }
         setProfile(d.profile);
+        if (d.user) setUserData(d.user);
         setTest(d.test);
         if (d.test?.submissionUrl) setDashboardSubmissionUrl(d.test.submissionUrl);
         if (d.test?.submissionNotes) setDashboardSubmissionNotes(d.test.submissionNotes);
@@ -151,7 +153,7 @@ export default function WorkspaceEnvironment() {
               {getFormattedDate()}
             </span>
             <h1 className="font-display text-4xl md:text-5xl font-semibold tracking-tight text-text-primary leading-tight">
-              {getGreeting()}, <span className="text-accent">{user?.name || "Professional"}</span>
+              {getGreeting()}, <span className="text-accent">{userData?.name || user?.name || "Professional"}</span>
             </h1>
             <p className="text-text-secondary font-sans text-sm mt-2">
               Here is an overview of your active projects and earnings.

@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Briefcase,
   User,
@@ -14,6 +14,8 @@ import {
   Circle,
   ArrowRight,
   ChevronLeft,
+  ChevronDown,
+  ChevronUp,
   ExternalLink,
   FileText,
   Link2,
@@ -28,6 +30,7 @@ import {
   PlayCircle,
   Download,
 } from "lucide-react";
+import { generateAssessmentPdf } from "@/lib/assessmentPdf";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Checkpoint  { id: string; label: string; completed: boolean; }
@@ -239,7 +242,7 @@ function ReviewButton({
 
 // ─── Submission workspace ─────────────────────────────────────────────────────
 function SubmissionWorkspace({
-  deliverables, form, onChange, onSubmit, submitting, validationErrors,
+  deliverables, form, onChange, onSubmit, submitting, validationErrors, onDownloadPdf,
 }: {
   deliverables: Deliverable[];
   form: Record<string, string>;
@@ -247,51 +250,77 @@ function SubmissionWorkspace({
   onSubmit: () => void;
   submitting: boolean;
   validationErrors: string[];
+  onDownloadPdf?: () => void;
 }) {
   const requiredMet = deliverables
-    .every((d, i) => !d.required || !!form[`d_${i}`]?.trim()) &&
-    !!(form.notes && form.notes.trim().length > 10);
+    .every((d, i) => !d.required || !!form[`d_${i}`]?.trim());
 
   const INPUT_CLS = "w-full px-4 py-3 bg-surface border border-border/60 rounded-xl text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent/40 transition-all";
 
   return (
-    <div className="mt-8 border-t border-border/40 pt-8 space-y-6">
-      <p className="text-[13px] text-text-secondary leading-relaxed">
-        When your work is ready to hand over, fill in the fields below. Include everything the
-        evaluation team needs to review your solution.
-      </p>
-
-      {/* Fields */}
-      <div className="space-y-5">
-        {deliverables.map((d, i) => (
-          <div key={i}>
-            <label className="block text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2">
-              {d.label} {d.required ? <span className="text-accent text-[10px] font-bold">Required</span> : <span className="text-text-tertiary font-normal normal-case tracking-normal">(Optional)</span>}
-            </label>
-            <div className="relative">
-              <Link2 size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-tertiary" />
-              <input type="url" placeholder="Paste link here..."
-                value={form[`d_${i}`] || ""} onChange={e => onChange(`d_${i}`, e.target.value)}
-                className={`${INPUT_CLS} pl-9`} />
-            </div>
+    <div className="space-y-8 pt-4">
+      {/* 1. Deliverables on Top */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-accent">1. Deliverable Links</p>
+            <h4 className="text-sm font-semibold text-text-primary mt-0.5">Submit your public repository, preview, or design links</h4>
           </div>
-        ))}
+          <span className="text-xs text-text-tertiary">
+            {deliverables.filter(d => d.required).length} Required Fields
+          </span>
+        </div>
 
-        <div>
-          <label className="block text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2">
-            Additional Notes <span className="text-accent text-[10px] font-bold">Required</span>
-          </label>
-          <textarea rows={5} value={form.notes || ""}
-            onChange={e => onChange("notes", e.target.value)}
-            placeholder="Walk through your approach, explain your decisions, mention trade-offs, and share anything the reviewer needs to know (minimum 10 characters)."
-            className={`${INPUT_CLS} resize-none leading-relaxed`} />
+        <div className="space-y-4 pt-1">
+          {deliverables.map((d, i) => (
+            <div key={i} className="bg-stone-50/70 border border-border/60 rounded-2xl p-4 md:p-5 space-y-2">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-text-primary">{d.label}</span>
+                  {d.required ? (
+                    <span className="text-[9px] font-bold text-accent bg-accent/8 px-2 py-0.5 rounded-full border border-accent/15">Required</span>
+                  ) : (
+                    <span className="text-[9px] font-medium text-text-tertiary bg-white px-2 py-0.5 rounded-full border border-border/40">Optional</span>
+                  )}
+                </div>
+                {d.description && (
+                  <span className="text-xs text-text-tertiary line-clamp-1">{d.description}</span>
+                )}
+              </div>
+              <div className="relative">
+                <Link2 size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-tertiary" />
+                <input
+                  type="url"
+                  placeholder={`Paste ${d.label} URL here (e.g. https://github.com/...)`}
+                  value={form[`d_${i}`] || ""}
+                  onChange={e => onChange(`d_${i}`, e.target.value)}
+                  className={`${INPUT_CLS} pl-9 bg-white`}
+                />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Validation */}
+      {/* 2. Additional Notes & Approach at Bottom */}
+      <div className="space-y-3 pt-2 border-t border-border/40">
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-widest text-accent">2. Approach & Decisions</p>
+          <h4 className="text-sm font-semibold text-text-primary mt-0.5">Walkthrough your implementation decisions</h4>
+        </div>
+        <textarea
+          rows={5}
+          value={form.notes || ""}
+          onChange={e => onChange("notes", e.target.value)}
+          placeholder="Explain your technical decisions, trade-offs, architecture overview, and key features implemented..."
+          className={`${INPUT_CLS} resize-none leading-relaxed`}
+        />
+      </div>
+
+      {/* Validation alert */}
       {validationErrors.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-          className="bg-red-50 border border-red-200 rounded-xl p-4">
+          className="bg-red-50 border border-red-200 rounded-2xl p-4">
           <p className="text-sm font-semibold text-red-700 mb-1">Missing required deliverables:</p>
           <ul className="space-y-1">
             {validationErrors.map((e) => (
@@ -303,13 +332,13 @@ function SubmissionWorkspace({
         </motion.div>
       )}
 
-      {/* Submit */}
-      <div className="flex items-center justify-between gap-4 pt-4 border-t border-border/40">
+      {/* Submit footer bar */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-4 border-t border-border/40">
         <p className="text-xs text-text-tertiary max-w-sm leading-relaxed">
-          Once submitted, your work enters evaluation. The platform will determine your capability level. Results are communicated separately.
+          Once submitted, your work enters evaluation review. Results will be communicated after verification.
         </p>
         <button onClick={onSubmit} disabled={submitting || !requiredMet}
-          className="shrink-0 flex items-center gap-2 px-7 py-3.5 bg-accent hover:bg-accent-hover disabled:bg-stone-200 disabled:text-stone-400 disabled:cursor-not-allowed text-white rounded-xl text-sm font-semibold transition-all shadow-[0_4px_16px_rgba(232,82,57,0.2)] hover:shadow-[0_6px_24px_rgba(232,82,57,0.3)] active:scale-[0.98]">
+          className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-2 px-8 py-3.5 bg-accent hover:bg-accent-hover disabled:bg-stone-200 disabled:text-stone-400 disabled:cursor-not-allowed text-white rounded-xl text-sm font-semibold transition-all shadow-[0_4px_16px_rgba(232,82,57,0.2)] hover:shadow-[0_6px_24px_rgba(232,82,57,0.3)] active:scale-[0.98]">
           {submitting ? <><Loader2 size={14} className="animate-spin" /> Submitting…</> : <><Send size={14} /> Submit Assessment</>}
         </button>
       </div>
@@ -317,8 +346,239 @@ function SubmissionWorkspace({
   );
 }
 
+// ─── Assignment Brief Content (Sections 01 - 10) ──────────────────────────────
+function AssignmentBriefContent({
+  a,
+  checkpoints,
+  handleCheckpoint,
+  isEvaluated,
+  showFullReport,
+  setShowFullReport
+}: {
+  a: any;
+  checkpoints: Checkpoint[];
+  handleCheckpoint: (id: string) => void;
+  isEvaluated: boolean;
+  showFullReport: boolean;
+  setShowFullReport: (v: boolean) => void;
+}) {
+  return (
+    <div className="space-y-12">
+      {/* ══ 01 — Assignment ══════════════════════════════════════════ */}
+      <DocSection id="s-assignment" number={1} title="Assignment" icon={Briefcase}>
+        <Card>
+          <div className="space-y-5">
+            {/* Meta row */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-3 py-1 bg-accent/8 text-accent text-[10px] font-bold uppercase tracking-widest rounded-full border border-accent/15">
+                {a.domain}
+              </span>
+              <span className="px-3 py-1 bg-stone-50 text-stone-500 text-[10px] font-semibold uppercase tracking-wider rounded-full border border-border/60">
+                {a.capabilityArea}
+              </span>
+              <span className="px-3 py-1 bg-stone-50 text-stone-500 text-[10px] font-semibold uppercase tracking-wider rounded-full border border-border/60">
+                Level 2
+              </span>
+            </div>
+
+            {/* Title */}
+            <h2 className="font-display text-2xl md:text-3xl font-semibold text-text-primary tracking-tight leading-snug">
+              {a.assignmentTitle}
+            </h2>
+
+            {/* Summary */}
+            {a.assignmentSummary && (
+              <p className="text-[15px] text-text-secondary leading-relaxed border-t border-border/40 pt-4">
+                {a.assignmentSummary}
+              </p>
+            )}
+          </div>
+        </Card>
+      </DocSection>
+
+      {/* ══ 02 — Project Overview ════════════════════════════════════ */}
+      <DocSection id="s-overview" number={2} title="Project Overview" icon={Briefcase}>
+        <Card>
+          <div className="space-y-6">
+            {[
+              { key: "background",       label: "Business Background"  },
+              { key: "currentSituation", label: "Current Situation"    },
+              { key: "businessProblem",  label: "The Problem"          },
+              { key: "expectedOutcome",  label: "Expected Outcome"     },
+            ].map(({ key, label }) => (
+              a.projectOverview?.[key] && (
+                <div key={key}>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary mb-2">{label}</p>
+                  <p className="text-[14px] text-text-secondary leading-relaxed">
+                    {a.projectOverview[key]}
+                  </p>
+                </div>
+              )
+            ))}
+          </div>
+          
+          <div className="flex justify-center pt-4 border-t border-border/30 mt-4">
+            <ReviewButton checkpointId="brief_reviewed" label="Project Overview" checkpoints={checkpoints} onCheck={handleCheckpoint} disabled={a && !["assigned", "in_progress"].includes(a.status)} />
+          </div>
+        </Card>
+      </DocSection>
+
+      {isEvaluated && !showFullReport ? (
+        <div className="flex justify-center pt-2 pb-10">
+          <button
+            onClick={() => setShowFullReport(true)}
+            className="px-10 py-4 bg-white border border-border/80 hover:border-accent/40 text-text-primary hover:text-accent rounded-2xl text-sm font-semibold tracking-wide transition-all shadow-[0_2px_12px_rgba(232,82,57,0.02)] active:scale-[0.98]"
+          >
+            Read Full Assignment Details
+          </button>
+        </div>
+      ) : (
+        <>
+          {/* ══ 03 — Your Role ═══════════════════════════════════════════ */}
+          <DocSection id="s-role" number={3} title="Your Role" icon={User}>
+            <Card className="bg-gradient-to-br from-white/80 to-accent/3">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-accent/60 mb-3">You have been brought in as</p>
+              <p className="font-display text-xl md:text-2xl font-semibold text-text-primary leading-snug tracking-tight">
+                {a.yourRole}
+              </p>
+              <p className="mt-5 pt-5 border-t border-border/40 text-[13px] text-text-secondary leading-relaxed">
+                This project is yours to own. The decisions you make, the trade-offs you navigate, and the quality of work you deliver are entirely your professional responsibility.
+              </p>
+
+              <div className="flex justify-center pt-4 border-t border-border/30 mt-5">
+                <ReviewButton checkpointId="role_understood" label="Your Role" checkpoints={checkpoints} onCheck={handleCheckpoint} disabled={a && !["assigned", "in_progress"].includes(a.status)} />
+              </div>
+            </Card>
+          </DocSection>
+
+          {/* ══ 04 — Project Objectives ══════════════════════════════════ */}
+          <DocSection id="s-objectives" number={4} title="Project Objectives" icon={Target}>
+            <Card>
+              <NumberedList items={a.projectObjectives || []} />
+              <div className="flex justify-center pt-4 border-t border-border/30 mt-5">
+                <ReviewButton checkpointId="objectives_reviewed" label="Project Objectives" checkpoints={checkpoints} onCheck={handleCheckpoint} disabled={a && !["assigned", "in_progress"].includes(a.status)} />
+              </div>
+            </Card>
+          </DocSection>
+
+          {/* ══ 05 — Constraints ═════════════════════════════════════════ */}
+          <DocSection id="s-constraints" number={5} title="Constraints" icon={ShieldAlert}>
+            <Card>
+              <BulletList items={a.constraints || []} color="accent" />
+              <div className="flex justify-center pt-4 border-t border-border/30 mt-5">
+                <ReviewButton checkpointId="constraints_reviewed" label="Constraints" checkpoints={checkpoints} onCheck={handleCheckpoint} disabled={a && !["assigned", "in_progress"].includes(a.status)} />
+              </div>
+            </Card>
+          </DocSection>
+
+          {/* ══ 06 — Exceptions ══════════════════════════════════════════ */}
+          <DocSection id="s-exceptions" number={6} title="Exceptions" icon={Ban}>
+            <Card>
+              <p className="text-[12px] text-text-tertiary mb-4 italic">
+                The following items are intentionally excluded from this assignment and will not be evaluated.
+              </p>
+              <BulletList items={a.exceptions || []} color="stone" />
+              <div className="flex justify-center pt-4 border-t border-border/30 mt-5">
+                <ReviewButton checkpointId="exceptions_reviewed" label="Exceptions" checkpoints={checkpoints} onCheck={handleCheckpoint} disabled={a && !["assigned", "in_progress"].includes(a.status)} />
+              </div>
+            </Card>
+          </DocSection>
+
+          {/* ══ 07 — Success Criteria ════════════════════════════════════ */}
+          <DocSection id="s-success" number={7} title="Success Criteria" icon={CheckSquare}>
+            <Card>
+              <p className="text-[14px] text-text-secondary leading-relaxed">
+                {a.successCriteria}
+              </p>
+              <p className="mt-5 pt-5 border-t border-border/40 text-[12px] text-text-tertiary italic leading-relaxed">
+                Evaluation determines whether your submission reflects Level 1, Level 2, or Level 3 capability. Results are communicated after a complete review — no scores are shown immediately.
+              </p>
+              <div className="flex justify-center pt-4 border-t border-border/30 mt-5">
+                <ReviewButton checkpointId="success_reviewed" label="Success Criteria" checkpoints={checkpoints} onCheck={handleCheckpoint} disabled={a && !["assigned", "in_progress"].includes(a.status)} />
+              </div>
+            </Card>
+          </DocSection>
+
+          {/* ══ 08 — Deliverables ════════════════════════════════════════ */}
+          <DocSection id="s-deliverables" number={8} title="Deliverables" icon={Package}>
+            <Card>
+              <div className="space-y-6">
+                {(a.deliverables || []).map((d: Deliverable, i: number) => (
+                  <div key={i} className="flex items-start gap-4">
+                    <div className="shrink-0 w-7 h-7 rounded-lg bg-surface border border-border/40 flex items-center justify-center mt-0.5">
+                      <span className="text-[10px] font-bold text-text-tertiary">{i + 1}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <span className="text-sm font-semibold text-text-primary">{d.label}</span>
+                        {d.required
+                          ? <span className="text-[9px] font-bold text-accent bg-accent/8 px-2 py-0.5 rounded-full border border-accent/15">Required</span>
+                          : <span className="text-[9px] font-medium text-text-tertiary bg-stone-50 px-2 py-0.5 rounded-full border border-border/40">Optional</span>}
+                      </div>
+                      <p className="text-[13px] text-text-secondary leading-relaxed">{d.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-center pt-4 border-t border-border/30 mt-6">
+                <ReviewButton checkpointId="deliverables_prepared" label="Deliverables" checkpoints={checkpoints} onCheck={handleCheckpoint} disabled={a && !["assigned", "in_progress"].includes(a.status)} />
+              </div>
+            </Card>
+          </DocSection>
+
+          {/* ══ 09 — Common Mistakes ═════════════════════════════════════ */}
+          <DocSection id="s-mistakes" number={9} title="Common Mistakes to Avoid" icon={AlertCircle}>
+            <Card>
+              <p className="text-[12px] text-text-tertiary mb-4 italic">
+                These are patterns that frequently appear in weaker submissions. Use this list to sense-check your work before submitting.
+              </p>
+              <BulletList items={a.commonMistakes || []} color="red" />
+              <div className="flex justify-center pt-4 border-t border-border/30 mt-5">
+                <ReviewButton checkpointId="mistakes_reviewed" label="Common Mistakes" checkpoints={checkpoints} onCheck={handleCheckpoint} disabled={a && !["assigned", "in_progress"].includes(a.status)} />
+              </div>
+            </Card>
+          </DocSection>
+
+          {/* ══ 10 — Important Notes ═════════════════════════════════════ */}
+          <DocSection id="s-notes" number={10} title="Important Notes" icon={StickyNote}>
+            <Card>
+              <ul className="space-y-4">
+                {(a.importantNotes || []).map((note: string, i: number) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <div className="w-5 h-5 rounded bg-stone-100 flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="text-[10px] font-bold text-stone-500">{i + 1}</span>
+                    </div>
+                    <p className="text-[13px] text-text-secondary leading-relaxed">{note}</p>
+                  </li>
+                ))}
+              </ul>
+              <div className="flex justify-center pt-4 border-t border-border/30 mt-5">
+                <ReviewButton checkpointId="notes_reviewed" label="Important Notes" checkpoints={checkpoints} onCheck={handleCheckpoint} disabled={a && !["assigned", "in_progress"].includes(a.status)} />
+              </div>
+            </Card>
+          </DocSection>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── Confirmation screen ──────────────────────────────────────────────────────
 function ConfirmationScreen({ title }: { title: string }) {
+  const router = useRouter();
+  const [countdown, setCountdown] = useState(5);
+
+  useEffect(() => {
+    if (countdown <= 0) {
+      router.push("/freelancer/workspace");
+      return;
+    }
+    const timer = setTimeout(() => {
+      setCountdown(c => c - 1);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [countdown, router]);
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-6 py-16">
       <motion.div initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }}
@@ -362,11 +622,16 @@ function ConfirmationScreen({ title }: { title: string }) {
           </ol>
         </div>
 
-        <a href="/freelancer/workspace"
-          className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-border/60 hover:border-accent/30 text-text-primary text-sm font-medium rounded-xl transition-all hover:bg-surface">
-          <ChevronLeft size={14} />
-          Return to Workspace
-        </a>
+        {/* 5-second automatic countdown text */}
+        <div className="flex flex-col items-center justify-center gap-2 pt-2 text-center">
+          <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-stone-50 border border-border/60 rounded-full text-xs font-medium text-text-secondary shadow-sm">
+            <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+            <span>Redirecting to your workspace in <strong className="font-bold text-accent">{countdown}s</strong>…</span>
+          </div>
+          <p className="text-[11px] text-text-tertiary">
+            Your progress is securely saved. You can monitor your evaluation status from your workspace dashboard.
+          </p>
+        </div>
       </motion.div>
     </div>
   );
@@ -397,6 +662,7 @@ export default function AssessmentWorkspace() {
   const [activeSection, setActiveSection] = useState("s-assignment");
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [showFullReport, setShowFullReport] = useState(false);
+  const [showAssignmentBrief, setShowAssignmentBrief] = useState(false);
 
   const [form, setForm] = useState<Record<string, string>>({
     repositoryLink: "", designFileUrl: "", prototypeLink: "",
@@ -532,16 +798,71 @@ export default function AssessmentWorkspace() {
   }, []);
 
 
-  // ── Section observer ──
+  // ── Sync activeSection on status change ──
+  useEffect(() => {
+    if (isActive) {
+      setActiveSection("s-submission");
+    } else {
+      setActiveSection("s-assignment");
+    }
+  }, [isActive]);
+
+  // ── Section scroll position & bottom-detection observer ──
   useEffect(() => {
     if (!assessment) return;
-    const observer = new IntersectionObserver(
-      entries => { entries.forEach(e => { if (e.isIntersecting) setActiveSection(e.target.id); }); },
-      { rootMargin: "-20% 0px -70% 0px" }
-    );
-    NAV_SECTIONS.forEach(({ id }) => { const el = document.getElementById(id); if (el) observer.observe(el); });
-    return () => observer.disconnect();
-  }, [assessment, isActive]);
+
+    const getTargetIds = () => {
+      if (isActive) {
+        return showAssignmentBrief
+          ? ["s-submission", ...NAV_SECTIONS.slice(0, 10).map(s => s.id)]
+          : ["s-submission"];
+      }
+      return NAV_SECTIONS.map(s => s.id);
+    };
+
+    const handleScroll = () => {
+      const targetIds = getTargetIds();
+      if (!targetIds.length) return;
+
+      const scrollY = window.scrollY || document.documentElement.scrollTop;
+      const windowHeight = window.innerHeight;
+      const scrollHeight = document.documentElement.scrollHeight;
+
+      // 1. Bottom of page reached -> Always highlight the last section (e.g. Section 10 "s-notes")
+      if (windowHeight + scrollY >= scrollHeight - 90) {
+        const lastId = targetIds[targetIds.length - 1];
+        setActiveSection(lastId);
+        return;
+      }
+
+      // 2. Very top of page -> Highlight first section
+      if (scrollY < 80) {
+        setActiveSection(targetIds[0]);
+        return;
+      }
+
+      // 3. Scan section positions in viewport
+      let currentSection = targetIds[0];
+      for (const id of targetIds) {
+        const el = document.getElementById(id);
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          // Element is in the active upper focal zone of the viewport
+          if (rect.top <= windowHeight * 0.42) {
+            currentSection = id;
+          }
+        }
+      }
+      setActiveSection(currentSection);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [assessment, isActive, showAssignmentBrief]);
 
   // ── Auto-save ──
   const triggerAutoSave = useCallback((newForm: Record<string, string>) => {
@@ -551,11 +872,11 @@ export default function AssessmentWorkspace() {
       try {
         await fetch("/api/freelancer/assessment", {
           method: "PATCH", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "save", savedProgress: JSON.stringify({ form: newForm }) }),
+          body: JSON.stringify({ action: "save_progress", savedProgress: JSON.stringify({ form: newForm }) }),
         });
         setLastSaved(new Date());
       } catch {}
-    }, 2000);
+    }, 1200);
   }, [isActive]);
 
   function handleFormChange(key: string, val: string) {
@@ -582,7 +903,7 @@ export default function AssessmentWorkspace() {
     } catch {}
   }
 
-  // ── Start ──
+  // ── Start (Soft inline transition) ──
   async function handleStart() {
     setStarting(true); setError("");
     try {
@@ -593,7 +914,9 @@ export default function AssessmentWorkspace() {
       if (!res.ok) throw new Error("Failed to start assessment");
       const data = await res.json();
       setAssessment(data.assessment);
-      router.push("/freelancer/workspace");
+      setShowAssignmentBrief(false);
+      setActiveSection("s-submission");
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (e: any) {
       setError(e.message || "Something went wrong.");
     } finally {
@@ -629,9 +952,41 @@ export default function AssessmentWorkspace() {
   }
 
   function scrollTo(id: string) {
+    if (isActive && id !== "s-submission") {
+      setShowAssignmentBrief(true);
+      setActiveSection(id);
+      setTimeout(() => {
+        const el = document.getElementById(id);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 150);
+      return;
+    }
+    if (isActive && id === "s-submission") {
+      setActiveSection("s-submission");
+    }
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   }
+
+  const handleDownloadPdf = useCallback(() => {
+    if (!assessment) return;
+    generateAssessmentPdf({
+      assignmentTitle: assessment.assignmentTitle,
+      assignmentSummary: assessment.assignmentSummary,
+      domain: assessment.domain,
+      capabilityArea: assessment.capabilityArea,
+      level: assessment.level || 2,
+      projectOverview: assessment.projectOverview,
+      yourRole: assessment.yourRole,
+      projectObjectives: assessment.projectObjectives,
+      constraints: assessment.constraints,
+      exceptions: assessment.exceptions,
+      successCriteria: assessment.successCriteria,
+      deliverables: assessment.deliverables,
+      commonMistakes: assessment.commonMistakes,
+      importantNotes: assessment.importantNotes,
+    });
+  }, [assessment]);
 
   // ─── Render: Loading ──────────────────────────────────────────────────────
   if (loading || generating) {
@@ -745,21 +1100,24 @@ export default function AssessmentWorkspace() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-4 shrink-0">
             {isActive && (
-              <>
-                <div className="hidden md:flex items-center gap-1.5 text-xs text-text-tertiary">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <div className="flex items-center gap-2 text-xs text-text-tertiary">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="font-medium text-text-secondary">
                   {lastSaved
                     ? `Saved ${lastSaved.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
                     : "Auto-saving…"}
-                </div>
-                <button onClick={() => scrollTo("s-submission")}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-accent/8 hover:bg-accent text-accent hover:text-white border border-accent/20 hover:border-transparent rounded-lg text-xs font-semibold transition-all">
-                  <Send size={11} /> Submit Work
-                </button>
-              </>
+                </span>
+              </div>
             )}
+            <button
+              onClick={handleDownloadPdf}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white hover:bg-stone-50 text-text-primary hover:text-accent border border-border/80 rounded-xl text-xs font-semibold transition-all shadow-sm active:scale-[0.98]"
+              title="Download Assignment Brief as PDF"
+            >
+              <Download size={13} /> <span className="hidden sm:inline">Download PDF</span>
+            </button>
           </div>
         </div>
       </header>
@@ -773,40 +1131,94 @@ export default function AssessmentWorkspace() {
               Sections
             </p>
             <div className="space-y-1">
-              {NAV_SECTIONS.map(({ id, label }, idx) => {
-                if (isEvaluated && !showFullReport && idx > 1) return null;
-                if (isEvaluated && id === "s-start") return null;
-
-                const isActiveSection = activeSection === id;
-                return (
+              {isActive ? (
+                <>
                   <motion.button
-                    key={id}
-                    onClick={() => scrollTo(id)}
+                    onClick={() => scrollTo("s-submission")}
                     animate={{
-                      x: isActiveSection ? 8 : 0,
-                      scale: isActiveSection ? 1.06 : 1.0,
+                      x: activeSection === "s-submission" ? 8 : 0,
+                      scale: activeSection === "s-submission" ? 1.06 : 1.0,
                     }}
                     transition={{ type: "spring", stiffness: 350, damping: 25 }}
                     className={`w-full flex items-center gap-3 py-1.5 text-left transition-colors duration-200 cursor-pointer origin-left ${
-                      isActiveSection
+                      activeSection === "s-submission"
                         ? "text-accent font-semibold"
-                        : id === "s-start"
-                        ? "text-accent/70 hover:text-accent font-medium"
                         : "text-text-tertiary hover:text-text-primary"
                     }`}
                   >
-                    <span className="text-[10px] font-mono opacity-50 w-5 shrink-0">
-                      {String(idx + 1).padStart(2, "0")}
+                    <span className={`text-[10px] font-mono w-5 shrink-0 transition-opacity ${activeSection === "s-submission" ? "opacity-100 text-accent font-bold" : "opacity-50"}`}>
+                      01
                     </span>
-                    <span className="text-[12px] tracking-wide truncate">{label}</span>
+                    <span className="text-[12px] tracking-wide truncate">Submission</span>
                   </motion.button>
-                );
-              })}
+
+                  <div className="pt-2.5 pb-1 border-t border-border/40 my-2">
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-text-tertiary px-1 mb-1">
+                      Specifications
+                    </p>
+                  </div>
+
+                  {NAV_SECTIONS.slice(0, 10).map(({ id, label }, idx) => {
+                    const isSecActive = activeSection === id;
+                    return (
+                      <motion.button
+                        key={id}
+                        onClick={() => scrollTo(id)}
+                        animate={{
+                          x: isSecActive ? 8 : 0,
+                          scale: isSecActive ? 1.06 : 1.0,
+                        }}
+                        transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                        className={`w-full flex items-center gap-3 py-1.5 text-left transition-colors duration-200 cursor-pointer origin-left ${
+                          isSecActive
+                            ? "text-accent font-semibold"
+                            : "text-text-tertiary hover:text-text-primary"
+                        }`}
+                      >
+                        <span className={`text-[10px] font-mono w-5 shrink-0 transition-opacity ${isSecActive ? "opacity-100 text-accent font-bold" : "opacity-50"}`}>
+                          {String(idx + 1).padStart(2, "0")}
+                        </span>
+                        <span className="text-[12px] tracking-wide truncate">{label}</span>
+                      </motion.button>
+                    );
+                  })}
+                </>
+              ) : (
+                NAV_SECTIONS.map(({ id, label }, idx) => {
+                  if (isEvaluated && !showFullReport && idx > 1) return null;
+                  if (isEvaluated && id === "s-start") return null;
+
+                  const isActiveSection = activeSection === id;
+                  return (
+                    <motion.button
+                      key={id}
+                      onClick={() => scrollTo(id)}
+                      animate={{
+                        x: isActiveSection ? 8 : 0,
+                        scale: isActiveSection ? 1.06 : 1.0,
+                      }}
+                      transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                      className={`w-full flex items-center gap-3 py-1.5 text-left transition-colors duration-200 cursor-pointer origin-left ${
+                        isActiveSection
+                          ? "text-accent font-semibold"
+                          : id === "s-start"
+                          ? "text-accent/70 hover:text-accent font-medium"
+                          : "text-text-tertiary hover:text-text-primary"
+                      }`}
+                    >
+                      <span className={`text-[10px] font-mono w-5 shrink-0 transition-opacity ${isActiveSection ? "opacity-100 text-accent font-bold" : "opacity-50"}`}>
+                        {String(idx + 1).padStart(2, "0")}
+                      </span>
+                      <span className="text-[12px] tracking-wide truncate">{label}</span>
+                    </motion.button>
+                  );
+                })
+              )}
             </div>
           </nav>
 
           {/* ── Main document ── */}
-          <main className="flex-1 min-w-0 space-y-14 pb-24">
+          <main className="flex-1 min-w-0 space-y-12 pb-24">
             {isEvaluated && assessment.evaluation && (
               <div className="bg-red-50/50 border border-red-100 rounded-3xl p-8 flex flex-col md:flex-row items-center justify-between gap-6">
                 <div className="space-y-2 text-center md:text-left">
@@ -830,266 +1242,39 @@ export default function AssessmentWorkspace() {
               </div>
             )}
 
-            {/* ══ 01 — Assignment ══════════════════════════════════════════ */}
-            <DocSection id="s-assignment" number={1} title="Assignment" icon={Briefcase}>
-              <Card>
-                <div className="space-y-5">
-                  {/* Meta row */}
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="px-3 py-1 bg-accent/8 text-accent text-[10px] font-bold uppercase tracking-widest rounded-full border border-accent/15">
-                      {a.domain}
-                    </span>
-                    <span className="px-3 py-1 bg-stone-50 text-stone-500 text-[10px] font-semibold uppercase tracking-wider rounded-full border border-border/60">
-                      {a.capabilityArea}
-                    </span>
-                    <span className="px-3 py-1 bg-stone-50 text-stone-500 text-[10px] font-semibold uppercase tracking-wider rounded-full border border-border/60">
-                      Level 2
-                    </span>
-                  </div>
-
-                  {/* Title */}
-                  <h2 className="font-display text-2xl md:text-3xl font-semibold text-text-primary tracking-tight leading-snug">
-                    {a.assignmentTitle}
-                  </h2>
-
-                  {/* Summary */}
-                  {a.assignmentSummary && (
-                    <p className="text-[15px] text-text-secondary leading-relaxed border-t border-border/40 pt-4">
-                      {a.assignmentSummary}
-                    </p>
-                  )}
-
-                </div>
-              </Card>
-            </DocSection>
-
-            {/* ══ 02 — Project Overview ════════════════════════════════════ */}
-            <DocSection id="s-overview" number={2} title="Project Overview" icon={Briefcase}>
-              <Card>
-                <div className="space-y-6">
-                  {[
-                    { key: "background",       label: "Business Background"  },
-                    { key: "currentSituation", label: "Current Situation"    },
-                    { key: "businessProblem",  label: "The Problem"          },
-                    { key: "expectedOutcome",  label: "Expected Outcome"     },
-                  ].map(({ key, label }) => (
-                    a.projectOverview?.[key] && (
-                      <div key={key}>
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary mb-2">{label}</p>
-                        <p className="text-[14px] text-text-secondary leading-relaxed">
-                          {a.projectOverview[key]}
+            {/* ══ CONDITIONAL FLOW ══ */}
+            {isActive ? (
+              /* ACTIVE FLOW: Section 01 Submission on TOP, Collapsible Brief below */
+              <>
+                {/* ══ SECTION 01 ON TOP: Assignment Submission ══ */}
+                <DocSection id="s-submission" number={1} title="Assignment Submission" icon={PlayCircle}>
+                  <Card className="border-accent/25 shadow-[0_4px_30px_rgba(232,82,57,0.06)] relative overflow-hidden">
+                    <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-accent to-[#FF8A75]" />
+                    
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border/40">
+                      <div>
+                        <div className="flex items-center gap-2.5 mb-2">
+                          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                          <span className="text-[11px] font-bold uppercase tracking-widest text-emerald-600">
+                            Section 01 • Assignment Submission
+                          </span>
+                        </div>
+                        <h2 className="font-display text-2xl font-bold text-text-primary tracking-tight">
+                          Submit Assignment Deliverables
+                        </h2>
+                        <p className="text-xs text-text-secondary mt-1">
+                          Submit your deliverable links at the top, enter your notes, and submit when ready.
                         </p>
                       </div>
-                    )
-                  ))}
-                </div>
-                
-                <div className="flex justify-center pt-4 border-t border-border/30 mt-4">
-                  <ReviewButton checkpointId="brief_reviewed" label="Project Overview" checkpoints={checkpoints} onCheck={handleCheckpoint} disabled={assessment && !["assigned", "in_progress"].includes(assessment.status)} />
-                </div>
-              </Card>
-            </DocSection>
 
-            {isEvaluated && !showFullReport ? (
-              <div className="flex justify-center pt-2 pb-10">
-                <button
-                  onClick={() => setShowFullReport(true)}
-                  className="px-10 py-4 bg-white border border-border/80 hover:border-accent/40 text-text-primary hover:text-accent rounded-2xl text-sm font-semibold tracking-wide transition-all shadow-[0_2px_12px_rgba(232,82,57,0.02)] active:scale-[0.98]"
-                >
-                  Read Full Assignment Details
-                </button>
-              </div>
-            ) : (
-              <>
-
-            {/* ══ 03 — Your Role ═══════════════════════════════════════════ */}
-            <DocSection id="s-role" number={3} title="Your Role" icon={User}>
-              <Card className="bg-gradient-to-br from-white/80 to-accent/3">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-accent/60 mb-3">You have been brought in as</p>
-                <p className="font-display text-xl md:text-2xl font-semibold text-text-primary leading-snug tracking-tight">
-                  {a.yourRole}
-                </p>
-                <p className="mt-5 pt-5 border-t border-border/40 text-[13px] text-text-secondary leading-relaxed">
-                  This project is yours to own. The decisions you make, the trade-offs you navigate, and the quality of work you deliver are entirely your professional responsibility.
-                </p>
-
-                <div className="flex justify-center pt-4 border-t border-border/30 mt-5">
-                  <ReviewButton checkpointId="role_understood" label="Your Role" checkpoints={checkpoints} onCheck={handleCheckpoint} disabled={assessment && !["assigned", "in_progress"].includes(assessment.status)} />
-                </div>
-              </Card>
-            </DocSection>
-
-            {/* ══ 04 — Project Objectives ══════════════════════════════════ */}
-            <DocSection id="s-objectives" number={4} title="Project Objectives" icon={Target}>
-              <Card>
-                <NumberedList items={a.projectObjectives || []} />
-                <div className="flex justify-center pt-4 border-t border-border/30 mt-5">
-                  <ReviewButton checkpointId="objectives_reviewed" label="Project Objectives" checkpoints={checkpoints} onCheck={handleCheckpoint} disabled={assessment && !["assigned", "in_progress"].includes(assessment.status)} />
-                </div>
-              </Card>
-            </DocSection>
-
-            {/* ══ 05 — Constraints ═════════════════════════════════════════ */}
-            <DocSection id="s-constraints" number={5} title="Constraints" icon={ShieldAlert}>
-              <Card>
-                <BulletList items={a.constraints || []} color="accent" />
-                <div className="flex justify-center pt-4 border-t border-border/30 mt-5">
-                  <ReviewButton checkpointId="constraints_reviewed" label="Constraints" checkpoints={checkpoints} onCheck={handleCheckpoint} disabled={assessment && !["assigned", "in_progress"].includes(assessment.status)} />
-                </div>
-              </Card>
-            </DocSection>
-
-            {/* ══ 06 — Exceptions ══════════════════════════════════════════ */}
-            <DocSection id="s-exceptions" number={6} title="Exceptions" icon={Ban}>
-              <Card>
-                <p className="text-[12px] text-text-tertiary mb-4 italic">
-                  The following items are intentionally excluded from this assignment and will not be evaluated.
-                </p>
-                <BulletList items={a.exceptions || []} color="stone" />
-                <div className="flex justify-center pt-4 border-t border-border/30 mt-5">
-                  <ReviewButton checkpointId="exceptions_reviewed" label="Exceptions" checkpoints={checkpoints} onCheck={handleCheckpoint} disabled={assessment && !["assigned", "in_progress"].includes(assessment.status)} />
-                </div>
-              </Card>
-            </DocSection>
-
-            {/* ══ 07 — Success Criteria ════════════════════════════════════ */}
-            <DocSection id="s-success" number={7} title="Success Criteria" icon={CheckSquare}>
-              <Card>
-                <p className="text-[14px] text-text-secondary leading-relaxed">
-                  {a.successCriteria}
-                </p>
-                <p className="mt-5 pt-5 border-t border-border/40 text-[12px] text-text-tertiary italic leading-relaxed">
-                  Evaluation determines whether your submission reflects Level 1, Level 2, or Level 3 capability. Results are communicated after a complete review — no scores are shown immediately.
-                </p>
-                <div className="flex justify-center pt-4 border-t border-border/30 mt-5">
-                  <ReviewButton checkpointId="success_reviewed" label="Success Criteria" checkpoints={checkpoints} onCheck={handleCheckpoint} disabled={assessment && !["assigned", "in_progress"].includes(assessment.status)} />
-                </div>
-              </Card>
-            </DocSection>
-
-            {/* ══ 08 — Deliverables ════════════════════════════════════════ */}
-            <DocSection id="s-deliverables" number={8} title="Deliverables" icon={Package}>
-              <Card>
-                <div className="space-y-6">
-                  {(a.deliverables || []).map((d: Deliverable, i: number) => (
-                    <div key={i} className="flex items-start gap-4">
-                      <div className="shrink-0 w-7 h-7 rounded-lg bg-surface border border-border/40 flex items-center justify-center mt-0.5">
-                        <span className="text-[10px] font-bold text-text-tertiary">{i + 1}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <span className="text-sm font-semibold text-text-primary">{d.label}</span>
-                          {d.required
-                            ? <span className="text-[9px] font-bold text-accent bg-accent/8 px-2 py-0.5 rounded-full border border-accent/15">Required</span>
-                            : <span className="text-[9px] font-medium text-text-tertiary bg-stone-50 px-2 py-0.5 rounded-full border border-border/40">Optional</span>}
-                        </div>
-                        <p className="text-[13px] text-text-secondary leading-relaxed">{d.description}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex justify-center pt-4 border-t border-border/30 mt-6">
-                  <ReviewButton checkpointId="deliverables_prepared" label="Deliverables" checkpoints={checkpoints} onCheck={handleCheckpoint} disabled={assessment && !["assigned", "in_progress"].includes(assessment.status)} />
-                </div>
-              </Card>
-            </DocSection>
-
-            {/* ══ 09 — Common Mistakes ═════════════════════════════════════ */}
-            <DocSection id="s-mistakes" number={9} title="Common Mistakes to Avoid" icon={AlertCircle}>
-              <Card>
-                <p className="text-[12px] text-text-tertiary mb-4 italic">
-                  These are patterns that frequently appear in weaker submissions. Use this list to sense-check your work before submitting.
-                </p>
-                <BulletList items={a.commonMistakes || []} color="red" />
-                <div className="flex justify-center pt-4 border-t border-border/30 mt-5">
-                  <ReviewButton checkpointId="mistakes_reviewed" label="Common Mistakes" checkpoints={checkpoints} onCheck={handleCheckpoint} disabled={assessment && !["assigned", "in_progress"].includes(assessment.status)} />
-                </div>
-              </Card>
-            </DocSection>
-
-            {/* ══ 10 — Important Notes ═════════════════════════════════════ */}
-            <DocSection id="s-notes" number={10} title="Important Notes" icon={StickyNote}>
-              <Card>
-                <ul className="space-y-4">
-                  {(a.importantNotes || []).map((note: string, i: number) => (
-                    <li key={i} className="flex items-start gap-3">
-                      <div className="w-5 h-5 rounded bg-stone-100 flex items-center justify-center shrink-0 mt-0.5">
-                        <span className="text-[10px] font-bold text-stone-500">{i + 1}</span>
-                      </div>
-                      <p className="text-[13px] text-text-secondary leading-relaxed">{note}</p>
-                    </li>
-                  ))}
-                </ul>
-                <div className="flex justify-center pt-4 border-t border-border/30 mt-5">
-                  <ReviewButton checkpointId="notes_reviewed" label="Important Notes" checkpoints={checkpoints} onCheck={handleCheckpoint} disabled={assessment && !["assigned", "in_progress"].includes(assessment.status)} />
-                </div>
-              </Card>
-            </DocSection>
-
-            {/* ══ 11 — Start Assignment ════════════════════════════════════ */}
-            {!isEvaluated && (
-            <DocSection id="s-start" number={11} title="Start Assignment" icon={PlayCircle}>
-              {!isActive ? (
-                <Card className="text-center py-10">
-                  <div className="space-y-6">
-                    <div className="w-16 h-16 rounded-2xl bg-accent/8 border border-accent/15 flex items-center justify-center mx-auto">
-                      <PlayCircle size={28} className="text-accent" />
-                    </div>
-                    <div className="space-y-2">
-                      <h3 className="font-display text-xl font-semibold text-text-primary tracking-tight">
-                        Ready to begin?
-                      </h3>
-                      <p className="text-[13px] text-text-secondary leading-relaxed max-w-sm mx-auto">
-                        Once you start, the assignment workspace opens, progress tracking activates, and your session is timestamped. You can return at any time — your work is automatically saved.
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-4 text-center max-w-xs mx-auto">
-                      {[
-                        { label: "Level", value: "2" },
-                        { label: "Timer", value: "Open" },
-                        { label: "Deliverables", value: String(a.deliverables?.length || 0) },
-                      ].map(({ label, value }) => (
-                        <div key={label} className="space-y-1">
-                          <p className="text-[10px] text-text-tertiary">{label}</p>
-                          <p className="text-sm font-bold text-text-primary">{value}</p>
-                        </div>
-                      ))}
-                    </div>
-
-                    {error && (
-                      <p className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-2.5 border border-red-100">
-                        {error}
-                      </p>
-                    )}
-
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                      <button onClick={() => window.print()}
-                        className="inline-flex items-center gap-2.5 px-8 py-4 bg-white border border-border/80 hover:border-accent/40 text-text-primary hover:text-accent rounded-2xl text-sm font-semibold tracking-wide transition-all shadow-[0_2px_12px_rgba(232,82,57,0.02)] active:scale-[0.98] print:hidden">
-                        <Download size={16} /> Download as PDF
-                      </button>
-                      <button onClick={handleStart} disabled={starting}
-                        className="inline-flex items-center gap-2.5 px-8 py-4 bg-accent hover:bg-accent-hover text-white rounded-2xl text-sm font-semibold tracking-wide transition-all shadow-[0_4px_24px_rgba(232,82,57,0.25)] hover:shadow-[0_8px_32px_rgba(232,82,57,0.35)] active:scale-[0.98] disabled:opacity-60 print:hidden">
-                        {starting
-                          ? <><Loader2 size={16} className="animate-spin" /> Opening workspace…</>
-                          : <><PlayCircle size={16} /> Start Assignment<ArrowRight size={14} strokeWidth={2.5} /></>}
+                      <button
+                        type="button"
+                        onClick={handleDownloadPdf}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-stone-50 text-text-primary hover:text-accent border border-border/80 rounded-xl text-xs font-semibold transition-all shadow-sm shrink-0 self-start sm:self-auto active:scale-[0.98]"
+                      >
+                        <Download size={13} /> Download Brief (PDF)
                       </button>
                     </div>
-                  </div>
-                </Card>
-              ) : (
-                /* Submission workspace — appears after Start is clicked */
-                <section id="s-submission">
-                  <Card>
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                      <p className="text-[11px] font-bold uppercase tracking-widest text-emerald-600">
-                        Assignment Active — Workspace Open
-                      </p>
-                    </div>
-                    <p className="text-[13px] text-text-secondary leading-relaxed mb-1">
-                      Work through the assignment above. When your deliverables are ready, submit them below.
-                    </p>
 
                     <SubmissionWorkspace
                       deliverables={a.deliverables || []}
@@ -1098,13 +1283,137 @@ export default function AssessmentWorkspace() {
                       onSubmit={handleSubmit}
                       submitting={submitting}
                       validationErrors={validationErrors}
+                      onDownloadPdf={handleDownloadPdf}
                     />
                   </Card>
-                </section>
-              )}
-            </DocSection>
-            )}
+                </DocSection>
 
+                {/* ══ COLLAPSIBLE ASSIGNMENT BRIEF (Sections 01 - 10) ══ */}
+                <section id="s-assignment-brief" className="scroll-mt-24">
+                  <div className="border border-border/60 bg-white rounded-3xl overflow-hidden shadow-sm transition-all">
+                    <button
+                      onClick={() => setShowAssignmentBrief(v => !v)}
+                      className="w-full flex items-center justify-between p-6 md:p-8 bg-gradient-to-r from-stone-50/90 to-white hover:bg-stone-100/70 transition-all text-left group cursor-pointer select-none"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-accent/8 border border-accent/15 flex items-center justify-center text-accent group-hover:scale-105 transition-transform shrink-0">
+                          <Briefcase size={22} />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-accent bg-accent/8 px-2.5 py-0.5 rounded-full border border-accent/15">
+                              Sections 01 – 10
+                            </span>
+                            <span className="text-xs text-text-tertiary">
+                              {showAssignmentBrief ? "Click to collapse specifications" : "Click to view full specifications"}
+                            </span>
+                          </div>
+                          <h3 className="font-display text-lg md:text-xl font-semibold text-text-primary mt-1">
+                            Complete Assignment Brief & Detailed Specifications
+                          </h3>
+                          <p className="text-xs text-text-secondary mt-0.5">
+                            Click here to review the problem statement, user role, objectives, constraints, exceptions, and deliverables.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 text-xs font-semibold text-accent shrink-0">
+                        <span>{showAssignmentBrief ? "Hide Details" : "View Full Assignment"}</span>
+                        <motion.div
+                          animate={{ rotate: showAssignmentBrief ? 180 : 0 }}
+                          transition={{ duration: 0.25 }}
+                        >
+                          <ChevronDown size={18} />
+                        </motion.div>
+                      </div>
+                    </button>
+
+                    <AnimatePresence>
+                      {showAssignmentBrief && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                          className="border-t border-border/40 p-6 md:p-8 bg-[#FAF9F7]/40 overflow-hidden"
+                        >
+                          <AssignmentBriefContent
+                            a={a}
+                            checkpoints={checkpoints}
+                            handleCheckpoint={handleCheckpoint}
+                            isEvaluated={isEvaluated}
+                            showFullReport={showFullReport}
+                            setShowFullReport={setShowFullReport}
+                          />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </section>
+              </>
+            ) : (
+              /* NON-ACTIVE FLOW: Full Brief first, Section 11 Start Card at bottom */
+              <>
+                <AssignmentBriefContent
+                  a={a}
+                  checkpoints={checkpoints}
+                  handleCheckpoint={handleCheckpoint}
+                  isEvaluated={isEvaluated}
+                  showFullReport={showFullReport}
+                  setShowFullReport={setShowFullReport}
+                />
+
+                {!isEvaluated && (
+                  <DocSection id="s-start" number={11} title="Start Assignment" icon={PlayCircle}>
+                    <Card className="text-center py-10">
+                      <div className="space-y-6">
+                        <div className="w-16 h-16 rounded-2xl bg-accent/8 border border-accent/15 flex items-center justify-center mx-auto">
+                          <PlayCircle size={28} className="text-accent" />
+                        </div>
+                        <div className="space-y-2">
+                          <h3 className="font-display text-xl font-semibold text-text-primary tracking-tight">
+                            Ready to begin?
+                          </h3>
+                          <p className="text-[13px] text-text-secondary leading-relaxed max-w-sm mx-auto">
+                            Once you start, the assignment workspace opens, progress tracking activates, and your session is timestamped. You can return at any time — your work is automatically saved.
+                          </p>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-4 text-center max-w-xs mx-auto">
+                          {[
+                            { label: "Level", value: "2" },
+                            { label: "Timer", value: "Open" },
+                            { label: "Deliverables", value: String(a.deliverables?.length || 0) },
+                          ].map(({ label, value }) => (
+                            <div key={label} className="space-y-1">
+                              <p className="text-[10px] text-text-tertiary">{label}</p>
+                              <p className="text-sm font-bold text-text-primary">{value}</p>
+                            </div>
+                          ))}
+                        </div>
+
+                        {error && (
+                          <p className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-2.5 border border-red-100">
+                            {error}
+                          </p>
+                        )}
+
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                          <button onClick={handleDownloadPdf}
+                            className="inline-flex items-center gap-2.5 px-8 py-4 bg-white border border-border/80 hover:border-accent/40 text-text-primary hover:text-accent rounded-2xl text-sm font-semibold tracking-wide transition-all shadow-[0_2px_12px_rgba(232,82,57,0.02)] active:scale-[0.98]">
+                            <Download size={16} /> Download as PDF
+                          </button>
+                          <button onClick={handleStart} disabled={starting}
+                            className="inline-flex items-center gap-2.5 px-8 py-4 bg-accent hover:bg-accent-hover text-white rounded-2xl text-sm font-semibold tracking-wide transition-all shadow-[0_4px_24px_rgba(232,82,57,0.25)] hover:shadow-[0_8px_32px_rgba(232,82,57,0.35)] active:scale-[0.98] disabled:opacity-60">
+                            {starting
+                              ? <><Loader2 size={16} className="animate-spin" /> Opening workspace…</>
+                              : <><PlayCircle size={16} /> Start Assignment<ArrowRight size={14} strokeWidth={2.5} /></>}
+                          </button>
+                        </div>
+                      </div>
+                    </Card>
+                  </DocSection>
+                )}
               </>
             )}
 

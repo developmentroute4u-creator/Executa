@@ -1,12 +1,13 @@
-﻿"use client";
+"use client";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   ChevronLeft, Award, ExternalLink, FileText, CheckCircle2,
   Briefcase, User, Target, ShieldAlert, Ban, CheckSquare,
-  Package, AlertCircle, StickyNote, ChevronDown, ChevronUp, Link2,
+  Package, AlertCircle, StickyNote, ChevronDown, ChevronUp, Link2, Download,
 } from "lucide-react";
+import { generateAssessmentPdf } from "@/lib/assessmentPdf";
 
 // ── Tiny helpers ─────────────────────────────────────────────────────────────
 
@@ -74,13 +75,37 @@ function AssignmentDetails({ test }: { test: any }) {
 
   return (
     <div className="border border-border/50 rounded-2xl overflow-hidden">
-      <button
-        onClick={() => setOpen(v => !v)}
-        className="w-full flex items-center justify-between px-6 py-4 bg-stone-50 hover:bg-stone-100 transition-colors text-left"
-      >
-        <span className="font-semibold text-[13px] text-text-primary">View Full Assignment Details</span>
-        {open ? <ChevronUp size={16} className="text-text-tertiary" /> : <ChevronDown size={16} className="text-text-tertiary" />}
-      </button>
+      <div className="flex items-center justify-between px-6 py-3.5 bg-stone-50 border-b border-border/40">
+        <button
+          onClick={() => setOpen(v => !v)}
+          className="flex items-center gap-2 text-left hover:text-accent transition-colors"
+        >
+          <span className="font-semibold text-[13px] text-text-primary">Assignment Details</span>
+          {open ? <ChevronUp size={15} className="text-text-tertiary" /> : <ChevronDown size={15} className="text-text-tertiary" />}
+        </button>
+        <button
+          type="button"
+          onClick={() => generateAssessmentPdf({
+            assignmentTitle: a.assignmentTitle,
+            assignmentSummary: a.assignmentSummary,
+            domain: a.domain,
+            capabilityArea: a.capabilityArea,
+            level: a.level || 2,
+            projectOverview: a.projectOverview,
+            yourRole: a.yourRole,
+            projectObjectives: a.projectObjectives,
+            constraints: a.constraints,
+            exceptions: a.exceptions,
+            successCriteria: a.successCriteria,
+            deliverables: a.deliverables,
+            commonMistakes: a.commonMistakes,
+            importantNotes: a.importantNotes,
+          })}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-stone-100 text-text-primary hover:text-accent border border-border/80 rounded-xl text-xs font-semibold transition-all shadow-sm active:scale-[0.98]"
+        >
+          <Download size={13} /> Download Brief (PDF)
+        </button>
+      </div>
 
       {open && (
         <motion.div

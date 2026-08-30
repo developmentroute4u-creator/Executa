@@ -1,4 +1,4 @@
-﻿export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -49,11 +49,6 @@ export async function POST(req: NextRequest) {
       if (!url || !url.trim()) {
         missingDeliverables.push(deliverable.label);
       }
-    }
-
-    // Also notes is mandatory
-    if (!notes || notes.trim().length <= 10) {
-      missingDeliverables.push("Additional Notes");
     }
 
     if (missingDeliverables.length > 0) {

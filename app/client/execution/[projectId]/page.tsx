@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -253,16 +253,16 @@ export default function ClientExecutionRoom({ params }: { params: { projectId: s
   }
 
   return (
-    <div className="flex-1 w-full h-[calc(100vh-theme(spacing.20))] max-h-[calc(100vh-theme(spacing.20))] overflow-hidden flex flex-col pt-6">
+    <div className="flex-1 w-full h-screen max-h-screen overflow-hidden flex flex-col pt-3 bg-[#f6f4f0]">
       
-      <div className="px-12 flex justify-between items-center mb-6 shrink-0">
-        <div className="flex items-center gap-6">
-          <Link href="/client/execution" className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-stone-400 hover:text-stone-900 transition-colors">
-            <ArrowLeft size={18} />
+      <div className="px-8 md:px-12 flex justify-between items-center mb-3 shrink-0">
+        <div className="flex items-center gap-5">
+          <Link href="/client/execution" className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center text-stone-400 hover:text-stone-900 transition-colors">
+            <ArrowLeft size={16} />
           </Link>
           <div>
-            <h1 className="text-[24px] font-black tracking-tight text-stone-900">{project.title}</h1>
-            <p className="text-[13px] font-bold uppercase tracking-wider text-[#E85239]">
+            <h1 className="text-[22px] md:text-[24px] font-black tracking-tight text-stone-900">{project.title}</h1>
+            <p className="text-[12px] font-bold uppercase tracking-wider text-[#E85239]">
               {project.status === "execution" || project.status === "active" || project.status === "disputed" ? "Active Execution" : "Setup Phase"}
             </p>
           </div>
@@ -270,8 +270,8 @@ export default function ClientExecutionRoom({ params }: { params: { projectId: s
         
         <div className="flex items-center gap-4">
           <div className="text-right">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-stone-400">Current Phase</p>
-            <p className="text-[14px] font-bold text-stone-900">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Current Phase</p>
+            <p className="text-[13px] font-bold text-stone-900">
               {project.status === "execution" || project.status === "active" || project.status === "disputed" ? "Awaiting Delivery" : "Waiting to start"}
             </p>
           </div>
@@ -281,9 +281,9 @@ export default function ClientExecutionRoom({ params }: { params: { projectId: s
               setConflictDetails("");
               setShowConflictModal(true);
             }}
-            className="px-4 py-2 border border-red-200 hover:border-red-300 bg-red-50/50 hover:bg-red-50 text-red-600 hover:text-red-700 rounded-xl text-[13px] font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-[0.98]"
+            className="px-3.5 py-2 border border-red-200 hover:border-red-300 bg-red-50/50 hover:bg-red-50 text-red-600 hover:text-red-700 rounded-xl text-[12px] font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-[0.98]"
           >
-            <AlertTriangle size={14} className="shrink-0" strokeWidth={2.5} />
+            <AlertTriangle size={13} className="shrink-0" strokeWidth={2.5} />
             Flag Scope Conflict
           </button>
           <button 
@@ -293,17 +293,17 @@ export default function ClientExecutionRoom({ params }: { params: { projectId: s
               setUpgradeStep("intake");
               setShowUpgradeModal(true);
             }}
-            className="px-4 py-2 bg-stone-900 text-white text-[13px] font-bold rounded-xl hover:bg-stone-800 transition-colors flex items-center gap-2"
+            className="px-3.5 py-2 bg-stone-900 text-white text-[12px] font-bold rounded-xl hover:bg-stone-800 transition-colors flex items-center gap-2"
           >
-            <Plus size={16} /> Add Functional Unit
+            <Plus size={15} /> Add Functional Unit
           </button>
         </div>
       </div>
 
-      <div className="flex-1 flex overflow-hidden border-t border-stone-200/50 bg-white shadow-[0_-10px_40px_rgba(0,0,0,0.02)]">
+      <div className="flex-1 min-h-0 w-full flex overflow-hidden border-t border-stone-200/60 bg-white shadow-[0_-10px_40px_rgba(0,0,0,0.02)]">
         
-        {/* EXECUTION CANVAS (Left) */}
-        <div className="flex-1 overflow-y-auto p-12 border-r border-stone-200/50">
+        {/* EXECUTION CANVAS (Left) - Scroll ONLY on live deliverables */}
+        <div className="flex-1 h-full min-h-0 overflow-y-auto p-8 lg:p-12 border-r border-stone-200/50">
           <h2 className="text-[16px] font-bold text-stone-900 mb-8 flex items-center gap-2">
             <CheckCircle2 className="text-stone-400" size={18} /> Live Deliverables
           </h2>
@@ -486,16 +486,22 @@ export default function ClientExecutionRoom({ params }: { params: { projectId: s
           </div>
         </div>
 
-        {/* COMMUNICATION LAYER (Right) */}
-        <div className="w-[400px] flex flex-col bg-stone-50/50">
-          <div className="p-6 border-b border-stone-200/50 flex items-center gap-3 bg-white">
-            <MessageSquare size={18} className="text-stone-400" />
-            <h2 className="text-[14px] font-bold text-stone-900">Execution Thread</h2>
+        {/* COMMUNICATION LAYER (Right) - Chat Thread & Sticky Input */}
+        <div className="w-[380px] lg:w-[440px] h-full min-h-0 flex flex-col bg-white shrink-0">
+          <div className="p-5 border-b border-stone-200/50 flex items-center justify-between bg-white shrink-0">
+            <div className="flex items-center gap-2.5">
+              <MessageSquare size={16} className="text-stone-400" />
+              <h2 className="text-[13px] font-bold text-stone-900">Execution Thread</h2>
+            </div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-full">
+              Live Sync
+            </span>
           </div>
           
-          <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
+          {/* Scrollable messages container */}
+          <div ref={messagesContainerRef} className="flex-1 min-h-0 overflow-y-auto p-6 flex flex-col gap-5 bg-stone-50/40">
             <div className="text-center">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 bg-stone-100 px-3 py-1 rounded-full">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 bg-white border border-stone-200/60 px-3 py-1 rounded-full shadow-2xs">
                 Execution Room Created
               </span>
             </div>
@@ -522,23 +528,25 @@ export default function ClientExecutionRoom({ params }: { params: { projectId: s
             })}
           </div>
 
-          <div className="p-6 bg-white border-t border-stone-200/50">
+          {/* Text Input - Stuck to the bottom */}
+          <div className="p-4 bg-white border-t border-stone-200/50 shrink-0">
             <div className="relative">
               <textarea 
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyDown={handleKeyPress}
                 placeholder="Discuss the deliverables..."
-                className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 pr-12 text-[13px] outline-none focus:border-[#E85239] focus:ring-1 focus:ring-[#E85239] resize-none h-24 text-stone-800"
+                className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 pr-14 text-[13px] outline-none focus:border-[#E85239] focus:ring-1 focus:ring-[#E85239] resize-none h-24 text-stone-800 placeholder:text-stone-400"
               />
               <div className="absolute bottom-3 right-3 flex items-center gap-2">
-                <button className="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-stone-900 transition-colors">
+                <button type="button" className="w-7 h-7 flex items-center justify-center text-stone-400 hover:text-stone-900 transition-colors">
                   <Paperclip size={16} />
                 </button>
                 <button 
+                  type="button"
                   onClick={sendMessage}
                   disabled={sending || !newMessage.trim()}
-                  className="w-8 h-8 rounded-lg bg-[#E85239] text-white flex items-center justify-center shadow-md hover:bg-[#d44127] transition-colors disabled:opacity-50"
+                  className="w-8 h-8 rounded-lg bg-[#E85239] text-white flex items-center justify-center shadow-md hover:bg-[#d44127] transition-colors disabled:opacity-50 active:scale-95"
                 >
                   <Send size={14} />
                 </button>

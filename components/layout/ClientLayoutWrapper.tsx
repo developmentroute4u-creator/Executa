@@ -18,7 +18,7 @@ export default function ClientLayoutWrapper({ children }: { children: React.Reac
       {!hideRail && <ClientWorkspaceRail />}
       <div className={`flex-1 flex flex-col transition-all duration-300 ${!hideRail
           ? 'lg:pl-[100px] pb-20 lg:pb-0'  // mobile: bottom padding for tab bar; desktop: left padding for rail
-          : ''
+          : 'h-screen max-h-screen overflow-hidden'
         }`}>
         {children}
       </div>

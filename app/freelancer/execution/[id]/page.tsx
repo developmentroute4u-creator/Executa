@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -697,16 +697,21 @@ export default function ExecutionRoom({ params }: { params: { id: string } }) {
         </div>
 
         {/* Right column: Dynamic synchronized communications stream */}
-        <div className="w-[400px] shrink-0 bg-stone-50/50 border-l border-border/40 flex flex-col relative z-20">
-          <div className="p-6 border-b border-stone-200/50 flex items-center gap-3 bg-white">
-            <MessageSquare size={18} className="text-stone-400" />
-            <h2 className="text-[14px] font-bold text-stone-900">Execution Thread</h2>
+        <div className="w-[380px] lg:w-[440px] h-full min-h-0 flex flex-col bg-white shrink-0 border-l border-border/40 relative z-20">
+          <div className="p-5 border-b border-stone-200/50 flex items-center justify-between bg-white shrink-0">
+            <div className="flex items-center gap-2.5">
+              <MessageSquare size={16} className="text-stone-400" />
+              <h2 className="text-[13px] font-bold text-stone-900">Execution Thread</h2>
+            </div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-full">
+              Live Sync
+            </span>
           </div>
 
           {/* Messages list */}
-          <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
-            <div className="text-center py-2">
-              <span className="text-[9px] font-bold uppercase tracking-widest text-text-tertiary bg-stone-100 px-3 py-1 rounded-full border border-border/10">
+          <div ref={messagesContainerRef} className="flex-1 min-h-0 overflow-y-auto p-6 flex flex-col gap-5 bg-stone-50/40">
+            <div className="text-center py-1">
+              <span className="text-[9px] font-bold uppercase tracking-widest text-text-tertiary bg-white px-3 py-1 rounded-full border border-border/40 shadow-2xs">
                 Secure Comms Rails Active
               </span>
             </div>
@@ -733,8 +738,8 @@ export default function ExecutionRoom({ params }: { params: { id: string } }) {
             })}
           </div>
 
-          {/* Typing Area */}
-          <div className="p-6 bg-white border-t border-border/40">
+          {/* Typing Area - Stuck to bottom */}
+          <div className="p-4 bg-white border-t border-border/40 shrink-0">
             {project.status === "pending" ? (
               <div className="text-center py-4 px-2 text-xs text-text-tertiary italic bg-stone-50 border border-dashed border-stone-200 rounded-xl">
                 Accept project scope to unlock team chat thread.
@@ -746,14 +751,15 @@ export default function ExecutionRoom({ params }: { params: { id: string } }) {
                   onChange={(e) => setNewMessage(e.target.value)}
                   onKeyDown={handleKeyPress}
                   placeholder="Discuss implementation details..."
-                  className="w-full bg-stone-50 border border-border rounded-xl px-4 py-3 pr-10 text-[13px] outline-none focus:border-[#E85239] focus:ring-1 focus:ring-[#E85239] resize-none h-20 text-text-primary placeholder:text-text-tertiary"
+                  className="w-full bg-stone-50 border border-border rounded-xl px-4 py-3 pr-14 text-[13px] outline-none focus:border-[#E85239] focus:ring-1 focus:ring-[#E85239] resize-none h-24 text-text-primary placeholder:text-text-tertiary"
                 />
                 <button 
+                  type="button"
                   onClick={sendMessage}
                   disabled={sending || !newMessage.trim()}
-                  className="absolute bottom-2.5 right-2.5 w-8 h-8 rounded-lg bg-[#E85239] text-white flex items-center justify-center shadow-md hover:bg-[#d44127] transition-all active:scale-95 disabled:opacity-50 shrink-0"
+                  className="absolute bottom-3 right-3 w-8 h-8 rounded-lg bg-[#E85239] text-white flex items-center justify-center shadow-md hover:bg-[#d44127] transition-all active:scale-95 disabled:opacity-50 shrink-0 cursor-pointer"
                 >
-                  <Send size={12} strokeWidth={2.5} />
+                  <Send size={13} strokeWidth={2.5} />
                 </button>
               </div>
             )}
