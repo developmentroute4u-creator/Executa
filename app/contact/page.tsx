@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
@@ -91,9 +91,6 @@ export default function ContactPage() {
             <div>
               <h3 className="text-[11px] font-bold tracking-[0.2em] text-stone-400 uppercase mb-2">Phone Inquiries</h3>
               <p className="text-stone-900 font-semibold text-lg">
-                <a href="tel:+917433880868" className="hover:text-[#E85239] transition-colors">+91 74338 80868</a>
-              </p>
-              <p className="text-stone-900 font-semibold text-lg mt-1">
                 <a href="tel:+919558171690" className="hover:text-[#E85239] transition-colors">+91 95581 71690</a>
               </p>
             </div>

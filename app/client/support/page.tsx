@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { motion } from "framer-motion";
 import { MessageSquare, Mail, BookOpen, ChevronDown, ChevronUp, Phone } from "lucide-react";
 import { useState } from "react";
@@ -145,10 +145,10 @@ export default function ClientSupport() {
                 <h3 className="text-[14px] font-black text-stone-900 mb-1">Call Us</h3>
                 <p className="text-[13px] text-stone-500 mb-3">Mon–Fri, 10am–6pm IST.</p>
                 <a
-                  href="tel:+918000000000"
+                  href="tel:+919558171690"
                   className="text-[13px] font-bold text-[#E85239] hover:text-[#d44127] transition-colors"
                 >
-                  +91 80000 00000
+                  +91 95581 71690
                 </a>
               </div>
             </div>

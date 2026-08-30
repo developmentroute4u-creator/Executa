@@ -570,8 +570,8 @@ export default function PaymentGatePage() {
                     <div>
                       <h4 className="text-[14px] font-black text-stone-900 mb-0.5">Call Us Direct</h4>
                       <p className="text-xs text-stone-500 leading-normal mb-2">Mon–Fri, 10am–6pm IST.</p>
-                      <a href="tel:+918000000000" className="text-sm font-bold text-[#E85239] hover:underline">
-                        +91 80000 00000
+                      <a href="tel:+919558171690" className="text-sm font-bold text-[#E85239] hover:underline">
+                        +91 95581 71690
                       </a>
                     </div>
                   </div>

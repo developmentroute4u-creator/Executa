@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React from "react";
 import Link from "next/link";
@@ -150,7 +150,7 @@ export default function RefundPage() {
               For refund inquiries, contact us at{" "}
               <a href="mailto:support@findade.com" className="text-[#E85239] font-medium hover:underline">support@findade.com</a>
               {" "}or call{" "}
-              <a href="tel:+918000000000" className="text-[#E85239] font-medium hover:underline">+91 80000 00000</a>
+              <a href="tel:+919558171690" className="text-[#E85239] font-medium hover:underline">+91 95581 71690</a>
               {" "}(Mon–Fri, 10am–6pm IST).
             </p>
           </div>
