@@ -143,7 +143,7 @@ function PaymentSuccessContent() {
             </div>
             <h2 className="text-[22px] font-black text-stone-900 mt-2">Verifying Payment</h2>
             <p className="text-[14px] text-stone-500 leading-relaxed">
-              Please wait while we confirm your payment with PhonePe.
+              Please wait while we confirm your payment with Razorpay.
               {attempts > 2 && (
                 <span className="block mt-1 text-stone-400 text-[12px]">This may take a few seconds…</span>
               )}

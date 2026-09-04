@@ -248,7 +248,7 @@ export default function ProfileEnvironment() {
   };
 
   const methodTypeLabel = (type: string) =>
-    type === "upi_id" ? "UPI ID" : type === "upi_mobile" ? "PhonePe Mobile" : "Bank Transfer";
+    type === "upi_id" ? "UPI ID" : type === "upi_mobile" ? "UPI Mobile" : "Bank Transfer";
 
   const methodValue = (m: any) =>
     m.type === "upi_id" ? m.upiId : m.type === "upi_mobile" ? m.upiMobile : m.accountNumber;
@@ -548,7 +548,7 @@ export default function ProfileEnvironment() {
                     <div className="flex flex-col items-center justify-center py-10 text-center">
                       <CreditCard size={30} className="text-stone-300 mb-3" strokeWidth={1.5} />
                       <p className="text-sm font-semibold text-stone-700 mb-1">No payout methods yet</p>
-                      <p className="text-[11px] text-stone-400">Add a method to receive milestone escrow payouts via PhonePe.</p>
+                      <p className="text-[11px] text-stone-400">Add a method to receive milestone escrow payouts directly.</p>
                     </div>
                   ) : (
                     <div className="space-y-2.5">
@@ -620,12 +620,12 @@ export default function ProfileEnvironment() {
                       {
                         id: "upi_id",
                         title: "UPI ID",
-                        desc: "Any UPI address like username@ybl or name@okicici. Works with PhonePe, GPay, Paytm, and all UPI apps.",
+                        desc: "Any UPI address like username@ybl or name@okicici. Works with all UPI apps.",
                       },
                       {
                         id: "upi_mobile",
-                        title: "PhonePe Mobile Number",
-                        desc: "10-digit Indian mobile number actively registered and linked on PhonePe.",
+                        title: "UPI Mobile Number",
+                        desc: "10-digit Indian mobile number actively registered on UPI.",
                       },
                       {
                         id: "bank_transfer",
@@ -653,7 +653,7 @@ export default function ProfileEnvironment() {
                 <div className="space-y-4 text-xs">
                   <div className="flex items-center gap-2 pb-3 border-b border-stone-100">
                     <span className="text-[10px] font-bold text-stone-400 uppercase bg-stone-100 px-2.5 py-1 rounded-full">
-                      {addingType === "upi_id" ? "UPI ID" : addingType === "upi_mobile" ? "PhonePe Mobile Number" : "Direct Bank Transfer"}
+                      {addingType === "upi_id" ? "UPI ID" : addingType === "upi_mobile" ? "UPI Mobile Number" : "Direct Bank Transfer"}
                     </span>
                     {payoutMethods.length === 0 && (
                       <span className="text-[9px] font-bold text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">Will be set as default</span>
@@ -720,11 +720,11 @@ export default function ProfileEnvironment() {
                     </div>
                   )}
 
-                  {/* PhonePe Mobile */}
+                  {/* UPI Mobile */}
                   {addingType === "upi_mobile" && (
                     <div className="space-y-1.5">
                       <label className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
-                        PhonePe Registered Mobile Number *
+                        UPI Registered Mobile Number *
                       </label>
                       <input
                         type="text"
@@ -748,7 +748,7 @@ export default function ProfileEnvironment() {
                           <AlertTriangle size={10} />{addErrors.upiMobile}
                         </p>
                       ) : (
-                        <p className="text-[10px] text-stone-400">Exactly 10 digits. Must start with 6, 7, 8, or 9. Must be an active PhonePe number.</p>
+                        <p className="text-[10px] text-stone-400">Exactly 10 digits. Must start with 6, 7, 8, or 9. Must be linked to UPI.</p>
                       )}
                     </div>
                   )}

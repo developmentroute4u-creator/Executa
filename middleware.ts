@@ -7,15 +7,25 @@ export default withAuth(
     const isAuth = !!token;
     const isAuthPage = req.nextUrl.pathname.startsWith("/auth/login") || req.nextUrl.pathname.startsWith("/auth/register");
 
-    // Payment success pages must be reachable immediately after PhonePe redirect,
-    // before the session cookie fully hydrates. Guard is handled client-side.
-    if (req.nextUrl.pathname.includes("/payment-success")) {
+    // Client project flow pages (pay, scope, match, payment-success, client execution)
+    // must be accessible to clients without bouncing to login after Razorpay payment
+    const isClientProjectFlowPage =
+      req.nextUrl.pathname.startsWith("/client") &&
+      (req.nextUrl.pathname.includes("/payment-success") ||
+       req.nextUrl.pathname.includes("/scope") ||
+       req.nextUrl.pathname.includes("/pay") ||
+       req.nextUrl.pathname.includes("/match") ||
+       req.nextUrl.pathname.includes("/execution"));
+
+    if (isClientProjectFlowPage) {
+      if (token && token.role === "freelancer") {
+        return NextResponse.redirect(new URL("/freelancer/workspace", req.url));
+      }
       return null;
     }
 
     if (isAuthPage) {
       // Always allow access to auth pages — even if already logged in.
-      // Users must explicitly click through the sign-in page to reach their dashboard.
       return null;
     }
 

@@ -108,10 +108,10 @@ export default function RefundPage() {
 
             <h2>6. Payment Gateway — Failed or Duplicate Payments</h2>
             <p>
-              All payments on Findade are processed securely via <strong>PhonePe Payment Gateway</strong> (a service of PhonePe Private Limited). In the event of:
+              All payments on Findade are processed securely via <strong>Razorpay Payment Gateway</strong> (a service of Razorpay Software Private Limited). In the event of:
             </p>
             <ul>
-              <li><strong>Failed transaction:</strong> If your bank account or card has been debited but the payment has not been confirmed on Findade, please wait up to 5 business days. The amount will be automatically reversed by your bank or PhonePe. If not received, contact us at <a href="mailto:support@findade.com" className="text-[#E85239] font-medium hover:underline">support@findade.com</a> with your transaction ID.</li>
+              <li><strong>Failed transaction:</strong> If your bank account or card has been debited but the payment has not been confirmed on Findade, please wait up to 5 business days. The amount will be automatically reversed by your bank or Razorpay. If not received, contact us at <a href="mailto:support@findade.com" className="text-[#E85239] font-medium hover:underline">support@findade.com</a> with your transaction ID.</li>
               <li><strong>Duplicate payment:</strong> If you have been charged twice for the same transaction, contact us immediately with both transaction IDs. Duplicate charges will be refunded within 5–7 business days.</li>
             </ul>
 
@@ -127,7 +127,7 @@ export default function RefundPage() {
             <p>To request a refund, please:</p>
             <ol>
               <li>Email us at <a href="mailto:support@findade.com" className="text-[#E85239] font-medium hover:underline">support@findade.com</a> with the subject line: <strong>Refund Request — [Your Project ID]</strong>.</li>
-              <li>Include your registered email address, the PhonePe or Findade Transaction ID, and a brief description of the reason.</li>
+              <li>Include your registered email address, the Razorpay Payment ID or Findade Order ID, and a brief description of the reason.</li>
               <li>Our team will respond within 2 business days and initiate the refund if eligible.</li>
             </ol>
 

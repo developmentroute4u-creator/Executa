@@ -124,8 +124,18 @@ async function getPhonePeToken(): Promise<string> {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  let session = await getServerSession(authOptions);
+  let userId = (session?.user as any)?.id;
+  let role = (session?.user as any)?.role;
+
+  if (!userId) {
+    const { getToken } = await import("next-auth/jwt");
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    if (token) {
+      userId = token.id as string;
+      role = (token.role as string) || "client";
+    }
+  }
 
   const body = await req.json();
   const { projectId, milestoneIndex, customUnit } = body;
@@ -135,9 +145,10 @@ export async function POST(req: NextRequest) {
   const project = await Project.findById(projectId);
   if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
-  // Only the client who owns the project can pay
-  const userId = (session.user as any).id;
-  if (project.clientId.toString() !== userId) {
+  const effectiveUserId = userId || project.clientId?.toString();
+
+  // If user is signed in as a different non-admin user, prevent payment
+  if (userId && project.clientId && project.clientId.toString() !== userId && role !== "admin") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -295,38 +306,12 @@ export async function POST(req: NextRequest) {
   const isMilestone = milestoneIndex !== undefined;
 
   if (isMilestone) {
-    // Check if freelancer profile has bank details
-    const freelancerId = project.freelancerId || (project.assignedFreelancers && project.assignedFreelancers[0]?.userId);
-    if (!freelancerId) {
-      return NextResponse.json({ error: "No freelancer is assigned to this project" }, { status: 400 });
-    }
-
-    const freelancerProfile = await FreelancerProfile.findOne({ userId: freelancerId });
-    
-    // Check new multi-method payoutMethods array first
-    const methods: any[] = freelancerProfile?.payoutMethods || [];
-    const hasNewMethod = methods.some((m: any) =>
-      (m.type === "upi_id" && m.upiId) ||
-      (m.type === "upi_mobile" && m.upiMobile) ||
-      (m.type === "bank_transfer" && m.accountNumber && m.ifscCode)
-    );
-
-    // Fallback: check legacy bankDetails single-method
-    const hasUpi = freelancerProfile?.bankDetails?.upiId || freelancerProfile?.bankDetails?.upiMobile;
-    const hasBankAccount = freelancerProfile?.bankDetails?.accountNumber && freelancerProfile?.bankDetails?.ifscCode;
-    
-    if (!hasNewMethod && !hasUpi && !hasBankAccount) {
-      return NextResponse.json({ 
-        error: "The assigned expert has not configured their Bank Account or UPI ID yet. Milestone payment cannot be initiated until they set it up in their Profile settings." 
-      }, { status: 400 });
-    }
-
-    if (!project.milestones[milestoneIndex]) {
+    if (!project.milestones || !project.milestones[milestoneIndex]) {
       return NextResponse.json({ error: "Invalid milestone index" }, { status: 400 });
     }
 
     const milestone = project.milestones[milestoneIndex];
-    if (milestone.status === "approved") {
+    if (milestone.status === "approved" || milestone.payment?.status === "paid") {
       return NextResponse.json({ alreadyPaid: true });
     }
 
@@ -343,7 +328,7 @@ export async function POST(req: NextRequest) {
         expireAfter: 1200,
         metaInfo: {
           udf1: projectId,
-          udf2: userId,
+          udf2: effectiveUserId,
           udf3: "milestone_payment",
           udf4: milestoneIndex.toString()
         },

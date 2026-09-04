@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -202,7 +202,7 @@ function AddPaymentModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
 
                 <p className="flex items-center gap-2 text-[11px] text-stone-400 mt-2">
                   <Shield size={12} className="shrink-0" />
-                  All payments are processed securely via PhonePe
+                  All payments are processed securely via Razorpay
                 </p>
               </motion.div>
             )}
@@ -404,7 +404,7 @@ export default function ClientBilling() {
     (p.freelancerId || (p.assignedFreelancers && p.assignedFreelancers.length > 0))
   );
 
-  // Paid = platform fee was successfully charged via PhonePe
+  // Paid = platform fee was successfully charged via Razorpay
   const paidProjects = projects.filter(p => p.payment?.status === "paid" && p.payment?.paidAt);
   const completedProjects = projects.filter(p => p.status === "completed");
 
@@ -700,7 +700,7 @@ export default function ClientBilling() {
             </button>
 
             <p className="flex items-center justify-center gap-1.5 text-[11px] text-stone-400 mt-3">
-              <Shield size={11} />All transactions secured by PhonePe
+              <Shield size={11} />All transactions secured by Razorpay
             </p>
           </motion.div>
         </div>

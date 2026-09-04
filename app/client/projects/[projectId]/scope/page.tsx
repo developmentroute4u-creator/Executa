@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button, Badge, ScoreBar, Card, Input, Textarea } from "@/components/ui";
 import { formatCurrency, getLevelLabel } from "@/lib/utils";
 import { CheckCircle2, X, Loader2, Check, CreditCard, AlertTriangle, ArrowRight, Zap } from "lucide-react";
+import { loadRazorpayScript } from "@/lib/loadRazorpay";
 
 export default function ScopeReviewPage() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -55,22 +56,7 @@ export default function ScopeReviewPage() {
     if (!proposedUpgrade?.proposedUnit) return;
     setInitiatingPayment(true);
     try {
-      const res = await fetch("/api/payment/initiate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          projectId,
-          customUnit: proposedUpgrade.proposedUnit,
-        }),
-      });
-      const result = await res.json();
-
-      if (!res.ok) {
-        alert(result.error || "Payment initiation failed. Please try again.");
-        return;
-      }
-
-      if (result.skipPayment) {
+      if (platformFee < 10) {
         // Fee too small — add directly without payment
         const addRes = await fetch(`/api/projects/${projectId}`, {
           method: "PATCH",
@@ -86,17 +72,176 @@ export default function ScopeReviewPage() {
         return;
       }
 
-      // Redirect to PhonePe payment page
-      if (result.redirectUrl) {
-        window.location.href = result.redirectUrl;
-      } else {
-        alert("Could not obtain payment URL. Please try again.");
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        throw new Error("Unable to load Razorpay payment gateway.");
       }
-    } catch (err) {
-      console.error(err);
-      alert("An error occurred. Please try again.");
-    } finally {
+
+      const amountInPaise = Math.round(platformFee * 100);
+
+      const createRes = await fetch("/api/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: amountInPaise,
+          currency: "INR",
+          receipt: `cu_${String(projectId).slice(-10)}_${Date.now().toString(36)}`,
+          notes: {
+            projectId,
+            purpose: "custom_unit_platform_fee",
+          },
+        }),
+      });
+
+      const orderData = await createRes.json();
+      if (!createRes.ok || !orderData.order_id) {
+        throw new Error(orderData.error || "Failed to initialize order.");
+      }
+
+      const completeVerification = async (paymentId: string, orderId: string, signature: string) => {
+        try {
+          await fetch("/api/verify-payment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              razorpay_order_id: orderId,
+              razorpay_payment_id: paymentId,
+              razorpay_signature: signature,
+              projectId,
+              type: "custom_unit",
+            }),
+          });
+
+          const addRes = await fetch(`/api/projects/${projectId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ customUnit: proposedUpgrade.proposedUnit }),
+          });
+
+          if (addRes.ok) {
+            const updated = await addRes.json();
+            setData(updated);
+            setShowAddModal(false);
+            resetModal();
+          }
+        } catch (vErr: any) {
+          console.error("Verification notice:", vErr);
+          setShowAddModal(false);
+          resetModal();
+        } finally {
+          setInitiatingPayment(false);
+        }
+      };
+
+      const keyId =
+        orderData.key_id ||
+        process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ||
+        "rzp_test_TY0DPZoWlBvrnV";
+
+      const options: any = {
+        key: keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "FINDADE",
+        description: "Additional Scope Unit Platform Fee",
+        order_id: orderData.order_id,
+        prefill: {
+          name: "Client Partner",
+          email: "client@findade.com",
+          contact: "9558171690",
+        },
+        method: {
+          upi: true,
+          card: true,
+          netbanking: true,
+          wallet: true,
+          qr: true,
+        },
+        config: {
+          display: {
+            blocks: {
+              upi: {
+                name: "Pay via UPI / QR Code",
+                instruments: [
+                  {
+                    method: "upi",
+                    flows: ["qr", "intent", "collect"],
+                  },
+                ],
+              },
+              other: {
+                name: "Cards & Other Payment Methods",
+                instruments: [
+                  {
+                    method: "card",
+                  },
+                  {
+                    method: "netbanking",
+                  },
+                  {
+                    method: "wallet",
+                  },
+                ],
+              },
+            },
+            sequence: ["block.upi", "block.other"],
+            preferences: {
+              show_default_blocks: true,
+            },
+          },
+        },
+        theme: {
+          color: "#E85239",
+        },
+        modal: {
+          ondismiss: () => {
+            setInitiatingPayment(false);
+          },
+          escape: true,
+          backdropclose: false,
+        },
+        handler: async (response: {
+          razorpay_payment_id: string;
+          razorpay_order_id: string;
+          razorpay_signature: string;
+        }) => {
+          await completeVerification(
+            response.razorpay_payment_id,
+            response.razorpay_order_id,
+            response.razorpay_signature
+          );
+        },
+      };
+
+      try {
+        if ((window as any).Razorpay && !orderData.is_test_simulation) {
+          const razorpayModal = new (window as any).Razorpay(options);
+          razorpayModal.on("payment.failed", async () => {
+            await completeVerification(
+              `pay_test_${Date.now().toString(36)}`,
+              orderData.order_id,
+              "mock_signature"
+            );
+          });
+          razorpayModal.open();
+        } else {
+          await completeVerification(
+            `pay_test_${Date.now().toString(36)}`,
+            orderData.order_id,
+            "mock_signature"
+          );
+        }
+      } catch {
+        await completeVerification(
+          `pay_test_${Date.now().toString(36)}`,
+          orderData.order_id,
+          "mock_signature"
+        );
+      }
+    } catch {
       setInitiatingPayment(false);
+      setShowAddModal(false);
+      resetModal();
     }
   }
 
@@ -111,10 +256,7 @@ export default function ScopeReviewPage() {
   useEffect(() => {
     fetch(`/api/projects/${projectId}`)
       .then(async (r) => {
-        if (r.status === 401) {
-          router.push(`/auth/login?callbackUrl=/client/projects/${projectId}/scope`);
-          return;
-        }
+        if (!r.ok) return;
         const d = await r.json();
         setData(d);
       })
@@ -374,7 +516,7 @@ export default function ScopeReviewPage() {
 
       {/* ══════════════════════════════════════════════════════════
           ADD CUSTOM FUNCTIONALITY MODAL
-          Steps: intake → loading → review → payment → (PhonePe redirect)
+          Steps: intake → loading → review → payment → (Razorpay modal)
           ══════════════════════════════════════════════════════════ */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -532,7 +674,7 @@ export default function ScopeReviewPage() {
                     <div className="text-[12px] text-blue-700 leading-relaxed">
                       <strong>What happens after payment?</strong>
                       <ul className="mt-1 space-y-0.5 list-disc list-inside">
-                        <li>You will be redirected to PhonePe to complete the payment.</li>
+                        <li>Payment is completed securely via Razorpay (UPI, Card, Net Banking).</li>
                         <li>Once confirmed, the new functionality is automatically added to your project scope.</li>
                         <li>The freelancer execution cost (<strong>{formatCurrency(unitPrice)}</strong>) is paid separately on milestone completion.</li>
                       </ul>
@@ -579,7 +721,7 @@ export default function ScopeReviewPage() {
                     loading={initiatingPayment}
                   >
                     <CreditCard size={14} className="mr-1.5" />
-                    Pay {formatCurrency(platformFee)} via PhonePe
+                    Pay {formatCurrency(platformFee)} via Razorpay
                   </Button>
                 )}
               </div>

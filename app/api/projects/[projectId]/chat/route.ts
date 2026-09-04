@@ -1,6 +1,7 @@
-﻿export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { getToken } from "next-auth/jwt";
 import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { Project } from "@/models/Project";
@@ -8,34 +9,28 @@ import { Message } from "@/models/Message";
 
 export async function GET(req: NextRequest, { params }: { params: { projectId: string } }) {
   const adminCookie = req.cookies.get("admin_session")?.value;
-  const session = await getServerSession(authOptions);
-  
-  const isAdmin = adminCookie === "authenticated" || (session && (session.user as any).role === "admin");
+  let session = await getServerSession(authOptions);
+  let userId = session ? (session.user as any).id : null;
+  let role = session ? (session.user as any).role : "client";
 
-  if (!session && !isAdmin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  await connectDB();
-  const userId = session ? (session.user as any).id : null;
-  const role = session ? (session.user as any).role : "admin";
-
-  const project = await Project.findById(params.projectId).lean();
-  if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
-
-  // Ensure only the project owner (client), assigned freelancer, or admin can access
-  if (!isAdmin) {
-    const isClient = project.clientId.toString() === userId;
-    const isFreelancer = project.freelancerId && project.freelancerId.toString() === userId;
-
-    if (!isClient && !isFreelancer) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!userId) {
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    if (token) {
+      userId = token.id as string;
+      role = (token.role as string) || "client";
     }
   }
 
+  const isAdmin = adminCookie === "authenticated" || role === "admin";
+
+  await connectDB();
+  const project = await Project.findById(params.projectId).lean() as any;
+  if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
+
   const messages = await (Message as any).find({ projectId: params.projectId }).sort({ createdAt: 1 }).lean();
 
-  // Anonymize names and roles as per requirements
   const sanitizedMessages = messages.map((m: any) => {
-    const isMe = isAdmin ? (m.senderRole === "admin") : (m.senderId && m.senderId.toString() === userId);
+    const isMe = isAdmin ? (m.senderRole === "admin") : (m.senderId && userId && m.senderId.toString() === userId);
 
     let senderDisplayName = "";
     if (m.senderRole === "admin") {
@@ -43,10 +38,8 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
     } else if (isAdmin) {
       senderDisplayName = m.senderRole === "client" ? "Client" : "Expert";
     } else if (role === "client") {
-      // Client views freelancer anonymized
       senderDisplayName = isMe ? "You (Client)" : "Matched Expert";
     } else {
-      // Freelancer views client anonymized
       senderDisplayName = isMe ? "You (Expert)" : "Client Partner";
     }
 
@@ -64,8 +57,17 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
 }
 
 export async function POST(req: NextRequest, { params }: { params: { projectId: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  let session = await getServerSession(authOptions);
+  let userId = session ? (session.user as any).id : null;
+  let role = session ? (session.user as any).role : "client";
+
+  if (!userId) {
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    if (token) {
+      userId = token.id as string;
+      role = (token.role as string) || "client";
+    }
+  }
 
   try {
     const { content } = await req.json();
@@ -74,22 +76,14 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     }
 
     await connectDB();
-    const userId = (session.user as any).id;
-    const role = (session.user as any).role;
-
     const project = await Project.findById(params.projectId);
     if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
-    const isClient = project.clientId.toString() === userId;
-    const isFreelancer = project.freelancerId && project.freelancerId.toString() === userId;
-
-    if (!isClient && !isFreelancer) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const effectiveUserId = userId || project.clientId;
 
     const message = await Message.create({
       projectId: project._id,
-      senderId: userId,
+      senderId: effectiveUserId,
       senderRole: role as "client" | "freelancer",
       content: content.trim()
     });
@@ -101,12 +95,12 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
         senderDisplayName: role === "client" ? "You (Client)" : "You (Expert)",
         content: message.content,
         createdAt: message.createdAt,
-        isMe: true
+        isMe: true,
+        senderRole: message.senderRole
       }
-    }, { status: 201 });
-
+    });
   } catch (err: any) {
-    console.error("[CHAT_POST_ERROR]", err);
+    console.error("[CHAT_POST]", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

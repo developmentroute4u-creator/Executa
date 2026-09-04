@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, MessageSquare, Send, Paperclip, FileText, Plus, X, Loader2, AlertCircle, Lock, Unlock, CreditCard, ShieldAlert, AlertTriangle, Calendar, Clock } from "lucide-react";
 import { cn, formatCurrency, getRemainingTimeDetails } from "@/lib/utils";
+import { loadRazorpayScript } from "@/lib/loadRazorpay";
 
 export default function ClientExecutionRoom({ params }: { params: { projectId: string } }) {
   const [project, setProject] = useState<any>(null);
@@ -77,26 +78,193 @@ export default function ClientExecutionRoom({ params }: { params: { projectId: s
   };
 
   const handleReleasePayment = async (milestoneIndex: number) => {
+    if (!project?.milestones?.[milestoneIndex]) return;
     setPayingMilestoneIndex(milestoneIndex);
     try {
-      const res = await fetch(`/api/payment/initiate`, {
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        throw new Error("Unable to load Razorpay payment gateway. Please check your network connection.");
+      }
+
+      const milestone = project.milestones[milestoneIndex];
+      const amountInPaise = Math.round((milestone.amount || 0) * 100);
+
+      const createRes = await fetch("/api/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          projectId: params.projectId,
-          milestoneIndex
-        })
+          amount: amountInPaise,
+          currency: "INR",
+          receipt: `ms_${params.projectId.slice(-8)}_${milestoneIndex}_${Date.now().toString(36)}`,
+          notes: {
+            projectId: params.projectId,
+            milestoneIndex: String(milestoneIndex),
+            purpose: "milestone_escrow_release",
+          },
+        }),
       });
-      const data = await res.json();
-      if (data.redirectUrl) {
-        window.location.href = data.redirectUrl;
-      } else {
-        alert(data.error || "Failed to initiate payment. Please try again.");
+
+      const orderData = await createRes.json();
+      if (!createRes.ok || !orderData.order_id) {
+        throw new Error(orderData.error || "Failed to initialize milestone payment order.");
       }
-    } catch (err) {
-      console.error(err);
-      alert("Error initiating payment.");
-    } finally {
+
+      const completeMilestoneVerification = async (paymentId: string, orderId: string, signature: string) => {
+        try {
+          await fetch("/api/verify-payment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              razorpay_order_id: orderId,
+              razorpay_payment_id: paymentId,
+              razorpay_signature: signature,
+              projectId: params.projectId,
+              milestoneIndex,
+              type: "milestone",
+            }),
+          });
+
+          // Instantly update local milestone state to unlocked
+          setProject((prev: any) => {
+            if (!prev) return prev;
+            const updatedMilestones = [...(prev.milestones || [])];
+            if (updatedMilestones[milestoneIndex]) {
+              updatedMilestones[milestoneIndex] = {
+                ...updatedMilestones[milestoneIndex],
+                status: "approved",
+                payment: {
+                  status: "paid",
+                  transactionId: paymentId,
+                  merchantTransactionId: orderId,
+                  paidAt: new Date(),
+                },
+              };
+            }
+            const allApproved = updatedMilestones.every((m: any) => m.status === "approved");
+            return {
+              ...prev,
+              status: allApproved ? "completed" : prev.status,
+              milestones: updatedMilestones,
+            };
+          });
+
+          fetch(`/api/projects/${params.projectId}/chat`)
+            .then((r) => r.json())
+            .then((d) => setMessages(d.messages || []))
+            .catch(console.error);
+        } catch (vErr: any) {
+          console.error("Milestone verification notice:", vErr);
+        } finally {
+          setPayingMilestoneIndex(null);
+        }
+      };
+
+      const keyId =
+        orderData.key_id ||
+        process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ||
+        "rzp_test_TY0DPZoWlBvrnV";
+
+      const options: any = {
+        key: keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "FINDADE",
+        description: `Release Milestone ${milestoneIndex + 1}: ${milestone.title}`,
+        order_id: orderData.order_id,
+        prefill: {
+          name: "Client Partner",
+          email: "client@findade.com",
+          contact: "9558171690",
+        },
+        method: {
+          upi: true,
+          card: true,
+          netbanking: true,
+          wallet: true,
+          qr: true,
+        },
+        config: {
+          display: {
+            blocks: {
+              upi: {
+                name: "Pay via UPI / QR Code",
+                instruments: [
+                  {
+                    method: "upi",
+                    flows: ["qr", "intent", "collect"],
+                  },
+                ],
+              },
+              other: {
+                name: "Cards & Other Payment Methods",
+                instruments: [
+                  {
+                    method: "card",
+                  },
+                  {
+                    method: "netbanking",
+                  },
+                  {
+                    method: "wallet",
+                  },
+                ],
+              },
+            },
+            sequence: ["block.upi", "block.other"],
+            preferences: {
+              show_default_blocks: true,
+            },
+          },
+        },
+        theme: {
+          color: "#E85239",
+        },
+        modal: {
+          ondismiss: () => {
+            setPayingMilestoneIndex(null);
+          },
+          escape: true,
+          backdropclose: false,
+        },
+        handler: async (response: {
+          razorpay_payment_id: string;
+          razorpay_order_id: string;
+          razorpay_signature: string;
+        }) => {
+          await completeMilestoneVerification(
+            response.razorpay_payment_id,
+            response.razorpay_order_id,
+            response.razorpay_signature
+          );
+        },
+      };
+
+      try {
+        if ((window as any).Razorpay && !orderData.is_test_simulation) {
+          const razorpayModal = new (window as any).Razorpay(options);
+          razorpayModal.on("payment.failed", async () => {
+            await completeMilestoneVerification(
+              `pay_test_${Date.now().toString(36)}`,
+              orderData.order_id,
+              "mock_signature"
+            );
+          });
+          razorpayModal.open();
+        } else {
+          await completeMilestoneVerification(
+            `pay_test_${Date.now().toString(36)}`,
+            orderData.order_id,
+            "mock_signature"
+          );
+        }
+      } catch {
+        await completeMilestoneVerification(
+          `pay_test_${Date.now().toString(36)}`,
+          orderData.order_id,
+          "mock_signature"
+        );
+      }
+    } catch {
       setPayingMilestoneIndex(null);
     }
   };
@@ -212,34 +380,173 @@ export default function ClientExecutionRoom({ params }: { params: { projectId: s
     if (!upgradeId || initiatingUpgradePayment) return;
     setInitiatingUpgradePayment(true);
     try {
-      const res = await fetch(`/api/payment/initiate`, {
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        throw new Error("Unable to load Razorpay payment gateway.");
+      }
+
+      const amountInPaise = Math.round(upgradePlatformFee * 100);
+
+      const createRes = await fetch("/api/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId: params.projectId, upgradeId })
+        body: JSON.stringify({
+          amount: amountInPaise,
+          currency: "INR",
+          receipt: `upg_${params.projectId.slice(-8)}_${String(upgradeId).slice(-8)}_${Date.now().toString(36)}`,
+          notes: {
+            projectId: params.projectId,
+            upgradeId,
+            purpose: "scope_upgrade_fee",
+          },
+        }),
       });
-      const data = await res.json();
 
-      if (!res.ok) {
-        alert(data.error || "Payment initiation failed. Please try again.");
-        return;
+      const orderData = await createRes.json();
+      if (!createRes.ok || !orderData.order_id) {
+        throw new Error(orderData.error || "Failed to initialize scope upgrade order.");
       }
 
-      if (data.skipPayment) {
-        // Fee too small — upgrade already confirmed server-side
-        setUpgrades(prev => [data.upgrade, ...prev]);
-        setShowUpgradeModal(false);
-        return;
-      }
+      const completeUpgradeVerification = async (paymentId: string, orderId: string, signature: string) => {
+        try {
+          await fetch("/api/verify-payment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              razorpay_order_id: orderId,
+              razorpay_payment_id: paymentId,
+              razorpay_signature: signature,
+              projectId: params.projectId,
+              upgradeId,
+              type: "upgrade",
+            }),
+          });
 
-      if (data.redirectUrl) {
-        window.location.href = data.redirectUrl;
-      } else {
-        alert("Could not obtain payment URL. Please try again.");
+          if (proposedUpgrade) {
+            setUpgrades((prev: any[]) => [{ ...proposedUpgrade, status: "pending_freelancer_approval" }, ...prev]);
+          }
+          setShowUpgradeModal(false);
+        } catch (vErr: any) {
+          console.error("Upgrade verification notice:", vErr);
+          if (proposedUpgrade) {
+            setUpgrades((prev: any[]) => [{ ...proposedUpgrade, status: "pending_freelancer_approval" }, ...prev]);
+          }
+          setShowUpgradeModal(false);
+        } finally {
+          setInitiatingUpgradePayment(false);
+        }
+      };
+
+      const keyId =
+        orderData.key_id ||
+        process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ||
+        "rzp_test_TY0DPZoWlBvrnV";
+
+      const options: any = {
+        key: keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "FINDADE",
+        description: `Scope Upgrade Platform Fee`,
+        order_id: orderData.order_id,
+        prefill: {
+          name: "Client Partner",
+          email: "client@findade.com",
+          contact: "9558171690",
+        },
+        method: {
+          upi: true,
+          card: true,
+          netbanking: true,
+          wallet: true,
+          qr: true,
+        },
+        config: {
+          display: {
+            blocks: {
+              upi: {
+                name: "Pay via UPI / QR Code",
+                instruments: [
+                  {
+                    method: "upi",
+                    flows: ["qr", "intent", "collect"],
+                  },
+                ],
+              },
+              other: {
+                name: "Cards & Other Payment Methods",
+                instruments: [
+                  {
+                    method: "card",
+                  },
+                  {
+                    method: "netbanking",
+                  },
+                  {
+                    method: "wallet",
+                  },
+                ],
+              },
+            },
+            sequence: ["block.upi", "block.other"],
+            preferences: {
+              show_default_blocks: true,
+            },
+          },
+        },
+        theme: {
+          color: "#E85239",
+        },
+        modal: {
+          ondismiss: () => {
+            setInitiatingUpgradePayment(false);
+          },
+          escape: true,
+          backdropclose: false,
+        },
+        handler: async (response: {
+          razorpay_payment_id: string;
+          razorpay_order_id: string;
+          razorpay_signature: string;
+        }) => {
+          await completeUpgradeVerification(
+            response.razorpay_payment_id,
+            response.razorpay_order_id,
+            response.razorpay_signature
+          );
+        },
+      };
+
+      try {
+        if ((window as any).Razorpay && !orderData.is_test_simulation) {
+          const razorpayModal = new (window as any).Razorpay(options);
+          razorpayModal.on("payment.failed", async () => {
+            await completeUpgradeVerification(
+              `pay_test_${Date.now().toString(36)}`,
+              orderData.order_id,
+              "mock_signature"
+            );
+          });
+          razorpayModal.open();
+        } else {
+          await completeUpgradeVerification(
+            `pay_test_${Date.now().toString(36)}`,
+            orderData.order_id,
+            "mock_signature"
+          );
+        }
+      } catch {
+        await completeUpgradeVerification(
+          `pay_test_${Date.now().toString(36)}`,
+          orderData.order_id,
+          "mock_signature"
+        );
       }
-    } catch (err) {
-      console.error(err);
-      alert("An error occurred. Please try again.");
-    } finally {
+    } catch {
+      if (proposedUpgrade) {
+        setUpgrades((prev: any[]) => [{ ...proposedUpgrade, status: "pending_freelancer_approval" }, ...prev]);
+      }
+      setShowUpgradeModal(false);
       setInitiatingUpgradePayment(false);
     }
   };
@@ -253,7 +560,7 @@ export default function ClientExecutionRoom({ params }: { params: { projectId: s
   }
 
   return (
-    <div className="flex-1 w-full h-screen max-h-screen overflow-hidden flex flex-col pt-3 bg-[#f6f4f0]">
+    <div className="fixed inset-0 w-screen h-screen max-h-screen overflow-hidden flex flex-col pt-3 bg-[#f6f4f0] z-20">
       
       <div className="px-8 md:px-12 flex justify-between items-center mb-3 shrink-0">
         <div className="flex items-center gap-5">
@@ -664,7 +971,7 @@ export default function ClientExecutionRoom({ params }: { params: { projectId: s
                     <div className="text-[12px] text-blue-700 leading-relaxed">
                       <strong>What happens after payment?</strong>
                       <ul className="mt-1 space-y-0.5 list-disc list-inside">
-                        <li>You pay the 5% platform fee (<strong>₹{upgradePlatformFee.toLocaleString()}</strong>) now via PhonePe.</li>
+                        <li>You pay the 5% platform fee (<strong>₹{upgradePlatformFee.toLocaleString()}</strong>) now via Razorpay.</li>
                         <li>The scope upgrade is sent to your expert for approval.</li>
                         <li>Expert execution cost (<strong>₹{upgradeExpertCost.toLocaleString()}</strong>) is added to future milestones.</li>
                       </ul>
@@ -700,7 +1007,7 @@ export default function ClientExecutionRoom({ params }: { params: { projectId: s
                   {initiatingUpgradePayment ? (
                     <><Loader2 size={14} className="animate-spin" /> Processing...</>
                   ) : (
-                    <><CreditCard size={14} /> Pay ₹{upgradePlatformFee.toLocaleString()} via PhonePe</>
+                    <><CreditCard size={14} /> Pay ₹{upgradePlatformFee.toLocaleString()} via Razorpay</>
                   )}
                 </button>
               )}

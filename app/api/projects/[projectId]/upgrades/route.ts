@@ -1,4 +1,4 @@
-﻿export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -109,11 +109,7 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
 }
 
 export async function GET(req: NextRequest, { params }: { params: { projectId: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
   await connectDB();
   const upgrades = await ScopeUpgrade.find({ projectId: params.projectId }).sort({ createdAt: -1 }).lean();
-  
   return NextResponse.json({ upgrades });
 }

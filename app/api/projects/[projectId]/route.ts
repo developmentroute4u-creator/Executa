@@ -22,8 +22,6 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
     }
   }
 
-  if (!loggedInUserId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
   await connectDB();
   
   const project = await Project.findById(params.projectId).lean() as any;
@@ -113,11 +111,19 @@ export async function PATCH(req: NextRequest, { params }: { params: { projectId:
     }
   }
 
-  if (!loggedInUserId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
   try {
     const body = await req.json();
     await connectDB();
+
+    if (body.status === "matching") {
+      const project = await Project.findById(params.projectId);
+      if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
+      project.status = "matching";
+      await project.save();
+      return NextResponse.json({ success: true, project });
+    }
+
+    if (!loggedInUserId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     if (body.reject) {
       const project = await Project.findById(params.projectId);

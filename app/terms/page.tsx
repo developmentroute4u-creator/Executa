@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React from "react";
 import Link from "next/link";
@@ -58,7 +58,7 @@ export default function TermsPage() {
 
             <h2>1. About FINDADE</h2>
             <p>
-              FINDADE is an AI-powered freelance marketplace that connects Clients (businesses and individuals seeking services) with verified independent Experts (freelancers). FINDADE provides the infrastructure for AI-generated project scoping, intelligent Expert matching, milestone-based project management, secure payment escrow via PhonePe, and an execution workspace.
+              FINDADE is an AI-powered freelance marketplace that connects Clients (businesses and individuals seeking services) with verified independent Experts (freelancers). FINDADE provides the infrastructure for AI-generated project scoping, intelligent Expert matching, milestone-based project management, secure payment escrow via Razorpay, and an execution workspace.
             </p>
             <p>
               <strong>Operated by:</strong> Route4U Technology LLP<br />
@@ -94,13 +94,13 @@ export default function TermsPage() {
             </ul>
             <p>All prices are displayed in Indian Rupees (INR) and are inclusive of applicable taxes unless stated otherwise. No payment is collected without the Client&apos;s explicit confirmation.</p>
 
-            <h2>4. Payments, Escrow &amp; PhonePe</h2>
+            <h2>4. Payments, Escrow &amp; Razorpay</h2>
             <ul>
-              <li><strong>Payment Gateway:</strong> All payments on Findade are processed via <strong>PhonePe Payment Gateway</strong> (PhonePe Private Limited). By making a payment, you also agree to <a href="https://www.phonepe.com/terms-conditions/" className="text-[#E85239] font-medium hover:underline" target="_blank" rel="noopener noreferrer">PhonePe&apos;s Terms &amp; Conditions</a>.</li>
+              <li><strong>Payment Gateway:</strong> All payments on Findade are processed via <strong>Razorpay Payment Gateway</strong> (Razorpay Software Private Limited). By making a payment, you also agree to <a href="https://razorpay.com/terms/" className="text-[#E85239] font-medium hover:underline" target="_blank" rel="noopener noreferrer">Razorpay&apos;s Terms &amp; Conditions</a>.</li>
               <li><strong>Milestone Funding:</strong> Clients must pay the milestone amount before an Expert begins work on that milestone. Funds are held in escrow until the Client approves the deliverables.</li>
               <li><strong>Release of Funds:</strong> Escrowed funds are released to the Expert upon the Client&apos;s explicit approval of submitted work.</li>
               <li><strong>Auto-release:</strong> If a Client does not approve or raise a dispute within <strong>14 days</strong> of milestone submission, funds are automatically released to the Expert.</li>
-              <li><strong>Accepted Payment Methods:</strong> UPI, Credit/Debit Cards (Visa, Mastercard, RuPay), and Net Banking — all via PhonePe.</li>
+              <li><strong>Accepted Payment Methods:</strong> UPI (Google Pay, PhonePe, Paytm, BHIM, QR code), Credit/Debit Cards (Visa, Mastercard, RuPay, Amex), and Net Banking — all via Razorpay.</li>
             </ul>
 
             <h2>5. Refunds &amp; Cancellations</h2>
@@ -113,7 +113,7 @@ export default function TermsPage() {
               <li>Platform fees are non-refundable after Expert matching, except in cases of platform error.</li>
               <li>Milestone payments in escrow may be refunded via the dispute resolution process if deliverables are not met.</li>
               <li>Released milestone payments are final and non-reversible.</li>
-              <li>Failed transactions will be auto-reversed by PhonePe within 5 business days.</li>
+              <li>Failed transactions will be auto-reversed by Razorpay or your issuing bank within 5 business days.</li>
             </ul>
 
             <h2>6. Freelancer–Client Relationship</h2>
@@ -162,7 +162,7 @@ export default function TermsPage() {
               <li>Indirect, incidental, punitive, or consequential damages arising from your use of the platform.</li>
               <li>The failure of a Client or Expert to fulfil their obligations under their agreement.</li>
               <li>Losses resulting from unauthorized access to your account due to your failure to safeguard credentials.</li>
-              <li>Delays or failures in payment processing caused by third-party payment providers (PhonePe, banks).</li>
+              <li>Delays or failures in payment processing caused by third-party payment providers (Razorpay, banks).</li>
             </ul>
             <p>
               Our maximum liability to you for any claim arising from these Terms shall not exceed the amount of platform fees paid by you in the 3 months preceding the claim.

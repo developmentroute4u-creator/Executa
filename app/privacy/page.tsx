@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React from "react";
 import Link from "next/link";
@@ -58,7 +58,7 @@ export default function PrivacyPage() {
 
             <h2>1. Who We Are</h2>
             <p>
-              FINDADE is an AI-powered freelance project management platform that connects Clients (businesses and individuals) with verified independent Experts (freelancers) for scoped, milestone-based projects. All payments are processed via <strong>PhonePe Payment Gateway</strong> (PhonePe Private Limited).
+              FINDADE is an AI-powered freelance project management platform that connects Clients (businesses and individuals) with verified independent Experts (freelancers) for scoped, milestone-based projects. All payments are processed via <strong>Razorpay Payment Gateway</strong> (Razorpay Software Private Limited).
             </p>
             <p>
               <strong>Business Name:</strong> Route4U Technology LLP (operating as FINDADE)<br />
@@ -72,7 +72,7 @@ export default function PrivacyPage() {
             <ul>
               <li><strong>Account Information:</strong> Name, email address, password, profile picture, and professional details (skills, experience, portfolio).</li>
               <li><strong>Identity Verification:</strong> For Experts, we may collect government ID or professional verification documents.</li>
-              <li><strong>Payment &amp; Financial Information:</strong> UPI ID, bank account number, IFSC code, and card details (processed and stored securely by PhonePe — we do not store raw card data). Platform fee and milestone transaction records are stored on our servers.</li>
+              <li><strong>Payment &amp; Financial Information:</strong> UPI ID, bank account number, IFSC code, and card details (processed and stored securely by Razorpay — we do not store raw card data). Platform fee and milestone transaction records are stored on our servers.</li>
               <li><strong>Project Data:</strong> Project descriptions, scope documents, messages, uploaded files, deliverables, milestone status, and AI-generated scope content.</li>
               <li><strong>Usage Data:</strong> Device type, browser, IP address, pages visited, session duration, and interaction patterns, collected via standard web server logs and analytics.</li>
               <li><strong>Cookies &amp; Tracking:</strong> We use essential session cookies for authentication and optional analytics cookies to understand platform usage. You may disable non-essential cookies via your browser settings.</li>
@@ -83,7 +83,7 @@ export default function PrivacyPage() {
             <ul>
               <li>Create and manage your account and authenticate your sessions.</li>
               <li>Match Clients with suitable verified Experts based on project requirements.</li>
-              <li>Process payments, manage escrow funds, and generate transaction records via PhonePe Payment Gateway.</li>
+              <li>Process payments, manage escrow funds, and generate transaction records via Razorpay Payment Gateway.</li>
               <li>Generate AI-powered project scopes, effort estimates, and functional unit breakdowns.</li>
               <li>Facilitate communication between Clients and Experts within the platform workspace.</li>
               <li>Investigate disputes and mediate between Clients and Experts in the event of disagreements.</li>
@@ -91,15 +91,15 @@ export default function PrivacyPage() {
               <li>Comply with applicable Indian laws, RBI digital payment regulations, and legal obligations.</li>
             </ul>
 
-            <h2>4. Payment Processing via PhonePe</h2>
+            <h2>4. Payment Processing via Razorpay</h2>
             <p>
-              FINDADE uses <strong>PhonePe Payment Gateway</strong> (operated by PhonePe Private Limited, Bengaluru) for all payment processing. When you make a payment on Findade:
+              FINDADE uses <strong>Razorpay Payment Gateway</strong> (operated by Razorpay Software Private Limited, Bengaluru) for all payment processing. When you make a payment on Findade:
             </p>
             <ul>
-              <li>You are redirected to PhonePe&apos;s secure hosted checkout page.</li>
-              <li>PhonePe collects and processes your payment details (UPI, card, net banking). We do not receive or store your raw card or UPI PIN.</li>
-              <li>PhonePe may store your payment instrument details for faster future payments, subject to their own <a href="https://www.phonepe.com/privacy-policy/" className="text-[#E85239] font-medium hover:underline" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.</li>
-              <li>We receive a transaction ID and payment confirmation from PhonePe to update your project status.</li>
+              <li>Payment details are captured securely via Razorpay&apos;s PCI-DSS compliant checkout.</li>
+              <li>Razorpay collects and processes your payment details (UPI, QR, card, net banking). We do not receive or store your raw card numbers or UPI PIN.</li>
+              <li>Razorpay may store your payment instrument tokens for faster checkout, subject to their own <a href="https://razorpay.com/privacy/" className="text-[#E85239] font-medium hover:underline" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.</li>
+              <li>We receive an order ID, payment ID, and HMAC signature verification from Razorpay to update your project status.</li>
             </ul>
 
             <h2>4a. Pricing &amp; Transaction Transparency</h2>
@@ -113,7 +113,7 @@ export default function PrivacyPage() {
             <p>We do not sell your personal information. We share your data only in the following circumstances:</p>
             <ul>
               <li><strong>Between Users:</strong> Your name, profile, and project-related communications are shared with the other party (Client or Expert) on a project to facilitate work.</li>
-              <li><strong>PhonePe (Payment Processor):</strong> Transaction metadata is shared with PhonePe for payment processing. This is governed by PhonePe&apos;s Privacy Policy.</li>
+              <li><strong>Razorpay (Payment Processor):</strong> Transaction metadata is shared with Razorpay for payment processing. This is governed by Razorpay&apos;s Privacy Policy.</li>
               <li><strong>Service Providers:</strong> We use MongoDB Atlas (database hosting), Vercel (web hosting), and OpenRouter/Google Gemini (AI services). These partners process data under strict confidentiality agreements.</li>
               <li><strong>Legal Compliance:</strong> We may disclose information if required by Indian law, a court order, or in response to a valid request by government authorities.</li>
               <li><strong>Business Transfer:</strong> In the event of a merger or acquisition, user data may be transferred. We will notify users in advance.</li>
@@ -137,7 +137,7 @@ export default function PrivacyPage() {
             <ul>
               <li>HTTPS (TLS 1.2+) encryption on all pages and API endpoints.</li>
               <li>Secure authentication via NextAuth.js with hashed passwords.</li>
-              <li>Payments handled by PhonePe&apos;s PCI-DSS compliant infrastructure — we do not store card numbers.</li>
+              <li>Payments handled by Razorpay&apos;s PCI-DSS compliant infrastructure — we do not store card numbers.</li>
               <li>Access controls that limit employee access to personal data on a need-to-know basis.</li>
             </ul>
             <p>

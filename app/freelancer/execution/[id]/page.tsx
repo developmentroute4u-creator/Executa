@@ -327,7 +327,7 @@ export default function ExecutionRoom({ params }: { params: { id: string } }) {
   const pendingUpgrade = upgrades.find(u => u.status === "pending_freelancer_approval");
 
   return (
-    <main className="w-full h-screen max-h-screen overflow-hidden flex flex-col bg-background font-sans select-none">
+    <main className="fixed inset-0 w-screen h-screen max-h-screen overflow-hidden flex flex-col bg-background font-sans select-none z-20">
       
       {/* ── Editorial Top Navigation Header ── */}
       <header className="shrink-0 border-b border-border/40 px-10 md:px-12 py-6 flex flex-col md:flex-row md:items-center justify-between gap-6 z-10 bg-white/80 backdrop-blur-xl">
@@ -623,7 +623,7 @@ export default function ExecutionRoom({ params }: { params: { id: string } }) {
                               <p><strong>Deliverable Link:</strong> <a href={m.submissionUrl} target="_blank" rel="noopener noreferrer" className="text-accent underline hover:text-accent-hover font-semibold">{m.submissionUrl}</a></p>
                               {m.submissionNotes && <p><strong>Notes:</strong> {m.submissionNotes}</p>}
                             </div>
-                            <p className="text-[10px] text-amber-700 font-semibold mt-3">🔒 ESCROW SECURED: The client has been notified. Payment release of ₹{(m.amount || 0).toLocaleString()} via PhonePe is required to unlock full access on their side.</p>
+                            <p className="text-[10px] text-amber-700 font-semibold mt-3">🔒 ESCROW SECURED: The client has been notified. Payment release of ₹{(m.amount || 0).toLocaleString()} via Razorpay is required to unlock full access on their side.</p>
                           </div>
                           {m.dueDate && (() => {
                             const { formattedDate, isOverdue, remainingText } = getRemainingTimeDetails(m.dueDate);

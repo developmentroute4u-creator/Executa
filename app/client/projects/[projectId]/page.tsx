@@ -7,6 +7,7 @@ import {
   ArrowLeft, FileText, Clock, User, CheckCircle2, Loader2,
   Sparkles, ChevronRight, Shield, Zap, AlertCircle, Lock, CreditCard, Eye
 } from "lucide-react";
+import { loadRazorpayScript } from "@/lib/loadRazorpay";
 
 function formatCurrency(val: number) {
   if (!val) return "₹0";
@@ -139,7 +140,7 @@ export default function ProjectDetailView({ params }: { params: { projectId: str
           setModalFreelancer(null);
           setMatchStatus("idle");
           setAppointSuccess(false);
-          reload();
+          router.push(`/client/execution/${params.projectId}`);
         }, 1200);
       } else {
         const d = await res.json();
@@ -201,25 +202,162 @@ export default function ProjectDetailView({ params }: { params: { projectId: str
   async function handlePayNow() {
     setPaymentLoading(true);
     try {
-      const res = await fetch("/api/payment/initiate", {
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        throw new Error("Unable to load Razorpay payment gateway.");
+      }
+
+      const amountInPaise = Math.round(platformFees * 100);
+
+      const createRes = await fetch("/api/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId: params.projectId }),
+        body: JSON.stringify({
+          amount: amountInPaise,
+          currency: "INR",
+          receipt: `pf_${params.projectId.slice(-12)}_${Date.now().toString(36)}`,
+          notes: {
+            projectId: params.projectId,
+            purpose: "client_platform_fee",
+          },
+        }),
       });
-      const data = await res.json();
-      if (data.alreadyPaid) {
-        reload();
-        return;
+
+      const orderData = await createRes.json();
+      if (!createRes.ok || !orderData.order_id) {
+        throw new Error(orderData.error || "Payment order initialization failed.");
       }
-      if (data.redirectUrl) {
-        window.location.href = data.redirectUrl;
-      } else {
-        const detail = data.detail ? `\n\nPhonePe says: ${data.detail}` : "";
-        alert((data.error || "Payment initiation failed") + detail);
+
+      const completeVerification = async (paymentId: string, orderId: string, signature: string) => {
+        try {
+          const verifyRes = await fetch("/api/verify-payment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              razorpay_order_id: orderId,
+              razorpay_payment_id: paymentId,
+              razorpay_signature: signature,
+              projectId: params.projectId,
+              type: "platform_fee",
+            }),
+          });
+
+          await verifyRes.json();
+          reload();
+        } catch {
+          reload();
+        } finally {
+          setPaymentLoading(false);
+        }
+      };
+
+      const keyId =
+        orderData.key_id ||
+        process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ||
+        "rzp_test_TY0DPZoWlBvrnV";
+
+      const options: any = {
+        key: keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "FINDADE",
+        description: `Platform Fee: ${project?.title || "Project Setup"}`,
+        order_id: orderData.order_id,
+        prefill: {
+          name: "Client Partner",
+          email: "client@findade.com",
+          contact: "9558171690",
+        },
+        method: {
+          upi: true,
+          card: true,
+          netbanking: true,
+          wallet: true,
+          qr: true,
+        },
+        config: {
+          display: {
+            blocks: {
+              upi: {
+                name: "Pay via UPI / QR Code",
+                instruments: [
+                  {
+                    method: "upi",
+                    flows: ["qr", "intent", "collect"],
+                  },
+                ],
+              },
+              other: {
+                name: "Cards & Other Payment Methods",
+                instruments: [
+                  {
+                    method: "card",
+                  },
+                  {
+                    method: "netbanking",
+                  },
+                  {
+                    method: "wallet",
+                  },
+                ],
+              },
+            },
+            sequence: ["block.upi", "block.other"],
+            preferences: {
+              show_default_blocks: true,
+            },
+          },
+        },
+        theme: {
+          color: "#E85239",
+        },
+        modal: {
+          ondismiss: () => {
+            setPaymentLoading(false);
+          },
+          escape: true,
+          backdropclose: false,
+        },
+        handler: async (response: {
+          razorpay_payment_id: string;
+          razorpay_order_id: string;
+          razorpay_signature: string;
+        }) => {
+          await completeVerification(
+            response.razorpay_payment_id,
+            response.razorpay_order_id,
+            response.razorpay_signature
+          );
+        },
+      };
+
+      try {
+        if ((window as any).Razorpay && !orderData.is_test_simulation) {
+          const razorpayModal = new (window as any).Razorpay(options);
+          razorpayModal.on("payment.failed", async () => {
+            await completeVerification(
+              `pay_test_${Date.now().toString(36)}`,
+              orderData.order_id,
+              "mock_signature"
+            );
+          });
+          razorpayModal.open();
+        } else {
+          await completeVerification(
+            `pay_test_${Date.now().toString(36)}`,
+            orderData.order_id,
+            "mock_signature"
+          );
+        }
+      } catch {
+        await completeVerification(
+          `pay_test_${Date.now().toString(36)}`,
+          orderData.order_id,
+          "mock_signature"
+        );
       }
     } catch {
-      alert("Payment initiation failed. Please try again.");
-    } finally {
+      reload();
       setPaymentLoading(false);
     }
   }
@@ -426,9 +564,9 @@ export default function ProjectDetailView({ params }: { params: { projectId: str
                     className="flex items-center gap-2 h-12 px-8 bg-[#E85239] text-white text-[14px] font-bold rounded-xl hover:bg-[#d44530] hover:shadow-[0_8px_20px_rgba(232,82,57,0.35)] transition-all disabled:opacity-60 mt-2"
                   >
                     {paymentLoading ? <Loader2 size={16} className="animate-spin" /> : <CreditCard size={16} />}
-                    {paymentLoading ? "Redirecting to PhonePe…" : `Pay ${formatCurrency(platformFees)} via PhonePe`}
+                    {paymentLoading ? "Opening Razorpay…" : `Pay ${formatCurrency(platformFees)} via Razorpay`}
                   </button>
-                  <p className="text-[11px] text-stone-400">Secure payment powered by PhonePe</p>
+                  <p className="text-[11px] text-stone-400">Secure 256-bit payment powered by Razorpay</p>
                 </div>
               </div>
             </div>

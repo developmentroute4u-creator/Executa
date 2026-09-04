@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
@@ -341,7 +341,7 @@ export default function PlatformDocsPage() {
           <ol className="steps">
             <li><div><strong>Client Creates a Project</strong><br/>The client answers 7 structured discovery questions — what to build, who will use it, how it should work, and what success means. Takes 10–15 minutes. No technical knowledge required.</div></li>
             <li><div><strong>AI Generates the Scope</strong><br/>FINDADE's AI Scope Engine analyses the answers and automatically generates a detailed scope — functional units, effort scores, timeline estimate, revision rules. Happens in seconds.</div></li>
-            <li><div><strong>Client Pays Platform Fee</strong><br/>The scope comes with a pricing breakdown. The client reviews and pays the platform fee via PhonePe. This unlocks the project for the matching queue.</div></li>
+            <li><div><strong>Client Pays Platform Fee</strong><br/>The scope comes with a pricing breakdown. The client reviews and pays the platform fee via Razorpay. This unlocks the project for the matching queue.</div></li>
             <li><div><strong>Admin Assigns a Freelancer</strong><br/>FINDADE's admin team reviews the project, matches it with a qualified freelancer based on skill level and domain, and sends the invitation.</div></li>
             <li><div><strong>Freelancer Accepts</strong><br/>The freelancer reviews the full project scope and either accepts or declines. Once accepted, work officially begins.</div></li>
             <li><div><strong>Work &amp; Milestones</strong><br/>The freelancer delivers milestone by milestone. The client reviews and approves each one directly in the platform.</div></li>
@@ -382,14 +382,14 @@ export default function PlatformDocsPage() {
             <li><strong>Expected Deliverables</strong> — the full list of what the client receives</li>
           </ul>
 
-          <h2 id="s3-4" className="sec">3.4 Platform Fee Payment via PhonePe</h2>
-          <p>Client reviews itemised pricing (Freelancer Price · Scope Fee · Accountability Fee · Execution Fee · Total) and optionally selects Accountability Mode. Clicking "Pay with PhonePe" initiates the payment flow.</p>
+          <h2 id="s3-4" className="sec">3.4 Platform Fee Payment via Razorpay</h2>
+          <p>Client reviews itemised pricing (Freelancer Price · Scope Fee · Accountability Fee · Execution Fee · Total) and optionally selects Accountability Mode. Clicking "Pay with Razorpay" initiates the payment flow.</p>
           <ol className="steps">
-            <li><div>Client clicks "Pay with PhonePe"</div></li>
-            <li><div>Redirected to PhonePe's hosted payment page (UPI, card, net banking supported)</div></li>
-            <li><div>Client completes payment on PhonePe</div></li>
-            <li><div>Redirected back to FINDADE's payment success page</div></li>
-            <li><div>FINDADE verifies payment with PhonePe in real time</div></li>
+            <li><div>Client clicks "Pay with Razorpay"</div></li>
+            <li><div>Razorpay Standard Checkout modal opens directly in the browser (UPI, QR code, Card, Net Banking supported)</div></li>
+            <li><div>Client completes payment inside Razorpay modal</div></li>
+            <li><div>Seamless in-app HMAC-SHA256 signature verification</div></li>
+            <li><div>FINDADE verifies payment in real time and unlocks full scope</div></li>
             <li><div>Project moves to "Matching" status — admin now receives it for freelancer assignment</div></li>
             <li><div>Payment instrument auto-saved to client's billing profile</div></li>
           </ol>
@@ -449,11 +449,11 @@ export default function PlatformDocsPage() {
 
           <h2 id="s3-13" className="sec">3.13 Billing &amp; Finances</h2>
           <p><strong>Active Escrow Holdings</strong> — Only projects where a freelancer is actively assigned and work has started. Shows escrow amount + expandable pricing breakdown per project.</p>
-          <p><strong>Platform Fee Payments History</strong> — Table of every successful PhonePe payment. Columns: Date | Project | Amount | Status | Receipt button.</p>
+          <p><strong>Platform Fee Payments History</strong> — Table of every successful Razorpay payment. Columns: Date | Project | Amount | Status | Receipt button.</p>
           <p><strong>Summary Stats Card</strong> — Total Platform Fees Paid (headline) · Projects Completed · Active Escrow value · Total Scopes Paid.</p>
 
           <h2 id="s3-14" className="sec">3.14 Payment Methods Management</h2>
-          <p>Auto-saved on first successful PhonePe payment. Manual addition via "+ Add Payment Method" modal.</p>
+          <p>Auto-saved on first successful Razorpay payment. Manual addition via "+ Add Payment Method" modal.</p>
           <div className="tbl-wrap"><table><thead><tr><th>Type</th><th>What's Entered</th></tr></thead><tbody>
             <tr><td><strong>UPI</strong></td><td>UPI ID (e.g. name@okicici, name@ybl, name@paytm). Format hints shown. Consent required.</td></tr>
             <tr><td><strong>Credit/Debit Card</strong></td><td>Card number (auto-formats), expiry MM/YY, cardholder name. Brand auto-detected: VISA / Mastercard / RuPay / Amex. Consent required.</td></tr>
@@ -635,7 +635,7 @@ export default function PlatformDocsPage() {
           <p>On/off switches to enable or disable platform features without code changes.</p>
           <div className="tbl-wrap"><table><thead><tr><th>Feature Flag</th><th>What It Controls</th></tr></thead><tbody>
             <tr><td><strong>AI Scope Enabled</strong></td><td>Whether AI scope generation runs on client onboarding submission</td></tr>
-            <tr><td><strong>Payments Enabled</strong></td><td>Whether clients can initiate PhonePe payments</td></tr>
+            <tr><td><strong>Payments Enabled</strong></td><td>Whether clients can initiate Razorpay payments</td></tr>
             <tr><td><strong>Freelancer Invitations Enabled</strong></td><td>Whether freelancers can receive and accept project invitations</td></tr>
             <tr><td><strong>Scope Upgrades Enabled</strong></td><td>Whether scope upgrade requests can be submitted by either party</td></tr>
           </tbody></table></div>
@@ -695,16 +695,16 @@ export default function PlatformDocsPage() {
         <div id="s8" className="section">
           <div className="chapter-eyebrow">Section 08</div>
           <h1 className="chapter">Payment System</h1>
-          <div className="chapter-desc">FINDADE uses PhonePe — one of India's largest and most trusted payment platforms.</div>
+          <div className="chapter-desc">FINDADE uses Razorpay — India's leading and most trusted payment infrastructure.</div>
 
           <div className="card-grid">
-            <div className="card"><div className="card-title">UPI</div><div className="card-body">GPay, PhonePe, Paytm, and any UPI app.</div></div>
-            <div className="card"><div className="card-title">Credit &amp; Debit Cards</div><div className="card-body">Visa, Mastercard, RuPay, and Amex.</div></div>
-            <div className="card"><div className="card-title">Net Banking</div><div className="card-body">Direct bank transfer from all major Indian banks.</div></div>
-            <div className="card"><div className="card-title">Wallets</div><div className="card-body">Supported through PhonePe's hosted payment interface.</div></div>
+            <div className="card"><div className="card-title">UPI &amp; QR Code</div><div className="card-body">Google Pay, PhonePe, Paytm, BHIM, and instant QR scan.</div></div>
+            <div className="card"><div className="card-title">Credit &amp; Debit Cards</div><div className="card-body">Visa, Mastercard, RuPay, and Amex with dynamic OTP.</div></div>
+            <div className="card"><div className="card-title">Net Banking</div><div className="card-body">Direct bank transfer from all 50+ major Indian banks.</div></div>
+            <div className="card"><div className="card-title">Wallets &amp; PayLater</div><div className="card-body">Supported natively within the Razorpay checkout modal.</div></div>
           </div>
 
-          <p><strong>Security:</strong> All processing on PhonePe's infrastructure. FINDADE stores no sensitive financial data — only reference identifiers and instrument type for billing display.</p>
+          <p><strong>Security:</strong> All processing on Razorpay's PCI-DSS Level 1 certified infrastructure. FINDADE stores no sensitive card data — only HMAC verified payment IDs for billing records.</p>
           <p><strong>Auto-Capture:</strong> On successful payment, the instrument type is auto-detected and saved to the client's billing profile.</p>
         </div>
 

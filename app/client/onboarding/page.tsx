@@ -147,7 +147,7 @@ export default function ClientOnboardingPage() {
         <div className="w-16 sm:w-24" />
       </div>
 
-      <div className={cn("pt-20 sm:pt-24 pb-24 px-4 sm:px-6 max-w-3xl mx-auto", loading && "hidden")}>
+      <div className={cn("pt-20 sm:pt-24 pb-36 px-4 sm:px-6 max-w-3xl mx-auto", loading && "hidden")}>
         {/* Step 0: Project Foundation */}
         {step === 0 && (
           <div className="animate-fade-up space-y-8">

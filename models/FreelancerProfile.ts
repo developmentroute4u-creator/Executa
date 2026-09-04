@@ -28,6 +28,7 @@ export interface IFreelancerProfile extends Document {
   available: boolean;
   portfolio: { title: string; url: string; description: string }[];
   totalEarnings: number;
+  withdrawnEarnings?: number;
   activeProjectIds: mongoose.Types.ObjectId[];
   completedProjectIds: mongoose.Types.ObjectId[];
   onboardingStep: number;
@@ -49,6 +50,17 @@ export interface IFreelancerProfile extends Document {
     ifscCode?: string;
     isDefault: boolean;
     addedAt?: string;
+  }>;
+  payouts?: Array<{
+    id: string;
+    amount: number;
+    methodType: "upi_id" | "upi_mobile" | "bank_transfer";
+    accountDetails: string;
+    status: "completed" | "processing" | "failed";
+    transactionId: string;
+    razorpayPayoutId?: string;
+    phonePeRefId?: string;
+    createdAt?: Date;
   }>;
   createdAt: Date;
   updatedAt: Date;
@@ -85,6 +97,7 @@ const FreelancerProfileSchema = new Schema<IFreelancerProfile>(
       },
     ],
     totalEarnings: { type: Number, default: 0 },
+    withdrawnEarnings: { type: Number, default: 0 },
     activeProjectIds: [{ type: Schema.Types.ObjectId, ref: "Project" }],
     completedProjectIds: [{ type: Schema.Types.ObjectId, ref: "Project" }],
     onboardingStep: { type: Number, default: 1 },
@@ -107,6 +120,19 @@ const FreelancerProfileSchema = new Schema<IFreelancerProfile>(
         ifscCode: { type: String, default: "" },
         isDefault: { type: Boolean, default: false },
         addedAt: { type: String },
+      },
+    ],
+    payouts: [
+      {
+        id: { type: String },
+        amount: { type: Number, required: true },
+        methodType: { type: String, enum: ["upi_id", "upi_mobile", "bank_transfer"] },
+        accountDetails: { type: String },
+        status: { type: String, enum: ["completed", "processing", "failed"], default: "completed" },
+        transactionId: { type: String },
+        razorpayPayoutId: { type: String },
+        phonePeRefId: { type: String },
+        createdAt: { type: Date, default: Date.now },
       },
     ],
   },

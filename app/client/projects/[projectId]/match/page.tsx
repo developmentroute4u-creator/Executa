@@ -121,8 +121,8 @@ export default function MatchFreelancerPage() {
       if (res.ok) {
         setSuccess(true);
         setTimeout(() => {
-          router.push(`/client/projects/${projectId}`);
-        }, 2000);
+          router.push(`/client/execution/${projectId}`);
+        }, 1500);
       }
     } catch (err) {
       console.error("Failed to appoint freelancer:", err);

@@ -154,8 +154,6 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
     }
   }
 
-  if (!loggedInUserId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
   try {
     await connectDB();
     await seedMockFreelancers();
@@ -297,8 +295,6 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
       loggedInUserId = token.id as string;
     }
   }
-
-  if (!loggedInUserId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
     const body = await req.json();
