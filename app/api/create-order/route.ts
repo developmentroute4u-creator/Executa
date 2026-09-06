@@ -4,7 +4,17 @@ import { getRazorpayConfig } from "@/lib/razorpay";
 
 export async function POST(req: NextRequest) {
   try {
-    const { keyId, keySecret } = getRazorpayConfig();
+    const { keyId, keySecret, configId } = getRazorpayConfig();
+
+    if (!keyId || !keySecret) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Payment configuration missing. Please verify RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in .env.local.",
+        },
+        { status: 500 }
+      );
+    }
 
     const body = await req.json().catch(() => ({}));
     const rawAmount = body.amount ?? body.amountInPaise ?? (body.amountInRupees ? Number(body.amountInRupees) * 100 : undefined);
@@ -49,66 +59,52 @@ export async function POST(req: NextRequest) {
       notes: safeNotes,
     };
 
-    // Try calling official Razorpay Orders API
-    if (keyId && keySecret) {
-      try {
-        const authHeader = "Basic " + Buffer.from(`${keyId}:${keySecret}`).toString("base64");
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000);
+    // Call official Razorpay Orders API
+    const authHeader = "Basic " + Buffer.from(`${keyId}:${keySecret}`).toString("base64");
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-        const razorpayRes = await fetch("https://api.razorpay.com/v1/orders", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: authHeader,
-          },
-          body: JSON.stringify(orderPayload),
-          signal: controller.signal,
-        }).finally(() => clearTimeout(timeoutId));
+    const razorpayRes = await fetch("https://api.razorpay.com/v1/orders", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: authHeader,
+      },
+      body: JSON.stringify(orderPayload),
+      signal: controller.signal,
+    }).finally(() => clearTimeout(timeoutId));
 
-        const orderData = await razorpayRes.json();
+    const orderData = await razorpayRes.json();
 
-        if (razorpayRes.ok && orderData && orderData.id) {
-          return NextResponse.json({
-            success: true,
-            order_id: orderData.id,
-            amount: orderData.amount,
-            currency: orderData.currency,
-            receipt: orderData.receipt,
-            key_id: keyId,
-            is_live_order: true,
-          });
-        }
-
-        console.warn("[Razorpay API Notice - Switching to seamless test mode]:", orderData);
-      } catch (apiErr) {
-        console.warn("[Razorpay API fetch notice - Switching to seamless test mode]:", apiErr);
-      }
+    if (razorpayRes.ok && orderData && orderData.id) {
+      return NextResponse.json({
+        success: true,
+        order_id: orderData.id,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        receipt: orderData.receipt,
+        key_id: keyId,
+        config_id: configId || undefined,
+        is_live_order: true,
+      });
     }
 
-    // Seamless Test Mode Fallback (guarantees zero disruption during sandbox testing)
-    const testOrderId = `order_test_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-    return NextResponse.json({
-      success: true,
-      order_id: testOrderId,
-      amount: numericAmount,
-      currency: (currency || "INR").toString().trim().toUpperCase(),
-      receipt: safeReceipt,
-      key_id: keyId || "rzp_test_TY0DPZoWlBvrnV",
-      is_test_simulation: true,
-    });
+    console.error("[Razorpay API Order Creation Error]:", orderData);
+    return NextResponse.json(
+      {
+        success: false,
+        error: orderData?.error?.description || orderData?.error?.message || "Razorpay could not create the payment order.",
+      },
+      { status: 502 }
+    );
   } catch (err: any) {
-    console.error("[Razorpay create-order fallback exception]:", err);
-    // Even in case of unexpected exception, generate a valid test order so UI never breaks
-    const fallbackOrderId = `order_test_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-    return NextResponse.json({
-      success: true,
-      order_id: fallbackOrderId,
-      amount: 404600,
-      currency: "INR",
-      receipt: "rc_fallback",
-      key_id: "rzp_test_TY0DPZoWlBvrnV",
-      is_test_simulation: true,
-    });
+    console.error("[Razorpay create-order exception]:", err);
+    return NextResponse.json(
+      {
+        success: false,
+        error: err.message || "Unable to communicate with Razorpay servers.",
+      },
+      { status: 500 }
+    );
   }
 }

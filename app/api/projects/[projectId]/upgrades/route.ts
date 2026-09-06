@@ -7,7 +7,7 @@ import { Project } from "@/models/Project";
 import { Scope } from "@/models/Scope";
 import { ScopeUpgrade } from "@/models/ScopeUpgrade";
 import { askGeminiForScopeUpgrade } from "@/lib/gemini";
-import { calculatePrice, getRateRange } from "@/lib/utils";
+import { calculatePrice, getRateRange, sanitizeEffortDrivers } from "@/lib/utils";
 
 export async function POST(req: NextRequest, { params }: { params: { projectId: string } }) {
   const session = await getServerSession(authOptions);
@@ -70,6 +70,8 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     proposedUnit.id = proposedUnit.name.toLowerCase().replace(/\s+/g, "_") + "_" + Date.now();
     proposedUnit.addedByClient = true;
     const score = Number(proposedUnit.unitScore) || 30;
+    proposedUnit.unitScore = score;
+    proposedUnit.effortDrivers = sanitizeEffortDrivers(proposedUnit.effortDrivers, score, proposedUnit.name);
 
     // Calculate Pricing Impact
     const currentScore = scope.totalEffortScore;

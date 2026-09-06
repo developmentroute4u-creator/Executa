@@ -1,4 +1,4 @@
-﻿export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -6,6 +6,7 @@ import { connectDB } from "@/lib/db";
 import { Project } from "@/models/Project";
 import { Scope } from "@/models/Scope";
 import { askGeminiForScopeUpgrade } from "@/lib/gemini";
+import { sanitizeEffortDrivers } from "@/lib/utils";
 
 export async function POST(req: NextRequest, { params }: { params: { projectId: string } }) {
   const session = await getServerSession(authOptions);
@@ -68,6 +69,9 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     const proposedUnit = upgradeData.proposedUnit;
     proposedUnit.id = proposedUnit.name.toLowerCase().replace(/\s+/g, "_") + "_" + Date.now();
     proposedUnit.addedByClient = true;
+    const score = Number(proposedUnit.unitScore) || 20;
+    proposedUnit.unitScore = score;
+    proposedUnit.effortDrivers = sanitizeEffortDrivers(proposedUnit.effortDrivers, score, proposedUnit.name);
     
     // We don't save anything here, we just return the unit to the frontend to review and accept
     return NextResponse.json({ success: true, proposedUnit, impact: upgradeData.scopeImpactSummary });

@@ -7,7 +7,7 @@ import { connectDB } from "@/lib/db";
 import { Project } from "@/models/Project";
 import { Scope } from "@/models/Scope";
 import { Message } from "@/models/Message";
-import { getEffortLevel, getRateRange, calculatePrice } from "@/lib/utils";
+import { getEffortLevel, getRateRange, calculatePrice, sanitizeEffortDrivers } from "@/lib/utils";
 import { askGeminiForCustomUnit } from "@/lib/gemini";
 import mongoose from "mongoose";
 
@@ -95,6 +95,25 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
     const pricing = calculatePrice(scope.totalEffortScore || 60, avgRate);
     project.pricing = { ...pricing, ratePerPoint: avgRate, accountabilityMode: "basic" };
     await Project.updateOne({ _id: project._id }, { pricing: project.pricing, requiredLevel: effortLevel });
+  }
+
+  const isPaid = project.payment?.status === "paid";
+  if (!isPaid && scope) {
+    // Protect confidential scope details on backend until payment is verified and credited
+    const lockedScope = {
+      _id: scope._id,
+      projectId: scope.projectId,
+      projectSummary: scope.projectSummary,
+      totalEffortScore: scope.totalEffortScore,
+      effortLevel: scope.effortLevel,
+      timeline: scope.timeline,
+      isLocked: true,
+      functionalUnits: [],
+      overallIncluded: [],
+      overallExcluded: [],
+      expectedDeliverables: [],
+    };
+    return NextResponse.json({ project, scope: lockedScope });
   }
 
   return NextResponse.json({ project, scope });
@@ -310,16 +329,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { projectId:
         deliverables: expandedUnit.deliverables || [],
         unitScore: score,
         addedByClient: true,
-        effortDrivers: {
-          name: expandedUnit.name,
-          logicDepth: expandedUnit.effortDrivers?.logicDepth || 5,
-          interactionDensity: expandedUnit.effortDrivers?.interactionDensity || 5,
-          dataHandling: expandedUnit.effortDrivers?.dataHandling || 5,
-          dependencyLevel: expandedUnit.effortDrivers?.dependencyLevel || 5,
-          variations: expandedUnit.effortDrivers?.variations || 5,
-          outputExpectation: expandedUnit.effortDrivers?.outputExpectation || 5,
-          totalScore: score,
-        },
+        effortDrivers: sanitizeEffortDrivers(expandedUnit.effortDrivers, score, expandedUnit.name),
       };
 
       scope.functionalUnits.push(newUnit);

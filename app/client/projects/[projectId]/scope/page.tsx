@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button, Badge, ScoreBar, Card, Input, Textarea } from "@/components/ui";
 import { formatCurrency, getLevelLabel } from "@/lib/utils";
-import { CheckCircle2, X, Loader2, Check, CreditCard, AlertTriangle, ArrowRight, Zap } from "lucide-react";
+import { CheckCircle2, X, Loader2, Check, CreditCard, AlertTriangle, ArrowRight, Zap, Lock } from "lucide-react";
 import { loadRazorpayScript } from "@/lib/loadRazorpay";
 
 export default function ScopeReviewPage() {
@@ -100,7 +100,7 @@ export default function ScopeReviewPage() {
 
       const completeVerification = async (paymentId: string, orderId: string, signature: string) => {
         try {
-          await fetch("/api/verify-payment", {
+          const verifyRes = await fetch("/api/verify-payment", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -111,6 +111,11 @@ export default function ScopeReviewPage() {
               type: "custom_unit",
             }),
           });
+
+          const verifyData = await verifyRes.json();
+          if (!verifyRes.ok || !verifyData.success) {
+            throw new Error(verifyData.error || "Custom unit payment verification failed.");
+          }
 
           const addRes = await fetch(`/api/projects/${projectId}`, {
             method: "PATCH",
@@ -123,23 +128,28 @@ export default function ScopeReviewPage() {
             setData(updated);
             setShowAddModal(false);
             resetModal();
+          } else {
+            const d = await addRes.json();
+            alert(d.error || "Payment received, but unit could not be added. Please contact support.");
           }
         } catch (vErr: any) {
           console.error("Verification notice:", vErr);
-          setShowAddModal(false);
-          resetModal();
+          alert(vErr.message || "Payment verification failed. Unit was not added.");
         } finally {
           setInitiatingPayment(false);
         }
       };
 
-      const keyId =
-        orderData.key_id ||
-        process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ||
-        "rzp_test_TY0DPZoWlBvrnV";
+      const keyId = orderData.key_id || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+      const configId = orderData.config_id || process.env.NEXT_PUBLIC_RAZORPAY_CONFIG_ID;
+
+      if (!keyId) {
+        throw new Error("Payment gateway configuration missing.");
+      }
 
       const options: any = {
         key: keyId,
+        config_id: configId || undefined,
         amount: orderData.amount,
         currency: orderData.currency,
         name: "FINDADE",
@@ -149,46 +159,6 @@ export default function ScopeReviewPage() {
           name: "Client Partner",
           email: "client@findade.com",
           contact: "9558171690",
-        },
-        method: {
-          upi: true,
-          card: true,
-          netbanking: true,
-          wallet: true,
-          qr: true,
-        },
-        config: {
-          display: {
-            blocks: {
-              upi: {
-                name: "Pay via UPI / QR Code",
-                instruments: [
-                  {
-                    method: "upi",
-                    flows: ["qr", "intent", "collect"],
-                  },
-                ],
-              },
-              other: {
-                name: "Cards & Other Payment Methods",
-                instruments: [
-                  {
-                    method: "card",
-                  },
-                  {
-                    method: "netbanking",
-                  },
-                  {
-                    method: "wallet",
-                  },
-                ],
-              },
-            },
-            sequence: ["block.upi", "block.other"],
-            preferences: {
-              show_default_blocks: true,
-            },
-          },
         },
         theme: {
           color: "#E85239",
@@ -213,35 +183,20 @@ export default function ScopeReviewPage() {
         },
       };
 
-      try {
-        if ((window as any).Razorpay && !orderData.is_test_simulation) {
-          const razorpayModal = new (window as any).Razorpay(options);
-          razorpayModal.on("payment.failed", async () => {
-            await completeVerification(
-              `pay_test_${Date.now().toString(36)}`,
-              orderData.order_id,
-              "mock_signature"
-            );
-          });
-          razorpayModal.open();
-        } else {
-          await completeVerification(
-            `pay_test_${Date.now().toString(36)}`,
-            orderData.order_id,
-            "mock_signature"
-          );
-        }
-      } catch {
-        await completeVerification(
-          `pay_test_${Date.now().toString(36)}`,
-          orderData.order_id,
-          "mock_signature"
-        );
+      if ((window as any).Razorpay) {
+        const razorpayModal = new (window as any).Razorpay(options);
+        razorpayModal.on("payment.failed", (failedRes: any) => {
+          console.error("Payment failed:", failedRes);
+          alert(failedRes.error?.description || "Payment failed. Please try again.");
+          setInitiatingPayment(false);
+        });
+        razorpayModal.open();
+      } else {
+        throw new Error("Unable to open Razorpay payment gateway.");
       }
-    } catch {
+    } catch (err: any) {
       setInitiatingPayment(false);
-      setShowAddModal(false);
-      resetModal();
+      alert(err.message || "Payment initialization failed.");
     }
   }
 
@@ -258,6 +213,11 @@ export default function ScopeReviewPage() {
       .then(async (r) => {
         if (!r.ok) return;
         const d = await r.json();
+        if (d?.project && d?.project?.payment?.status !== "paid") {
+          // Strictly redirect to payment page
+          router.replace(`/client/projects/${projectId}/pay`);
+          return;
+        }
         setData(d);
       })
       .catch(console.error)
@@ -293,7 +253,26 @@ export default function ScopeReviewPage() {
   );
 
   const { project, scope } = data || {};
-  if (!project || !scope) return null;
+  if (!project || project?.payment?.status !== "paid" || !scope) {
+    return (
+      <div className="min-h-screen bg-[#f6f4f0] flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-16 h-16 rounded-3xl bg-rose-100 flex items-center justify-center text-[#E85239] mb-4 shadow-sm">
+          <Lock size={30} />
+        </div>
+        <h2 className="text-2xl font-black text-stone-900 mb-2">Scope Access Locked</h2>
+        <p className="text-stone-500 max-w-md mb-6 text-sm">
+          Payment of the platform fee is required to unlock the full project scope, functional units, and deliverables.
+        </p>
+        <Link
+          href={`/client/projects/${projectId}/pay`}
+          className="px-6 py-3.5 bg-[#E85239] hover:bg-[#d44530] text-white font-bold text-sm rounded-xl shadow-lg shadow-orange-500/20 transition-all flex items-center gap-2"
+        >
+          <CreditCard size={18} />
+          Complete Payment to Unlock
+        </Link>
+      </div>
+    );
+  }
 
   const pricing = project.pricing;
 

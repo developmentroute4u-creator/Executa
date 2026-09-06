@@ -1,4 +1,7 @@
 import { connectDB } from "./db";
+import { sanitizeEffortDrivers } from "./utils";
+
+export { sanitizeEffortDrivers };
 
 // Standard functional units map for reference
 const STANDARD_UNITS: Record<string, any> = {
@@ -270,7 +273,7 @@ INSTRUCTIONS:
    - If Domain is 'Development' → Generate ONLY technical implementation units (Frontend code, Backend, Database, API, Infrastructure). Do NOT include any design-specific units like wireframing or mockups.
    - If Domain is 'Design & Development' → Generate DISTINCT, comprehensive units for BOTH the Design phase AND the Development phase with equal weight to both.
    VIOLATION OF THIS RULE IS UNACCEPTABLE. The domain is non-negotiable.
-3. For each Functional Unit, assign a unitScore between 12 and 28 points based on logic depth and implementation complexity for India market rates, and build an effortDrivers object.
+3. For each Functional Unit, assign a unitScore between 12 and 28 points based on logic depth and implementation complexity for India market rates, and build an effortDrivers object where every sub-score (logicDepth, interactionDensity, dataHandling, dependencyLevel, variations, outputExpectation) is strictly an integer between 1 and 10.
 4. Generate OUTPUT 3: Expected Deliverables (derived strictly from the client's domain. E.g. Figma files for Design, Source Code for Development).
 5. Generate OUTPUT 4: Included Scope (explicit, measurable, execution-focused items that the client mentioned or clearly needs).
 6. Generate OUTPUT 5: Excluded Scope (protect both client and freelancer, e.g., Future Enhancements, 3rd Party Costs, things NOT mentioned).
@@ -305,6 +308,16 @@ Return your response strictly in the following JSON format. Do not wrap in markd
   try {
     const parsed = await callOpenRouterApi(PRIMARY_MODELS, prompt);
     if (parsed.functionalUnits && Array.isArray(parsed.functionalUnits)) {
+      parsed.functionalUnits = parsed.functionalUnits.map((u: any, idx: number) => {
+        const uName = u.name || `Functional Unit ${idx + 1}`;
+        const score = Number(u.unitScore) || Number(u.effortDrivers?.totalScore) || 20;
+        return {
+          ...u,
+          name: uName,
+          unitScore: score,
+          effortDrivers: sanitizeEffortDrivers(u.effortDrivers, score, uName)
+        };
+      });
       console.log("[OPENROUTER] Successfully generated scope");
       return parsed;
     }
@@ -330,7 +343,7 @@ Based on this name and description, please articulate:
 2. What is "excluded" (premium out-of-scope features/add-ons, as an array of strings).
 3. What the "deliverables" are (as an array of strings).
 4. Calculate an estimated complexity/effort score (unitScore) between 15 and 50 points based on implementation difficulty.
-5. Build an effortDrivers object with parameters (logicDepth, interactionDensity, dataHandling, dependencyLevel, variations, outputExpectation) scored between 1 and 10, with totalScore equal to the unitScore.
+5. Build an effortDrivers object with parameters (logicDepth, interactionDensity, dataHandling, dependencyLevel, variations, outputExpectation) strictly scored between 1 and 10, with totalScore equal to the unitScore.
 
 Return your response strictly in the following JSON format:
 {
@@ -356,6 +369,9 @@ Ensure the output is valid JSON. Do not wrap in markdown or add notes.`;
   try {
     const parsed = await callOpenRouterApi(PRIMARY_MODELS, prompt);
     if (parsed.name && parsed.included && parsed.excluded && parsed.deliverables) {
+      const score = Number(parsed.unitScore) || 30;
+      parsed.unitScore = score;
+      parsed.effortDrivers = sanitizeEffortDrivers(parsed.effortDrivers, score, parsed.name);
       console.log("[OPENROUTER] Successfully expanded custom unit");
       return parsed;
     }
@@ -647,6 +663,13 @@ Return your response strictly in the following JSON format. Do not wrap in markd
   try {
     const parsed = await callOpenRouterApi(PRIMARY_MODELS, prompt);
     if (parsed && parsed.proposedUnit && parsed.scopeImpactSummary) {
+      const score = Number(parsed.proposedUnit.unitScore) || 30;
+      parsed.proposedUnit.unitScore = score;
+      parsed.proposedUnit.effortDrivers = sanitizeEffortDrivers(
+        parsed.proposedUnit.effortDrivers,
+        score,
+        parsed.proposedUnit.name
+      );
       console.log("[OPENROUTER] Successfully generated scope upgrade unit");
       return parsed;
     }

@@ -7,7 +7,7 @@ import {
   CreditCard, Lock, CheckCircle2, Loader2,
   Shield, FileText, Zap, ChevronDown, Star,
   BadgeCheck, Headphones, BarChart3, Users, ArrowRight,
-  ChevronLeft, Mail, MessageSquare, Phone, X
+  ChevronLeft, Mail, MessageSquare, Phone, X, AlertTriangle
 } from "lucide-react";
 import Link from "next/link";
 import { SupportChatWidget } from "@/components/SupportChatWidget";
@@ -141,25 +141,28 @@ export default function PaymentGatePage() {
 
           const verifyData = await verifyRes.json();
           if (!verifyRes.ok || !verifyData.success) {
-            throw new Error(verifyData.error || "Payment verification failed.");
+            throw new Error(verifyData.error || "Payment verification failed. Please try again.");
           }
 
-          // Immediately redirect to unlocked scope
+          // SUCCESS: Only when payment is verified and credited, unlock and redirect to scope
           router.push(`/client/projects/${params.projectId}/scope`);
         } catch (vErr: any) {
           console.error("Verification error:", vErr);
-          // In test mode redirect smoothly to unlocked scope
-          router.push(`/client/projects/${params.projectId}/scope`);
+          setError(vErr.message || "Payment verification failed. Your project scope remains locked until payment is verified.");
+          setPaymentLoading(false);
         }
       };
 
-      const keyId =
-        orderData.key_id ||
-        process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ||
-        "rzp_test_TY0DPZoWlBvrnV";
+      const keyId = orderData.key_id || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+      const configId = orderData.config_id || process.env.NEXT_PUBLIC_RAZORPAY_CONFIG_ID;
+
+      if (!keyId) {
+        throw new Error("Payment gateway key missing. Please contact support.");
+      }
 
       const options: any = {
         key: keyId,
+        config_id: configId || undefined,
         amount: orderData.amount,
         currency: orderData.currency,
         name: "FINDADE",
@@ -170,52 +173,13 @@ export default function PaymentGatePage() {
           email: "client@findade.com",
           contact: "9558171690",
         },
-        method: {
-          upi: true,
-          card: true,
-          netbanking: true,
-          wallet: true,
-          qr: true,
-        },
-        config: {
-          display: {
-            blocks: {
-              upi: {
-                name: "Pay via UPI / QR Code",
-                instruments: [
-                  {
-                    method: "upi",
-                    flows: ["qr", "intent", "collect"],
-                  },
-                ],
-              },
-              other: {
-                name: "Cards & Other Payment Methods",
-                instruments: [
-                  {
-                    method: "card",
-                  },
-                  {
-                    method: "netbanking",
-                  },
-                  {
-                    method: "wallet",
-                  },
-                ],
-              },
-            },
-            sequence: ["block.upi", "block.other"],
-            preferences: {
-              show_default_blocks: true,
-            },
-          },
-        },
         theme: {
           color: "#E85239",
         },
         modal: {
           ondismiss: () => {
             setPaymentLoading(false);
+            setError("Payment was cancelled. You must complete the payment to unlock and view your project scope.");
           },
           escape: true,
           backdropclose: false,
@@ -233,36 +197,24 @@ export default function PaymentGatePage() {
         },
       };
 
-      try {
-        if ((window as any).Razorpay && !orderData.is_test_simulation) {
-          const razorpayModal = new (window as any).Razorpay(options);
-          razorpayModal.on("payment.failed", async () => {
-            // Seamless test recovery
-            await completeVerification(
-              `pay_test_${Date.now().toString(36)}`,
-              orderData.order_id,
-              "mock_signature"
-            );
-          });
-          razorpayModal.open();
-        } else {
-          // Instant test sandbox completion
-          await completeVerification(
-            `pay_test_${Date.now().toString(36)}`,
-            orderData.order_id,
-            "mock_signature"
+      if ((window as any).Razorpay) {
+        const razorpayModal = new (window as any).Razorpay(options);
+        razorpayModal.on("payment.failed", (failedRes: any) => {
+          console.error("Razorpay Payment Failed:", failedRes);
+          setError(
+            failedRes.error?.description ||
+            failedRes.error?.reason ||
+            "Payment failed. Please retry with UPI, QR code, Card, or Net Banking."
           );
-        }
-      } catch {
-        await completeVerification(
-          `pay_test_${Date.now().toString(36)}`,
-          orderData.order_id,
-          "mock_signature"
-        );
+          setPaymentLoading(false);
+        });
+        razorpayModal.open();
+      } else {
+        throw new Error("Razorpay payment modal could not be opened. Please check your network connection.");
       }
-    } catch {
-      // In all edge cases, complete cleanly
-      router.push(`/client/projects/${params.projectId}/scope`);
+    } catch (err: any) {
+      setError(err.message || "Payment initialization failed. Please try again.");
+      setPaymentLoading(false);
     }
   }
 
@@ -472,11 +424,33 @@ export default function PaymentGatePage() {
                 </div>
               </motion.div>
 
-              {/* Error */}
+              {/* Payment Incomplete / Failed Alert Banner */}
               {error && (
-                <div className="p-4 bg-red-50 border border-red-100 rounded-xl text-[13px] text-red-600 font-medium">
-                  {error}
-                </div>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.96 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="p-5 bg-rose-50/90 border-2 border-rose-200/80 rounded-2xl text-stone-800 space-y-2 shadow-sm"
+                >
+                  <div className="flex items-center gap-2 text-rose-700 font-black text-[14px]">
+                    <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0" />
+                    <span>Payment Incomplete · Scope Remains Locked</span>
+                  </div>
+                  <p className="text-[12px] text-rose-800/80 font-medium leading-relaxed">
+                    {error}
+                  </p>
+                  <div className="pt-2 flex items-center justify-between">
+                    <p className="text-[11px] text-stone-500 font-semibold">
+                      Your full project scope will unlock immediately once payment is completed.
+                    </p>
+                    <button
+                      onClick={handlePayNow}
+                      disabled={paymentLoading}
+                      className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-bold rounded-xl transition-all shadow-sm shrink-0"
+                    >
+                      Retry Now
+                    </button>
+                  </div>
+                </motion.div>
               )}
 
               {/* ── Pay button ── */}
@@ -493,7 +467,7 @@ export default function PaymentGatePage() {
                 {paymentLoading ? (
                   <><Loader2 size={20} className="animate-spin" />Opening Razorpay…</>
                 ) : (
-                  <><CreditCard size={19} />Pay {formatCurrency(platformFees)} via Razorpay<ArrowRight size={18} /></>
+                  <><CreditCard size={19} />{error ? `Retry Payment (${formatCurrency(platformFees)})` : `Pay ${formatCurrency(platformFees)} via Razorpay`}<ArrowRight size={18} /></>
                 )}
               </motion.button>
 

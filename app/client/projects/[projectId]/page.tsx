@@ -49,6 +49,7 @@ export default function ProjectDetailView({ params }: { params: { projectId: str
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
   // Inline matching state variables
   const [matchStatus, setMatchStatus] = useState<"idle" | "loading" | "loaded" | "empty">("idle");
@@ -201,6 +202,7 @@ export default function ProjectDetailView({ params }: { params: { projectId: str
 
   async function handlePayNow() {
     setPaymentLoading(true);
+    setPaymentError(null);
     try {
       const scriptLoaded = await loadRazorpayScript();
       if (!scriptLoaded) {
@@ -242,10 +244,14 @@ export default function ProjectDetailView({ params }: { params: { projectId: str
             }),
           });
 
-          await verifyRes.json();
+          const verifyData = await verifyRes.json();
+          if (!verifyRes.ok || !verifyData.success) {
+            throw new Error(verifyData.error || "Payment verification failed. Scope access remains locked.");
+          }
+
           reload();
-        } catch {
-          reload();
+        } catch (vErr: any) {
+          setPaymentError(vErr.message || "Payment verification failed. Scope remains locked until confirmed.");
         } finally {
           setPaymentLoading(false);
         }
@@ -253,11 +259,20 @@ export default function ProjectDetailView({ params }: { params: { projectId: str
 
       const keyId =
         orderData.key_id ||
-        process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ||
-        "rzp_test_TY0DPZoWlBvrnV";
+        process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+
+      if (!keyId) {
+        throw new Error("Razorpay payment credentials are missing in the configuration.");
+      }
+
+      const configId =
+        orderData.config_id ||
+        process.env.NEXT_PUBLIC_RAZORPAY_CONFIG_ID ||
+        undefined;
 
       const options: any = {
         key: keyId,
+        ...(configId ? { config_id: configId } : {}),
         amount: orderData.amount,
         currency: orderData.currency,
         name: "FINDADE",
@@ -267,46 +282,6 @@ export default function ProjectDetailView({ params }: { params: { projectId: str
           name: "Client Partner",
           email: "client@findade.com",
           contact: "9558171690",
-        },
-        method: {
-          upi: true,
-          card: true,
-          netbanking: true,
-          wallet: true,
-          qr: true,
-        },
-        config: {
-          display: {
-            blocks: {
-              upi: {
-                name: "Pay via UPI / QR Code",
-                instruments: [
-                  {
-                    method: "upi",
-                    flows: ["qr", "intent", "collect"],
-                  },
-                ],
-              },
-              other: {
-                name: "Cards & Other Payment Methods",
-                instruments: [
-                  {
-                    method: "card",
-                  },
-                  {
-                    method: "netbanking",
-                  },
-                  {
-                    method: "wallet",
-                  },
-                ],
-              },
-            },
-            sequence: ["block.upi", "block.other"],
-            preferences: {
-              show_default_blocks: true,
-            },
-          },
         },
         theme: {
           color: "#E85239",
@@ -331,34 +306,19 @@ export default function ProjectDetailView({ params }: { params: { projectId: str
         },
       };
 
-      try {
-        if ((window as any).Razorpay && !orderData.is_test_simulation) {
-          const razorpayModal = new (window as any).Razorpay(options);
-          razorpayModal.on("payment.failed", async () => {
-            await completeVerification(
-              `pay_test_${Date.now().toString(36)}`,
-              orderData.order_id,
-              "mock_signature"
-            );
-          });
-          razorpayModal.open();
-        } else {
-          await completeVerification(
-            `pay_test_${Date.now().toString(36)}`,
-            orderData.order_id,
-            "mock_signature"
-          );
-        }
-      } catch {
-        await completeVerification(
-          `pay_test_${Date.now().toString(36)}`,
-          orderData.order_id,
-          "mock_signature"
-        );
+      if ((window as any).Razorpay) {
+        const razorpayModal = new (window as any).Razorpay(options);
+        razorpayModal.on("payment.failed", (failedRes: any) => {
+          setPaymentLoading(false);
+          setPaymentError(failedRes?.error?.description || "Payment failed or was declined. Scope remains locked.");
+        });
+        razorpayModal.open();
+      } else {
+        throw new Error("Razorpay SDK not available on window.");
       }
-    } catch {
-      reload();
+    } catch (err: any) {
       setPaymentLoading(false);
+      setPaymentError(err?.message || "Payment failed to initialize. Scope remains locked.");
     }
   }
 
@@ -558,13 +518,24 @@ export default function ProjectDetailView({ params }: { params: { projectId: str
                       Pay the platform fee of <strong className="text-[#E85239]">{formatCurrency(platformFees)}</strong> to unlock the complete scope, functional units, deliverables, and capabilities.
                     </p>
                   </div>
+
+                  {paymentError && (
+                    <div className="w-full max-w-md p-3.5 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2.5 text-left">
+                      <AlertCircle size={16} className="text-red-600 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-[12px] font-bold text-red-900">Payment Incomplete</p>
+                        <p className="text-[11px] text-red-700 leading-snug">{paymentError}</p>
+                      </div>
+                    </div>
+                  )}
+
                   <button
                     onClick={handlePayNow}
                     disabled={paymentLoading}
                     className="flex items-center gap-2 h-12 px-8 bg-[#E85239] text-white text-[14px] font-bold rounded-xl hover:bg-[#d44530] hover:shadow-[0_8px_20px_rgba(232,82,57,0.35)] transition-all disabled:opacity-60 mt-2"
                   >
                     {paymentLoading ? <Loader2 size={16} className="animate-spin" /> : <CreditCard size={16} />}
-                    {paymentLoading ? "Opening Razorpay…" : `Pay ${formatCurrency(platformFees)} via Razorpay`}
+                    {paymentLoading ? "Opening Razorpay…" : paymentError ? `Retry Payment · ${formatCurrency(platformFees)}` : `Pay ${formatCurrency(platformFees)} via Razorpay`}
                   </button>
                   <p className="text-[11px] text-stone-400">Secure 256-bit payment powered by Razorpay</p>
                 </div>

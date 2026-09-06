@@ -1,4 +1,4 @@
-﻿export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -10,7 +10,7 @@ import { Message } from "@/models/Message";
 import { FreelancerProfile } from "@/models/FreelancerProfile";
 import { User } from "@/models/User";
 import { Test } from "@/models/Test";
-import { calculatePrice, getEffortLevel, getRateRange } from "@/lib/utils";
+import { calculatePrice, getEffortLevel, getRateRange, sanitizeEffortDrivers } from "@/lib/utils";
 
 export async function POST(req: NextRequest) {
   const adminCookie = req.cookies.get("admin_session")?.value;
@@ -290,16 +290,7 @@ export async function POST(req: NextRequest) {
         deliverables: ["Tested asset build"],
         addedByClient: true,
         unitScore: 10,
-        effortDrivers: {
-          name: unitName,
-          logicDepth: 5,
-          interactionDensity: 5,
-          dataHandling: 5,
-          dependencyLevel: 5,
-          variations: 5,
-          outputExpectation: 5,
-          totalScore: 30
-        }
+        effortDrivers: sanitizeEffortDrivers(undefined, 10, unitName)
       };
 
       currentScope.functionalUnits.push(newUnit as any);

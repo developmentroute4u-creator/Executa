@@ -37,21 +37,26 @@ export function getRazorpayConfig() {
   const rawKeyId =
     process.env.RAZORPAY_KEY_ID ||
     process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ||
-    "rzp_test_TY0DPZoWlBvrnV";
+    "";
   const rawKeySecret =
     process.env.RAZORPAY_KEY_SECRET ||
-    "5hX3VG4P4Tk8lCY7MIzFbtz5";
+    "";
+  const rawConfigId =
+    process.env.NEXT_PUBLIC_RAZORPAY_CONFIG_ID ||
+    process.env.RAZORPAY_CONFIG_ID ||
+    "";
 
   const keyId = (rawKeyId || "").trim();
   const keySecret = (rawKeySecret || "").trim();
+  const configId = (rawConfigId || "").trim();
 
-  return { keyId, keySecret };
+  return { keyId, keySecret, configId };
 }
 
 export function getRazorpayInstance(): Razorpay {
   const { keyId, keySecret } = getRazorpayConfig();
   if (!keyId || !keySecret) {
-    throw new Error("Razorpay credentials missing in environment variables.");
+    throw new Error("Razorpay credentials missing in environment variables (.env.local).");
   }
   return new Razorpay({
     key_id: keyId,
@@ -61,9 +66,9 @@ export function getRazorpayInstance(): Razorpay {
 
 export function generateTestSignature(orderId: string, paymentId: string): string {
   const { keySecret } = getRazorpayConfig();
-  const secret = keySecret || "5hX3VG4P4Tk8lCY7MIzFbtz5";
+  if (!keySecret) return "";
   return crypto
-    .createHmac("sha256", secret)
+    .createHmac("sha256", keySecret)
     .update(`${String(orderId).trim()}|${String(paymentId).trim()}`)
     .digest("hex");
 }
@@ -79,14 +84,12 @@ export function verifyRazorpaySignature(
     const cleanPaymentId = String(paymentId || "").trim();
     const cleanSignature = String(signature || "").trim();
 
-    if (!cleanOrderId || !cleanPaymentId || !cleanSignature) {
+    if (!cleanOrderId || !cleanPaymentId || !cleanSignature || !keySecret) {
       return false;
     }
 
-    const secret = keySecret || "5hX3VG4P4Tk8lCY7MIzFbtz5";
-
     const generatedSignature = crypto
-      .createHmac("sha256", secret)
+      .createHmac("sha256", keySecret)
       .update(`${cleanOrderId}|${cleanPaymentId}`)
       .digest("hex");
 
@@ -94,16 +97,6 @@ export function verifyRazorpaySignature(
     const bufB = Buffer.from(cleanSignature, "utf-8");
 
     if (bufA.length === bufB.length && crypto.timingSafeEqual(bufA, bufB)) {
-      return true;
-    }
-
-    // Support simulated test sandbox signatures
-    if (
-      cleanSignature === "mock_signature" ||
-      cleanSignature === generateTestSignature(cleanOrderId, cleanPaymentId) ||
-      cleanOrderId.startsWith("order_test_") ||
-      cleanPaymentId.startsWith("pay_test_")
-    ) {
       return true;
     }
 

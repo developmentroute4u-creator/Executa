@@ -81,14 +81,20 @@ export default function RazorpayPayButton({
       });
 
       const orderData = await createOrderRes.json();
-      const keyId =
-        orderData.key_id ||
-        process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ||
-        "rzp_test_TY0DPZoWlBvrnV";
+      if (!createOrderRes.ok || !orderData.order_id) {
+        throw new Error(orderData.error || "Order creation failed.");
+      }
+
+      const keyId = orderData.key_id || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+      const configId = orderData.config_id || process.env.NEXT_PUBLIC_RAZORPAY_CONFIG_ID;
+
+      if (!keyId) {
+        throw new Error("Razorpay Key ID is not configured.");
+      }
 
       const completeVerification = async (paymentId: string, orderId: string, signature: string) => {
         try {
-          await fetch("/api/verify-payment", {
+          const verifyRes = await fetch("/api/verify-payment", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -100,6 +106,11 @@ export default function RazorpayPayButton({
             }),
           });
 
+          const verifyData = await verifyRes.json();
+          if (!verifyRes.ok || !verifyData.success) {
+            throw new Error(verifyData.error || "Payment verification failed.");
+          }
+
           setLoading(false);
           if (onSuccess) {
             onSuccess({
@@ -109,20 +120,16 @@ export default function RazorpayPayButton({
             });
           }
         } catch (verifyErr: any) {
-          console.error("Verification notice:", verifyErr);
+          console.error("Verification error:", verifyErr);
           setLoading(false);
-          if (onSuccess) {
-            onSuccess({
-              order_id: orderId,
-              payment_id: paymentId,
-              signature: signature,
-            });
-          }
+          setErrorMessage(verifyErr.message || "Payment verification failed.");
+          if (onError) onError(verifyErr.message || "Payment verification failed.");
         }
       };
 
       const options: any = {
         key: keyId,
+        config_id: configId || undefined,
         amount: orderData.amount,
         currency: orderData.currency,
         name,
@@ -133,52 +140,13 @@ export default function RazorpayPayButton({
           email: prefill?.email || "client@findade.com",
           contact: prefill?.contact || "9558171690",
         },
-        method: {
-          upi: true,
-          card: true,
-          netbanking: true,
-          wallet: true,
-          qr: true,
-        },
-        config: {
-          display: {
-            blocks: {
-              upi: {
-                name: "Pay via UPI / QR Code",
-                instruments: [
-                  {
-                    method: "upi",
-                    flows: ["qr", "intent", "collect"],
-                  },
-                ],
-              },
-              other: {
-                name: "Other Payment Methods",
-                instruments: [
-                  {
-                    method: "card",
-                  },
-                  {
-                    method: "netbanking",
-                  },
-                  {
-                    method: "wallet",
-                  },
-                ],
-              },
-            },
-            sequence: ["block.upi", "block.other"],
-            preferences: {
-              show_default_blocks: true,
-            },
-          },
-        },
         theme: {
           color: "#E85239",
         },
         modal: {
           ondismiss: () => {
             setLoading(false);
+            setErrorMessage("Payment was cancelled.");
             if (onDismiss) onDismiss();
           },
           escape: true,
@@ -197,40 +165,23 @@ export default function RazorpayPayButton({
         },
       };
 
-      try {
-        if ((window as any).Razorpay && !orderData.is_test_simulation) {
-          const razorpayModal = new (window as any).Razorpay(options);
-          razorpayModal.on("payment.failed", async () => {
-            await completeVerification(
-              `pay_test_${Date.now().toString(36)}`,
-              orderData.order_id,
-              "mock_signature"
-            );
-          });
-          razorpayModal.open();
-        } else {
-          await completeVerification(
-            `pay_test_${Date.now().toString(36)}`,
-            orderData.order_id,
-            "mock_signature"
-          );
-        }
-      } catch {
-        await completeVerification(
-          `pay_test_${Date.now().toString(36)}`,
-          orderData.order_id,
-          "mock_signature"
-        );
-      }
-    } catch {
-      setLoading(false);
-      if (onSuccess) {
-        onSuccess({
-          order_id: `order_test_${Date.now().toString(36)}`,
-          payment_id: `pay_test_${Date.now().toString(36)}`,
-          signature: "mock_signature",
+      if ((window as any).Razorpay) {
+        const razorpayModal = new (window as any).Razorpay(options);
+        razorpayModal.on("payment.failed", (failedRes: any) => {
+          console.error("Payment failed:", failedRes);
+          const errText = failedRes.error?.description || "Payment failed. Please try again.";
+          setErrorMessage(errText);
+          setLoading(false);
+          if (onError) onError(errText);
         });
+        razorpayModal.open();
+      } else {
+        throw new Error("Unable to open Razorpay payment gateway.");
       }
+    } catch (err: any) {
+      setLoading(false);
+      setErrorMessage(err.message || "Payment initialization failed.");
+      if (onError) onError(err.message || "Payment initialization failed.");
     }
   }
 

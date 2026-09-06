@@ -190,3 +190,46 @@ export function getRemainingTimeDetails(dueDateStr: string | Date): {
   };
 }
 
+export function sanitizeEffortDrivers(
+  drivers?: any,
+  defaultScore: number = 25,
+  defaultName: string = "Functional Unit"
+) {
+  const clamp = (v: any, fallback = 5) => {
+    const num = Number(v);
+    if (isNaN(num) || num === null || num === undefined) return fallback;
+    return Math.min(10, Math.max(1, Math.round(num)));
+  };
+
+  const name =
+    typeof drivers?.name === "string" && drivers.name.trim()
+      ? drivers.name.trim()
+      : defaultName;
+  const logicDepth = clamp(drivers?.logicDepth, 5);
+  const interactionDensity = clamp(drivers?.interactionDensity, 5);
+  const dataHandling = clamp(drivers?.dataHandling, 5);
+  const dependencyLevel = clamp(drivers?.dependencyLevel, 5);
+  const variations = clamp(drivers?.variations, 5);
+  const outputExpectation = clamp(drivers?.outputExpectation, 5);
+  const totalScore =
+    Number(drivers?.totalScore) ||
+    Number(defaultScore) ||
+    logicDepth +
+      interactionDensity +
+      dataHandling +
+      dependencyLevel +
+      variations +
+      outputExpectation;
+
+  return {
+    name,
+    logicDepth,
+    interactionDensity,
+    dataHandling,
+    dependencyLevel,
+    variations,
+    outputExpectation,
+    totalScore,
+  };
+}
+

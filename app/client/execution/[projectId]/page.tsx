@@ -111,7 +111,7 @@ export default function ClientExecutionRoom({ params }: { params: { projectId: s
 
       const completeMilestoneVerification = async (paymentId: string, orderId: string, signature: string) => {
         try {
-          await fetch("/api/verify-payment", {
+          const verifyRes = await fetch("/api/verify-payment", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -123,6 +123,11 @@ export default function ClientExecutionRoom({ params }: { params: { projectId: s
               type: "milestone",
             }),
           });
+
+          const verifyData = await verifyRes.json();
+          if (!verifyRes.ok || !verifyData.success) {
+            throw new Error(verifyData.error || "Milestone payment verification failed.");
+          }
 
           // Instantly update local milestone state to unlocked
           setProject((prev: any) => {
@@ -161,11 +166,20 @@ export default function ClientExecutionRoom({ params }: { params: { projectId: s
 
       const keyId =
         orderData.key_id ||
-        process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ||
-        "rzp_test_TY0DPZoWlBvrnV";
+        process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+
+      if (!keyId) {
+        throw new Error("Razorpay Key ID is not configured.");
+      }
+
+      const configId =
+        orderData.config_id ||
+        process.env.NEXT_PUBLIC_RAZORPAY_CONFIG_ID ||
+        undefined;
 
       const options: any = {
         key: keyId,
+        ...(configId ? { config_id: configId } : {}),
         amount: orderData.amount,
         currency: orderData.currency,
         name: "FINDADE",
@@ -175,46 +189,6 @@ export default function ClientExecutionRoom({ params }: { params: { projectId: s
           name: "Client Partner",
           email: "client@findade.com",
           contact: "9558171690",
-        },
-        method: {
-          upi: true,
-          card: true,
-          netbanking: true,
-          wallet: true,
-          qr: true,
-        },
-        config: {
-          display: {
-            blocks: {
-              upi: {
-                name: "Pay via UPI / QR Code",
-                instruments: [
-                  {
-                    method: "upi",
-                    flows: ["qr", "intent", "collect"],
-                  },
-                ],
-              },
-              other: {
-                name: "Cards & Other Payment Methods",
-                instruments: [
-                  {
-                    method: "card",
-                  },
-                  {
-                    method: "netbanking",
-                  },
-                  {
-                    method: "wallet",
-                  },
-                ],
-              },
-            },
-            sequence: ["block.upi", "block.other"],
-            preferences: {
-              show_default_blocks: true,
-            },
-          },
         },
         theme: {
           color: "#E85239",
@@ -239,32 +213,18 @@ export default function ClientExecutionRoom({ params }: { params: { projectId: s
         },
       };
 
-      try {
-        if ((window as any).Razorpay && !orderData.is_test_simulation) {
-          const razorpayModal = new (window as any).Razorpay(options);
-          razorpayModal.on("payment.failed", async () => {
-            await completeMilestoneVerification(
-              `pay_test_${Date.now().toString(36)}`,
-              orderData.order_id,
-              "mock_signature"
-            );
-          });
-          razorpayModal.open();
-        } else {
-          await completeMilestoneVerification(
-            `pay_test_${Date.now().toString(36)}`,
-            orderData.order_id,
-            "mock_signature"
-          );
-        }
-      } catch {
-        await completeMilestoneVerification(
-          `pay_test_${Date.now().toString(36)}`,
-          orderData.order_id,
-          "mock_signature"
-        );
+      if ((window as any).Razorpay) {
+        const razorpayModal = new (window as any).Razorpay(options);
+        razorpayModal.on("payment.failed", (failedRes: any) => {
+          console.error("Milestone payment failed:", failedRes);
+          setPayingMilestoneIndex(null);
+        });
+        razorpayModal.open();
+      } else {
+        throw new Error("Razorpay SDK not loaded on window.");
       }
-    } catch {
+    } catch (err) {
+      console.error("Milestone payment error:", err);
       setPayingMilestoneIndex(null);
     }
   };
@@ -409,7 +369,7 @@ export default function ClientExecutionRoom({ params }: { params: { projectId: s
 
       const completeUpgradeVerification = async (paymentId: string, orderId: string, signature: string) => {
         try {
-          await fetch("/api/verify-payment", {
+          const verifyRes = await fetch("/api/verify-payment", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -422,16 +382,17 @@ export default function ClientExecutionRoom({ params }: { params: { projectId: s
             }),
           });
 
+          const verifyData = await verifyRes.json();
+          if (!verifyRes.ok || !verifyData.success) {
+            throw new Error(verifyData.error || "Upgrade payment verification failed.");
+          }
+
           if (proposedUpgrade) {
             setUpgrades((prev: any[]) => [{ ...proposedUpgrade, status: "pending_freelancer_approval" }, ...prev]);
           }
           setShowUpgradeModal(false);
         } catch (vErr: any) {
           console.error("Upgrade verification notice:", vErr);
-          if (proposedUpgrade) {
-            setUpgrades((prev: any[]) => [{ ...proposedUpgrade, status: "pending_freelancer_approval" }, ...prev]);
-          }
-          setShowUpgradeModal(false);
         } finally {
           setInitiatingUpgradePayment(false);
         }
@@ -439,11 +400,20 @@ export default function ClientExecutionRoom({ params }: { params: { projectId: s
 
       const keyId =
         orderData.key_id ||
-        process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ||
-        "rzp_test_TY0DPZoWlBvrnV";
+        process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+
+      if (!keyId) {
+        throw new Error("Razorpay Key ID is not configured.");
+      }
+
+      const configId =
+        orderData.config_id ||
+        process.env.NEXT_PUBLIC_RAZORPAY_CONFIG_ID ||
+        undefined;
 
       const options: any = {
         key: keyId,
+        ...(configId ? { config_id: configId } : {}),
         amount: orderData.amount,
         currency: orderData.currency,
         name: "FINDADE",
@@ -453,46 +423,6 @@ export default function ClientExecutionRoom({ params }: { params: { projectId: s
           name: "Client Partner",
           email: "client@findade.com",
           contact: "9558171690",
-        },
-        method: {
-          upi: true,
-          card: true,
-          netbanking: true,
-          wallet: true,
-          qr: true,
-        },
-        config: {
-          display: {
-            blocks: {
-              upi: {
-                name: "Pay via UPI / QR Code",
-                instruments: [
-                  {
-                    method: "upi",
-                    flows: ["qr", "intent", "collect"],
-                  },
-                ],
-              },
-              other: {
-                name: "Cards & Other Payment Methods",
-                instruments: [
-                  {
-                    method: "card",
-                  },
-                  {
-                    method: "netbanking",
-                  },
-                  {
-                    method: "wallet",
-                  },
-                ],
-              },
-            },
-            sequence: ["block.upi", "block.other"],
-            preferences: {
-              show_default_blocks: true,
-            },
-          },
         },
         theme: {
           color: "#E85239",
@@ -517,36 +447,18 @@ export default function ClientExecutionRoom({ params }: { params: { projectId: s
         },
       };
 
-      try {
-        if ((window as any).Razorpay && !orderData.is_test_simulation) {
-          const razorpayModal = new (window as any).Razorpay(options);
-          razorpayModal.on("payment.failed", async () => {
-            await completeUpgradeVerification(
-              `pay_test_${Date.now().toString(36)}`,
-              orderData.order_id,
-              "mock_signature"
-            );
-          });
-          razorpayModal.open();
-        } else {
-          await completeUpgradeVerification(
-            `pay_test_${Date.now().toString(36)}`,
-            orderData.order_id,
-            "mock_signature"
-          );
-        }
-      } catch {
-        await completeUpgradeVerification(
-          `pay_test_${Date.now().toString(36)}`,
-          orderData.order_id,
-          "mock_signature"
-        );
+      if ((window as any).Razorpay) {
+        const razorpayModal = new (window as any).Razorpay(options);
+        razorpayModal.on("payment.failed", (failedRes: any) => {
+          console.error("Upgrade payment failed:", failedRes);
+          setInitiatingUpgradePayment(false);
+        });
+        razorpayModal.open();
+      } else {
+        throw new Error("Razorpay SDK not loaded on window.");
       }
-    } catch {
-      if (proposedUpgrade) {
-        setUpgrades((prev: any[]) => [{ ...proposedUpgrade, status: "pending_freelancer_approval" }, ...prev]);
-      }
-      setShowUpgradeModal(false);
+    } catch (err) {
+      console.error("Upgrade payment error:", err);
       setInitiatingUpgradePayment(false);
     }
   };

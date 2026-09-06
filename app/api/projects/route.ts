@@ -7,7 +7,7 @@ import { connectDB } from "@/lib/db";
 import { Project } from "@/models/Project";
 import { Scope } from "@/models/Scope";
 import { User } from "@/models/User";
-import { getEffortLevel, getRateRange, calculatePrice } from "@/lib/utils";
+import { getEffortLevel, getRateRange, calculatePrice, sanitizeEffortDrivers } from "@/lib/utils";
 import { askGeminiForScope } from "@/lib/gemini";
 import { generateScope } from "@/lib/scopeGenerator";
 
@@ -178,12 +178,7 @@ export async function POST(req: NextRequest) {
         excluded: Array.isArray(u.excluded) ? u.excluded : [],
         deliverables: Array.isArray(u.deliverables) ? u.deliverables : [],
         unitScore: score,
-        effortDrivers: u.effortDrivers || {
-          name: uName,
-          logicDepth: 5, interactionDensity: 5, dataHandling: 5,
-          dependencyLevel: 5, variations: 5, outputExpectation: 5,
-          totalScore: score
-        }
+        effortDrivers: sanitizeEffortDrivers(u.effortDrivers, score, uName)
       };
     });
 
